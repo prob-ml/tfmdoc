@@ -1,1 +1,10 @@
 .ipynb_checkpoints/
+
+# Large file to be ignored:
+*.txt
+*.csv
+*.json
+
+# Training files of Bert
+*runs/
+*.bin
