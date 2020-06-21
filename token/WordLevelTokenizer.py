@@ -11,6 +11,7 @@ from tokenizers.models import BPE
 from tokenizers.normalizers import Lowercase
 from tokenizers.pre_tokenizers import CharDelimiterSplit
 from .BaseTokenizer import BaseTokenizer
+from models import WordLevel
 
 
 class WordLevelBertTokenizer(BaseTokenizer):
