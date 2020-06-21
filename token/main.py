@@ -11,7 +11,8 @@ import pandas as pd
 import torch.nn.functional as F
 from torch.distributions.normal import Normal
 from torch.distributions.categorical import Categorical
-from token.WordLevelTokenizer import WordLevelBertTokenizer
+
+from .WordLevelTokenizer import WordLevelBertTokenizer
 
 
 def is_in(z, a=1, b=3):
@@ -19,7 +20,7 @@ def is_in(z, a=1, b=3):
 
 
 xdim = 100  # number of billing codes
-N = 20_0000  # number of patients
+N = 20_000  # number of patients
 T = 5  # total time steps
 
 # model parameters
