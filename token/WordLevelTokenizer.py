@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 import tokenizers
+from tokenizers.models import WordLevel
 from tokenizers import Tokenizer, Encoding, AddedToken
 from tokenizers.models import TokenizedSequence, TokenizedSequenceWithOffsets
 from tokenizers.normalizers import Lowercase, Sequence, unicode_normalizer_from_str
@@ -10,7 +11,7 @@ from tokenizers.models import BPE
 from tokenizers.normalizers import Lowercase
 from tokenizers.pre_tokenizers import CharDelimiterSplit
 from BaseTokenizer import BaseTokenizer
-from models import WordLevel
+# from models import WordLevel
 
 
 class WordLevelBertTokenizer(BaseTokenizer):

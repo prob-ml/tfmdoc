@@ -1,8 +1,10 @@
-from .. import Encoding, Offsets
+from tokenizers import Encoding, Offsets
+from tokenizers.models import WordLevel
 from typing import List, Optional, Union, Tuple
 
 TokenizedSequence = List[str]
 TokenizedSequenceWithOffsets = List[Tuple[str, Offsets]]
+
 
 class Model:
     """ Base class for all models
