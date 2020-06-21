@@ -5,7 +5,7 @@ import pandas as pd
 import torch.nn.functional as F
 from torch.distributions.normal import Normal
 from torch.distributions.categorical import Categorical
-from .WordLevelTokenizer import WordLevelBertTokenizer
+from token.WordLevelTokenizer import WordLevelBertTokenizer
 
 
 def is_in(z, a=1, b=3):
