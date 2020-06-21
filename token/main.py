@@ -1,3 +1,9 @@
+import os, sys
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(curPath)
+
 import torch
 import numpy as np
 import pandas as pd
