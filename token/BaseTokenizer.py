@@ -1,5 +1,4 @@
 from tokenizers import Tokenizer, Encoding, AddedToken
-from tokenizers import WordLevel
 from tokenizers.models import TokenizedSequence, TokenizedSequenceWithOffsets
 
 from typing import List, Union, Tuple, Optional, Dict
