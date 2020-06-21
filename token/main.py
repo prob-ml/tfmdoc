@@ -12,8 +12,7 @@ import torch.nn.functional as F
 from torch.distributions.normal import Normal
 from torch.distributions.categorical import Categorical
 
-from .WordLevelTokenizer import WordLevelBertTokenizer
-
+from WordLevelTokenizer import WordLevelBertTokenizer
 
 def is_in(z, a=1, b=3):
     return (z >= a) * (z <= b)
