@@ -152,6 +152,6 @@ cython_debug/
 *.idea/
 
 bert-dev/*.py
-token/*
+*_archive*
 
 *_dev*
