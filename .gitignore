@@ -152,3 +152,8 @@ cython_debug/
 *.idea/
 
 bert-dev/*.py
+*_archive*
+
+*_dev*
+
+nohup.out
