@@ -63,8 +63,8 @@ if __name__ == '__main__':
 
 	for file in procs:
 	    proc = pd.read_csv(file, sep=',', dtype = {'Patid': str})
-	    proc = diag.assign(ProcId = 'icd:' + diag['Icd_Flag'].astype(str) + '_proc:' + diag['Diag'])
-	    proc = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
+	    proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
+	    proc = proc.assign(PatGroup = proc['Patid'].apply(lambda x: x[-1]))
 	    
 	    for group in userGroup:
 	        logger.info(f'Start: {file}, group: {group}.')
@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
 	for file in pharms:
 	    pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str})
-	    pharm = pharm.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
+	    pharm = pharm.assign(PatGroup = pharm['Patid'].apply(lambda x: x[-1]))
 	    
 	    for group in userGroup:
 	        logger.info(f'Start: {file}, group: {group}.')
