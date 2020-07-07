@@ -6,32 +6,13 @@ import os
 import shutil
 import logging
 import argparse
-import re
+# import re
 
 from utils import get_logger, makedirs
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--dev', action='store_true')
-
-parser.add_argument('--create_field_seq', action='store_true')
-parser.add_argument('--merge_field', action='store_true')
-
-parser.add_argument('--force_new', action='store_true')
-args = parser.parse_args()
-
-data_path = '/home/liutianc/emr-data'
-result_path = os.path.join(data_path, 'merge')
-if os.path.exists(result_path) and args.force_new:
-    shutil.rmtree(result_path)
-makedirs(result_path)
-
-job = os.path.basename(__file__)
-job = job.split('.')[0]
-job += args.create_field_seq * '_create_field_seq' + args.merge_field * '_merge_field'
-logger = get_logger(job)
-
 
 def create_field_seq():
+    
 	logger.info('*' * 100)
 	logger.info('Start: create_field_seq.')
 
@@ -56,7 +37,6 @@ def create_field_seq():
 	        sub_diag_merged_df.to_csv(to_write, index=False)
 	        logger.info(f'Finish: {file}, group: {group}.')
 
-
 	for file in procs:
 	    proc = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
@@ -77,7 +57,6 @@ def create_field_seq():
 	        #     sub_proc_merged_df.to_csv(to_write, index=False)
 	        sub_proc_merged_df.to_csv(to_write, index=False)
 	        logger.info(f'Finish: {file}, group: {group}.')
-
 
 	for file in pharms:
 	    pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str}, error_bad_lines=False)
@@ -104,8 +83,8 @@ def create_field_seq():
 	logger.info('*' * 100)
 
 
-
 def merge_field():
+    
 	logger.info('*' * 100)
 	logger.info('Start: merge_field.')
 
@@ -120,18 +99,18 @@ def merge_field():
 				diag = pd.read_csv(diag_file, sep=',', dtype = {'patid': str, 'date': str})
 				proc = pd.read_csv(proc_file, sep=',', dtype = {'patid': str, 'date': str})
 				pharm = pd.read_csv(pharm_file, sep=',', dtype = {'patid': str, 'date': str})
+                
 				tmp = pd.merge(diag, proc, how='outer', on=['patid', 'date'])
 				tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
 				tmp = tmp.fillna('')
 				tmp['seq'] = tmp['diags'] + ' ' + tmp['procs'] + ' ' + tmp['drugs']
-				to_write = os.path.join(result_path, f'{year}_{group}.csv')
                 
+				to_write = os.path.join(result_path, f'{year}_{group}.csv')
 				tmp.to_csv(to_write, index=False)
 				logger.info(f'Finish: Year: {year}, Group: {group}.')
-
+                
 			else:
 				logger.info(f'Data doesn\'t exist: Year: {year}, Group: {group}.')
-
 
 	logger.info('Finish: merge_field.')
 	logger.info('*' * 100)
@@ -139,22 +118,39 @@ def merge_field():
 
 
 if __name__ == '__main__':
-	if args.dev:
+    
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--dev', action='store_true', help='Dev mode, just use much smaller tmp files.')
+	parser.add_argument('--create_field_seq', action='store_true', help='Create in-year & in-field daily record.')
+	parser.add_argument('--merge_field', action='store_true', help='Merge in-year daily record from field_seq.')
+	parser.add_argument('--force_new', action='store_true', help='Force recreate the whole result folders.')
+	args = parser.parse_args()
 
+	data_path = '/home/liutianc/emr-data'
+	result_path = os.path.join(data_path, 'merge')
+	if os.path.exists(result_path) and args.force_new:
+		shutil.rmtree(result_path)
+	makedirs(result_path)
+
+	job = os.path.basename(__file__)
+	job = job.split('.')[0]
+	job += args.create_field_seq * '_create_field_seq' + args.merge_field * '_merge_field'
+	logger = get_logger(job)
+
+	if args.dev:
 		diags = [str(x) for x in Path(data_path).glob("**/diag_201*_tmp.csv")]
 		procs = [str(x) for x in Path(data_path).glob("**/proc_201*_tmp.csv")]
 		pharms = [str(x) for x in Path(data_path).glob("**/pharm_201*_tmp.csv")]
-	else:
 
+	else:
 		diags = [str(x) for x in Path(data_path).glob("**/diag_201*.csv")]
 		procs = [str(x) for x in Path(data_path).glob("**/proc_201*.csv")]
 		pharms = [str(x) for x in Path(data_path).glob("**/pharm_201*.csv")]
 
-
 	user_group = [str(i) for i in range(10)]
 	years = [str(i) for i in range(2010, 2019)]
 
-	pattern = '\w*_(\d*)_tmp.csv' if args.dev else '\w*_(\d*).csv'
+# 	pattern = '\w*_(\d*)_tmp.csv' if args.dev else '\w*_(\d*).csv'
 
 	if args.create_field_seq:
 		create_field_seq()
