@@ -22,7 +22,7 @@ Call diag/proc/pharm as "field".
    - `diag` record: `icd:9_loc:2_diag:V700`
 
    - `proc` record: `icd:9_proc:640`
-   - `pharm` record: `TODO: add an example`
+   - `pharm` record: replace whitespace with `_`.
 
 For each year:
 
