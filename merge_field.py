@@ -42,13 +42,14 @@ else:
 
 userGroup = [str(i) for i in range(10)]
 
+pattern = '\w*_(\d*)_tmp.csv' if args.dev else '\w*_(\d*).csv'
 
 if __name__ == '__main__':
 	for file in diags:
 	    diag = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
 	    diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
-	    
+	    year = re.findall(pattern, file)[0]
 	    for group in userGroup:
 	        logger.info(f'Start: {file}, group: {group}.')
 	        sub_diag = diag[diag['PatGroup'] == group]
@@ -56,7 +57,8 @@ if __name__ == '__main__':
 	        sub_diag_merged_df = sub_diag_merged.to_frame().reset_index()
 	        
 	        sub_diag_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'}, inplace=True)
-	        to_write = os.path.join(result_path, 'diag_' + group + '.csv')
+	        
+	        to_write = os.path.join(result_path, f'diag_{year}_{group}.csv')
 	        if os.path.exists(to_write):
 	            sub_diag_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
@@ -79,7 +81,7 @@ if __name__ == '__main__':
 	        
 	        sub_proc_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'}, inplace=True)
 	        
-	        to_write = os.path.join(result_path, 'proc_' + group + '.csv')
+	        to_write = os.path.join(result_path, f'proc_{year}_{group}.csv')
 	        if os.path.exists(to_write):
 	            sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
@@ -88,7 +90,6 @@ if __name__ == '__main__':
 
 
 	for file in pharms:
-	    print(file)
 	    pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str}, error_bad_lines=False)
 	    pharm = pharm.assign(PatGroup = pharm['Patid'].apply(lambda x: x[-1]))
 	    
@@ -100,7 +101,7 @@ if __name__ == '__main__':
 	        sub_pharm_merged_df.rename(columns={'Patid': 'patid', 'Fill_Dt': 'date', 'Gnrc_Nm': 'drugs'}, inplace=True)
 	        
 	        
-	        to_write = os.path.join(result_path, 'pharm_' + group + '.csv')
+	        to_write = os.path.join(result_path, f'pharm_{year}_{group}.csv')
 	        if os.path.exists(to_write):
 	            sub_pharm_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
