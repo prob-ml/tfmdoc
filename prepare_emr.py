@@ -13,7 +13,7 @@ from utils import get_logger, makedirs
 parser = argparse.ArgumentParser()
 parser.add_argument('--dev', action='store_true')
 
-parser.add_argument('--create_filed_seq', action='store_true')
+parser.add_argument('--create_field_seq', action='store_true')
 parser.add_argument('--merge_field', action='store_true')
 
 parser.add_argument('--force_new', action='store_true')
@@ -75,7 +75,7 @@ def create_field_seq():
 	        #     sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        # else:
 	        #     sub_proc_merged_df.to_csv(to_write, index=False)
-            sub_proc_merged_df.to_csv(to_write, index=False)
+	        sub_proc_merged_df.to_csv(to_write, index=False)
 	        logger.info(f'Finish: {file}, group: {group}.')
 
 
@@ -117,14 +117,15 @@ def merge_field():
 
 			if os.path.exists(diag_file) and os.path.exists(proc_file) and os.path.exists(pharm_file):
 				logger.info(f'Start: Year: {year}, Group: {group}.')
-				diag = pd.read_csv(diag_file, sep=',')
-				proc = pd.read_csv(proc_file, sep=',')
-				pharm = pd.read_csv(pharm_file, sep=',')
+				diag = pd.read_csv(diag_file, sep=',', dtype = {'patid': str, 'date': str})
+				proc = pd.read_csv(proc_file, sep=',', dtype = {'patid': str, 'date': str})
+				pharm = pd.read_csv(pharm_file, sep=',', dtype = {'patid': str, 'date': str})
 				tmp = pd.merge(diag, proc, how='outer', on=['patid', 'date'])
 				tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
-				tmp.assign(Seq=tmp['diags'] + tmp['procs'] + tmp['drugs'])
+				tmp = tmp.fillna('')
+				tmp['seq'] = tmp['diags'] + ' ' + tmp['procs'] + ' ' + tmp['drugs']
 				to_write = os.path.join(result_path, f'{year}_{group}.csv')
-
+                
 				tmp.to_csv(to_write, index=False)
 				logger.info(f'Finish: Year: {year}, Group: {group}.')
 
@@ -151,7 +152,7 @@ if __name__ == '__main__':
 
 
 	user_group = [str(i) for i in range(10)]
-	years = [str(i) for i in range(9)]
+	years = [str(i) for i in range(2010, 2019)]
 
 	pattern = '\w*_(\d*)_tmp.csv' if args.dev else '\w*_(\d*).csv'
 
