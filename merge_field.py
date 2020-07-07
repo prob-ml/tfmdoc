@@ -83,6 +83,7 @@ if __name__ == '__main__':
 
 
 	for file in pharms:
+		print(file)
 	    pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    pharm = pharm.assign(PatGroup = pharm['Patid'].apply(lambda x: x[-1]))
 	    
