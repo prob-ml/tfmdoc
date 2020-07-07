@@ -10,7 +10,7 @@ There are four main steps:
 
 - Select useful columns (highlighted in blue) from `CDM_Data_Dictionary_72_ZIP5.xlsx`.
 
-= Replace all whitespace `' '` with  `'_'`
+- Replace all whitespace `' '` with  `'_'`
 
 - Sort data by `patid` - `date` - `position`(if available) in increasing orders.
 
@@ -34,9 +34,9 @@ For each year:
 
 - Create daily sequences: . The `field_seq` is ordered by `Position`.
 
-= Store users's daily in-field sequence `(user, date, field_seq)`, where the order in `field_seq` is defined by `position`. Files are named `field_year_group.csv`
+- Store users's daily in-field sequence `(user, date, field_seq)`, where the order in `field_seq` is defined by `position`. Files are named `field_year_group.csv`
 
-= Rename columns `patid, date, diags/procs/drugs`.
+- Rename columns `patid, date, diags/procs/drugs`.
 
 ### Step 3. Merge data from different fields in the same year.
 
