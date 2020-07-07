@@ -40,7 +40,7 @@ userGroup = [str(i) for i in range(10)]
 
 if __name__ == '__main__':
 	for file in diags:
-	    diag = pd.read_csv(file, dtype = {'Patid': str})
+	    diag = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
 	    diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
 	    
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
 
 	for file in procs:
-	    proc = pd.read_csv(file, dtype = {'Patid': str})
+	    proc = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    proc = diag.assign(ProcId = 'icd:' + diag['Icd_Flag'].astype(str) + '_proc:' + diag['Diag'])
 	    proc = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
 	    
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
 
 	for file in pharms:
-	    pharm = pd.read_csv(file, dtype = {'Patid': str})
+	    pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str})
 	    pharm = pharm.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
 	    
 	    for group in userGroup:
