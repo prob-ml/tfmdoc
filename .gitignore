@@ -155,7 +155,7 @@ bert-dev/*.py
 *_archive*
 
 *_dev*
-
+*tmp*
 *checkpoint*
 *pth*
 */nohup.out
