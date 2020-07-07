@@ -7,14 +7,12 @@ import shutil
 import logging
 import argparse
 
-
 from utils import get_logger, makedirs
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dev', action='store_true')
 parser.add_argument('--force_new', action='store_true')
 args = parser.parse_args()
-
 
 data_path = '/home/liutianc/emr-data'
 result_path = os.path.join(data_path, 'merge')
@@ -32,7 +30,6 @@ if args.dev:
 	diags = [str(x) for x in Path(data_path).glob("**/diag_201*_tmp.csv")]
 	procs = [str(x) for x in Path(data_path).glob("**/proc_201*_tmp.csv")]
 	pharms = [str(x) for x in Path(data_path).glob("**/pharm_201*_tmp.csv")]
-
 else:
 
 	diags = [str(x) for x in Path(data_path).glob("**/diag_201*.csv")]
@@ -41,8 +38,8 @@ else:
 
 
 userGroup = [str(i) for i in range(10)]
-
 pattern = '\w*_(\d*)_tmp.csv' if args.dev else '\w*_(\d*).csv'
+
 
 if __name__ == '__main__':
 	for file in diags:
