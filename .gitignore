@@ -159,3 +159,5 @@ bert-dev/*.py
 *checkpoint*
 *pth*
 */nohup.out
+
+.DS_Store
