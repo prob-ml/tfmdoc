@@ -6,6 +6,7 @@ import os
 import shutil
 import logging
 import argparse
+import re
 
 from utils import get_logger, makedirs
 
