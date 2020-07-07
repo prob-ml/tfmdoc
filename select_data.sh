@@ -1,4 +1,3 @@
-#!/bin/bash
 
 INPATH='/nfs/turbo/lsa-regier/OPTUMInsight_csv/'
 OUTPATH='/home/liutianc/emr-data/'
