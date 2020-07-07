@@ -6,41 +6,19 @@ import os
 import logging
 import argparse
 
+
+from utils import get_logger
+
 parser = argparse.ArgumentParser()
 parser.add_argument('dev', action='store_true')
 args = parser.parse_args()
 
 
-def get_logger(log_path):
-    """from github: ffjord"""
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    info_file_handler = logging.FileHandler(log_path, mode="a")
-    info_file_handler.setLevel(logging.INFO)
-    logger.addHandler(info_file_handler)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    logger.addHandler(console_handler)
-
-    return logger
-
-
-def makedirs(*dirnames):
-    for dirname in dirnames:
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-
-
 data_path = '/home/liutianc/emr-data'
 result_path = os.path.join(data_path, 'merge')
-
-
 log_path = os.path.join('/home/liutianc/emr/logs')
-makedirs(log_path)
-logger = get_logger('log_path')
+
+logger = get_logger(log_path)
 
 if args.dev:
 
@@ -71,7 +49,7 @@ if __name__ == '__main__':
 	        sub_diag_merged_df = sub_diag_merged.reset_index()
 	        
 	        sub_diag_merged_df.rename({'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'})
-	        to_write = os.path.join(data_path, 'diag_' + group + '.csv')
+	        to_write = os.path.join(result_path, 'diag_' + group + '.csv')
 	        if os.path.exist(to_write):
 	            sub_diag_merged.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
@@ -94,7 +72,7 @@ if __name__ == '__main__':
 	        
 	        sub_proc_merged_df.rename({'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'})
 
-	        to_write = os.path.join(data_path, 'proc_' + group + '.csv')
+	        to_write = os.path.join(result_path, 'proc_' + group + '.csv')
 	        if os.path.exist(to_write):
 	            sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
@@ -114,10 +92,13 @@ if __name__ == '__main__':
 	        sub_pharm_merged_df.rename({'Patid': 'patid', 'Fill_Dt': 'date', 'Gnrc_Nm': 'drugs'})
 
 	        
-	        to_write = os.path.join(data_path, 'pharm_' + group + '.csv')
+	        to_write = os.path.join(result_path, 'pharm_' + group + '.csv')
 	        if os.path.exist(to_write):
 	            sub_pharm_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
 	            sub_pharm_merged_df.to_csv(to_write, index=False)
 	        logger.info(f'Finish: {file}, group: {group}.')
-	        
+
+
+
+
