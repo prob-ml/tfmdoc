@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PATH='/home/liutianc/emr-data/merge/'
 
 
