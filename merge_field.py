@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	        
 	        sub_diag_merged_df.rename({'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'})
 	        to_write = os.path.join(result_path, 'diag_' + group + '.csv')
-	        if os.path.exist(to_write):
+	        if os.path.exists(to_write):
 	            sub_diag_merged.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
 	            sub_diag_merged.to_csv(to_write, index=False)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 	        sub_proc_merged_df.rename({'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'})
 
 	        to_write = os.path.join(result_path, 'proc_' + group + '.csv')
-	        if os.path.exist(to_write):
+	        if os.path.exists(to_write):
 	            sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
 	            sub_proc_merged_df.to_csv(to_write, index=False)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
 	        
 	        to_write = os.path.join(result_path, 'pharm_' + group + '.csv')
-	        if os.path.exist(to_write):
+	        if os.path.exists(to_write):
 	            sub_pharm_merged_df.to_csv(to_write, mode='a', header=False, index=False)
 	        else:
 	            sub_pharm_merged_df.to_csv(to_write, index=False)
