@@ -2,10 +2,12 @@ import logging
 import os
 
 
-def get_logger(log_path):
+def get_logger(job):
     """from github: ffjord"""
+    log_path = '/home/liutianc/emr/logs'
     makedirs(log_path)
-    
+
+    log_path += '/' + job
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 

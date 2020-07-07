@@ -10,15 +10,17 @@ import argparse
 from utils import get_logger
 
 parser = argparse.ArgumentParser()
-parser.add_argument('dev', action='store_true')
+parser.add_argument('--dev', action='store_true')
 args = parser.parse_args()
 
 
 data_path = '/home/liutianc/emr-data'
 result_path = os.path.join(data_path, 'merge')
-log_path = os.path.join('/home/liutianc/emr/logs')
 
-logger = get_logger(log_path)
+job = os.path.basename(__file__)
+job = job.split('.')[0]
+logger = get_logger(job)
+
 
 if args.dev:
 
