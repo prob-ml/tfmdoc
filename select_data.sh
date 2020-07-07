@@ -3,7 +3,7 @@
 INPATH='/nfs/turbo/lsa-regier/OPTUMInsight_csv/'
 OUTPATH='/home/liutianc/emr-data/'
 
-for year in $(seq 0 8)
+for ((year = 0; year <= 8; year++));
 do
     # Clean diag data.
 	diag='diag_201'$year'.csv'

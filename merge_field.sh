@@ -3,9 +3,9 @@
 PATH='/home/liutianc/emr-data/merge/'
 
 
-for year in $(seq 0 8)
+for ((year = 0; year <= 8; year++));
 do
-    for user in $(seq 0 9)
+    for ((user = 0; user <= 9; user++));
     do
         echo "Start: 201"$year", usergroup: "$user
 
