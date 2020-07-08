@@ -1,16 +1,18 @@
-This document provides information about pipeline of preparing EMR data.
+# Pipeline of preparing EMR data.
 
 ### Overview.
 
 The `data_main.sh` is the main process controlilng the whole pipeline and the only file you need to modify. And here are some important points:
 
-- Before start, please specify where you want to save the output files with `OUTPATH` in `data_main.sh`. By default, it is automatically directed to your directory: `/home/username/emr-data/`. 
+- ~Before start,~ Please specify where you want to save the output files with `OUTPATH` in `data_main.sh`. By default, it **automatically** directs to your directory: `/home/username/emr-data/`
 
-- By default, we create tmp files for each original `diag_/proc_/pharm_201*`, which contains 3000 lines. These files are aimed to test if codes work as expected. If you want to run the program on whole dataset, remove `--dev` in `data_main.sh` at
+- By default, we create tmp files for each original `diag_/proc_/pharm_201*` containing 3000 lines. These files are used to test if codes work as expected. If you want to run the program on whole dataset, just remove `--dev` in `data_main.sh` at
 ```
     python3 ./data_field.py --create_field_seq --dev --merge_field --path $OUTPATH 1>&2
 ```
-- In order to run the whole pipeline, just use `data_main.sh` with four parameters (These parameters are explained below).
+
+- In order to run the whole pipeline, just use `data_main.sh` with four parameters (these parameters are explained below). And here are the name rule: `-s`: select, `-f`: field, `-m`: merge, `-c`: clean.
+
 ```
     ./data_main.sh -s y -f y -m y -c y
 ```
@@ -39,7 +41,9 @@ Call diag/proc/pharm as "field".
 
 Add additional information to each filed record, each subfield is separated by `_` and kept as `key:vlaue`.
 
-   - `diag` record: `icd:9_loc:2_diag:V700`
+update: I remove the `_loc_` in `diag` so that using `'_'` to separate tokens makes no sense in practice. Since drug names contains `'_'` whereas cannot be separated.
+
+   - `diag` record: `icd:9_diag:V700` 
 
    - `proc` record: `icd:9_proc:640`
 
@@ -74,3 +78,4 @@ See `data_merge.py` for details: create user document, where each daily sequence
 
 ### Step 4. (Optional) Remove useless files. -c
 
+Recommendation: when your run the codes first time, you may keep these "useless" files(by dropping `-c` parameter) to see what are they.
