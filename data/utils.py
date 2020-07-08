@@ -5,6 +5,9 @@ import os
 def get_logger(job):
     """from github: ffjord"""
     log_path = '/home/liutianc/emr/logs'
+    cur_path = os.path.abspath(os.path.dirname(__file__))
+    print(cur_path)
+    exit(1)
     makedirs(log_path)
 
     log_path += '/' + job
