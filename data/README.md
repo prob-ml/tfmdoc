@@ -10,9 +10,14 @@ The `data_main.sh` is the main process controlilng the whole pipeline and the on
 ```
     python3 ./data_field.py --create_field_seq --dev --merge_field --path $OUTPATH 1>&2
 ```
+- In order to run the whole pipeline, just use `data_main.sh` with four parameters (These parameters are explained below).
+```
+    ./data_main.sh -s y -f y -m y -c y
+```
+If just want to run part of the pipeline, you can change useless parameter values to `n` or just drop these paramters.
 
 
-### Step 1. Select useful columns and remove illegal characters.
+### Step 1. Select useful columns and remove illegal characters: -s
 
 See `data_select.sh` for details.
 
@@ -26,7 +31,7 @@ There are four main steps:
 
 - Sort data by `patid` - `date` - `position`(if available) in increasing orders.
 
-### Step 2. Create diag/proc/pharm sequence and create user daily sequence.
+### Step 2. Create diag/proc/pharm sequence and create user daily sequence: -f
 
 See `create_field_seq()` in `data_field.py` for details
 
@@ -60,11 +65,12 @@ See `merge_field()` in `data_field.py` for details
 
 
 
-### Step 3. Merge data from different year and create user document.
+### Step 3. Merge data from different year and create user document: -m
 
 See `data_merge.sh` for details: merge data from different years.
 
 See `data_merge.py` for details: create user document, where each daily sequence is separated by `[SEP]`
 
 
+### Step 4. (Optional) Remove useless files. -c
 
