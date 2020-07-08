@@ -1,4 +1,4 @@
-This document provides information about pipeline of preparing EMR data.
+This fold is the pipeline of preparing EMR data.
 
 ### Overview.
 
