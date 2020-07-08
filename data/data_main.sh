@@ -9,7 +9,7 @@ clean='n'
 
 INPATH='/nfs/turbo/lsa-regier/OPTUMInsight_csv/'
 # OUTPATH='/nfs/turbo/lsa-regier/emr-data/'
-OUTPATH='/home/liutianc/emr-data/'
+OUTPATH='/home/'$USER'/emr-data/'
 
 para_num=$#
 
