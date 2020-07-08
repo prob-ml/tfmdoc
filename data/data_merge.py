@@ -29,18 +29,20 @@ if __name__ == '__main__':
                 current_document = ''
                 for line in infile:
                     user, date, hist = line.split(",")
+                    user = user.strip()
                     hist = hist.strip()
-                    
                     # first record of current user
                     if current_user == '':
                         current_user = user
-                        current_document += hist
+                        current_document = hist
                     # Same user: just append
                     elif current_user == user:
                         current_document += ' [SEP] ' + hist
                     # next user
                     else:
                         outfile.write(current_user + ',' + current_document + '\n')
+                        current_user = ''
+                        current_document = ''
                 
         logger.info(f'Finish: group: {group}, time cost: {round(time.time() - start, 2)}.')
         start = time.time()
