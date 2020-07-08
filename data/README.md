@@ -11,7 +11,8 @@ The `data_main.sh` is the main process controlilng the whole pipeline and the on
     python3 ./data_field.py --create_field_seq --dev --merge_field --path $OUTPATH 1>&2
 ```
 
-- In order to run the whole pipeline, just use `data_main.sh` with four parameters (These parameters are explained below).
+- In order to run the whole pipeline, just use `data_main.sh` with four parameters (these parameters are explained below). And here are the name rule: `-s`: select, `-f`: field, `-m`: merge, `-c`: clean.
+
 ```
     ./data_main.sh -s y -f y -m y -c y
 ```
