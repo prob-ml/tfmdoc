@@ -17,7 +17,7 @@ def create_field_seq():
     logger.info('Start: create_field_seq.')
 
 #     for file in diags:
-#         diag = pd.read_csv(file, sep=',', dtype = {'Patid': str})
+#         diag = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Diag': str})
 # #         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
 #         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_diag:' + diag['Diag'])
 #         diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
@@ -40,7 +40,7 @@ def create_field_seq():
 #             logger.info(f'Finish: {file}, group: {group}.')
 
 #     for file in procs:
-#         proc = pd.read_csv(file, sep=',', dtype = {'Patid': str})
+#         proc = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Diag': str})
 #         proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
 #         proc = proc.assign(PatGroup = proc['Patid'].apply(lambda x: x[-1]))
 #         year = re.findall(pattern, file)[0]
@@ -62,7 +62,7 @@ def create_field_seq():
 #             logger.info(f'Finish: {file}, group: {group}.')
 
     for file in pharms:
-        pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str})
+        pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Gnrc_Nm': str})
         pharm = pharm.assign(PatGroup = pharm['Patid'].apply(lambda x: x[-1]))
         year = re.findall(pattern, file)[0]
         for group in user_group:
