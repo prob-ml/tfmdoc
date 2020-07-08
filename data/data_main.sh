@@ -20,6 +20,7 @@ usage() {
 if [[ ${para_num} -lt 1 ]]; then
     echo "None of expected manipulation is specified: "
     usage
+    exit 1
 fi
 
 while getopts ":s:f:m:c:" opt
