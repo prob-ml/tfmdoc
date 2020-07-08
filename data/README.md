@@ -14,7 +14,7 @@ The `data_main.sh` is the main process controlilng the whole pipeline and the on
 ```
     ./data_main.sh -s y -f y -m y -c y
 ```
-If just want to run part of the pipeline, you can change useless parameter values to `n` or just drop these paramters.
+If you just want to run part of the pipeline, you can change useless parameter values to `n` or just drop these paramters.
 
 
 ### Step 1. Select useful columns and remove illegal characters: -s
