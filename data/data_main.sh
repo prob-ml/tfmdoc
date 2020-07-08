@@ -6,7 +6,6 @@ field='n'
 merge='n'
 clean='n'
 
-
 INPATH='/nfs/turbo/lsa-regier/OPTUMInsight_csv/'
 # OUTPATH='/nfs/turbo/lsa-regier/emr-data/'
 OUTPATH='/home/'$USER'/emr-data/'
@@ -51,7 +50,7 @@ fi
 if [[ ${field} == 'y' ]]; then
     echo "Start: create user-date-field data. "
     # NOTE: after making sure everything is fine, remove --dev here.
-    nohup python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
+    nohup python3 ./data_field.py --create_field_seq --merge_field --dev --path $OUTPATH 2>&1
     echo "Finish: create user-date-field data. "
 fi 
 
