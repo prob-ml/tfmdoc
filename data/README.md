@@ -78,3 +78,4 @@ See `data_merge.py` for details: create user document, where each daily sequence
 
 ### Step 4. (Optional) Remove useless files. -c
 
+Recommendation: when your run the codes first time, you may keep these "useless" files(by dropping `-c` parameter) to see what are they.
