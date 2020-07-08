@@ -41,7 +41,9 @@ Call diag/proc/pharm as "field".
 
 Add additional information to each filed record, each subfield is separated by `_` and kept as `key:vlaue`.
 
-   - `diag` record: `icd:9_loc:2_diag:V700`
+update: I remove the `_loc_` in `diag` so that using `'_'` to separate tokens makes no sense in practice. Since drug names contains `'_'` whereas cannot be separated.
+
+   - `diag` record: `icd:9_diag:V700` 
 
    - `proc` record: `icd:9_proc:640`
 
