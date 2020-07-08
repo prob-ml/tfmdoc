@@ -4,12 +4,13 @@
 
 The `data_main.sh` is the main process controlilng the whole pipeline and the only file you need to modify. And here are some important points:
 
-- ~Before start~, please specify where you want to save the output files with `OUTPATH` in `data_main.sh`. By default, it is automatically directed to your directory: `/home/username/emr-data/`. 
+- ~Before start,~ Please specify where you want to save the output files with `OUTPATH` in `data_main.sh`. By default, it **automatically** directs to your directory: `/home/username/emr-data/`
 
-- By default, we create tmp files for each original `diag_/proc_/pharm_201*`, which contains 3000 lines. These files are aimed to test if codes work as expected. If you want to run the program on whole dataset, remove `--dev` in `data_main.sh` at
+- By default, we create tmp files for each original `diag_/proc_/pharm_201*` containing 3000 lines. These files are used to test if codes work as expected. If you want to run the program on whole dataset, just remove `--dev` in `data_main.sh` at
 ```
     python3 ./data_field.py --create_field_seq --dev --merge_field --path $OUTPATH 1>&2
 ```
+
 - In order to run the whole pipeline, just use `data_main.sh` with four parameters (These parameters are explained below).
 ```
     ./data_main.sh -s y -f y -m y -c y
