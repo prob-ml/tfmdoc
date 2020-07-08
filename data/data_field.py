@@ -18,8 +18,10 @@ def create_field_seq():
 
     for file in diags:
         diag = pd.read_csv(file, sep=',', dtype = {'Patid': str})
-        diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
+#         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
+        diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_diag:' + diag['Diag'])
         diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
+    
         year = re.findall(pattern, file)[0]
         for group in user_group:
             logger.info(f'Start: {file}, group: {group}.')
