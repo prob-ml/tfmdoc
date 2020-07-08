@@ -39,7 +39,6 @@ do
         echo "Unknown parameter: ${error}, expect: "
         usage
         exit 1;;
-
     esac
 done
 
