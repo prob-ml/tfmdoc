@@ -143,15 +143,15 @@ if __name__ == '__main__':
     logger = get_logger(job)
 
     if args.dev:
-        diags = [str(x) for x in Path(data_path).glob("**/diag_201*_tmp.csv")]
-        procs = [str(x) for x in Path(data_path).glob("**/proc_201*_tmp.csv")]
-        pharms = [str(x) for x in Path(data_path).glob("**/pharm_201*_tmp.csv")]
+        diags = [str(x) for x in Path(data_path).glob("**/diag_201[0-9]_tmp.csv")]
+        procs = [str(x) for x in Path(data_path).glob("**/proc_201[0-9]_tmp.csv")]
+        pharms = [str(x) for x in Path(data_path).glob("**/pharm_201[0-9]_tmp.csv")]
 
     else:
-        diags = [str(x) for x in Path(data_path).glob("**/diag_201*.csv")]
-        procs = [str(x) for x in Path(data_path).glob("**/proc_201*.csv")]
-        pharms = [str(x) for x in Path(data_path).glob("**/pharm_201*.csv")]
-
+        diags = [str(x) for x in Path(data_path).glob("**/diag_201[0-9].csv")]
+        procs = [str(x) for x in Path(data_path).glob("**/proc_201[0-9].csv")]
+        pharms = [str(x) for x in Path(data_path).glob("**/pharm_201[0-9].csv")]
+        print(diags)
     user_group = [str(i) for i in range(10)]
     years = [str(i) for i in range(2010, 2019)]
 
