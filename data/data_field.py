@@ -16,52 +16,52 @@ def create_field_seq():
     logger.info('*' * 100)
     logger.info('Start: create_field_seq.')
 
-#     for file in diags:
-#         diag = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Diag': str})
-#         diag = diag[-diag['Diag'].isna()]
-# #         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
-#         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_diag:' + diag['Diag'])
-#         diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
+    for file in diags:
+        diag = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Diag': str})
+        diag = diag[-diag['Diag'].isna()]
+#         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
+        diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_diag:' + diag['Diag'])
+        diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
     
-#         year = re.findall(pattern, file)[0]
-#         for group in user_group:
-#             logger.info(f'Start: {file}, group: {group}.')
-#             sub_diag = diag[diag['PatGroup'] == group]
-#             sub_diag_merged = sub_diag.groupby(['Patid', 'Fst_Dt'])['DiagId'].apply(lambda x: ' '.join(x))
-#             sub_diag_merged_df = sub_diag_merged.to_frame().reset_index()
+        year = re.findall(pattern, file)[0]
+        for group in user_group:
+            logger.info(f'Start: {file}, group: {group}.')
+            sub_diag = diag[diag['PatGroup'] == group]
+            sub_diag_merged = sub_diag.groupby(['Patid', 'Fst_Dt'])['DiagId'].apply(lambda x: ' '.join(x))
+            sub_diag_merged_df = sub_diag_merged.to_frame().reset_index()
             
-#             sub_diag_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'}, inplace=True)
+            sub_diag_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'}, inplace=True)
             
-#             to_write = os.path.join(result_path, f'diag_{year}_{group}.csv')
-#             # if os.path.exists(to_write):
-#             #     sub_diag_merged_df.to_csv(to_write, mode='a', header=False, index=False)
-#             # else:
-#             #     sub_diag_merged_df.to_csv(to_write, index=False)
-#             sub_diag_merged_df.to_csv(to_write, index=False)
-#             logger.info(f'Finish: {file}, group: {group}.')
+            to_write = os.path.join(result_path, f'diag_{year}_{group}.csv')
+            # if os.path.exists(to_write):
+            #     sub_diag_merged_df.to_csv(to_write, mode='a', header=False, index=False)
+            # else:
+            #     sub_diag_merged_df.to_csv(to_write, index=False)
+            sub_diag_merged_df.to_csv(to_write, index=False)
+            logger.info(f'Finish: {file}, group: {group}.')
 
-#     for file in procs:
-#         proc = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Proc': str})
-#         proc = proc[-proc['Proc'].isna()]
-#         proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
-#         proc = proc.assign(PatGroup = proc['Patid'].apply(lambda x: x[-1]))
-#         year = re.findall(pattern, file)[0]
-#         for group in user_group:
-#             logger.info(f'Start: {file}, group: {group}.')
-#             sub_proc = proc[proc['PatGroup'] == group]
-#             sub_proc_merged = sub_proc.groupby(['Patid', 'Fst_Dt'])['ProcId'].apply(lambda x: ' '.join(x))
-#             sub_proc_merged_df = sub_proc_merged.to_frame().reset_index()
+    for file in procs:
+        proc = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Proc': str})
+        proc = proc[-proc['Proc'].isna()]
+        proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
+        proc = proc.assign(PatGroup = proc['Patid'].apply(lambda x: x[-1]))
+        year = re.findall(pattern, file)[0]
+        for group in user_group:
+            logger.info(f'Start: {file}, group: {group}.')
+            sub_proc = proc[proc['PatGroup'] == group]
+            sub_proc_merged = sub_proc.groupby(['Patid', 'Fst_Dt'])['ProcId'].apply(lambda x: ' '.join(x))
+            sub_proc_merged_df = sub_proc_merged.to_frame().reset_index()
             
-#             sub_proc_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'}, inplace=True)
+            sub_proc_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'}, inplace=True)
             
-#             to_write = os.path.join(result_path, f'proc_{year}_{group}.csv')
-#             # if os.path.exists(to_write):
-#             #     sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
-#             # else:
-#             #     sub_proc_merged_df.to_csv(to_write, index=False)
-#             sub_proc_merged_df.to_csv(to_write, index=False)
+            to_write = os.path.join(result_path, f'proc_{year}_{group}.csv')
+            # if os.path.exists(to_write):
+            #     sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
+            # else:
+            #     sub_proc_merged_df.to_csv(to_write, index=False)
+            sub_proc_merged_df.to_csv(to_write, index=False)
             
-#             logger.info(f'Finish: {file}, group: {group}.')
+            logger.info(f'Finish: {file}, group: {group}.')
 
     for file in pharms:
         pharm = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Gnrc_Nm': str})
