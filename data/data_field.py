@@ -55,10 +55,6 @@ def create_field_seq():
             sub_proc_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'ProcId': 'procs'}, inplace=True)
             
             to_write = os.path.join(result_path, f'proc_{year}_{group}.csv')
-            # if os.path.exists(to_write):
-            #     sub_proc_merged_df.to_csv(to_write, mode='a', header=False, index=False)
-            # else:
-            #     sub_proc_merged_df.to_csv(to_write, index=False)
             sub_proc_merged_df.to_csv(to_write, index=False)
             
             logger.info(f'Finish: {file}, group: {group}.')
@@ -76,10 +72,6 @@ def create_field_seq():
             sub_pharm_merged_df.rename(columns={'Patid': 'patid', 'Fill_Dt': 'date', 'Gnrc_Nm': 'drugs'}, inplace=True)
             
             to_write = os.path.join(result_path, f'pharm_{year}_{group}.csv')
-            # if os.path.exists(to_write):
-            #     sub_pharm_merged_df.to_csv(to_write, mode='a', header=False, index=False)
-            # else:
-            #     sub_pharm_merged_df.to_csv(to_write, index=False)
             sub_pharm_merged_df.to_csv(to_write, index=False)
 
             logger.info(f'Finish: {file}, group: {group}.')
@@ -154,7 +146,7 @@ if __name__ == '__main__':
         diags = [str(x) for x in Path(data_path).glob("**/diag_201[0-9].csv")]
         procs = [str(x) for x in Path(data_path).glob("**/proc_201[0-9].csv")]
         pharms = [str(x) for x in Path(data_path).glob("**/pharm_201[0-9].csv")]
-        print(pharms)
+
     user_group = [str(i) for i in range(10)]
     years = [str(i) for i in range(2010, 2019)]
 

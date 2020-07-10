@@ -14,7 +14,6 @@ para_num=$#
 
 usage() {
     echo -e " -s 'select data: [y/n]' \n -f 'create user-date-field data [y/n]' \n -m 'create user-seq data [y/n]' \n -c 'clean tmp files [y/n]' \n" 1>&2
-#     exit 1
 }
 
 if [[ ${para_num} -lt 1 ]]; then
@@ -51,14 +50,14 @@ fi
 if [[ ${field} == 'y' ]]; then
     echo "Start: create user-date-field data. "
     # NOTE: after making sure everything is fine, remove --dev here.
-    nohup python3 ./data_field.py --create_field_seq --merge_field --dev --path $OUTPATH 2>&1
+    python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
     echo "Finish: create user-date-field data. "
 fi 
 
 if [[ ${merge} == 'y' ]]; then
     echo "Start: create user-seq data. "
     ./data_merge.sh $OUTPATH
-    nohup python3 ./data_merge.py --path $OUTPATH 2>&1
+    python3 ./data_merge.py --path $OUTPATH 2>&1
     echo "Finish: create user-seq data. "
 fi 
 
