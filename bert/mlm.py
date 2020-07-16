@@ -19,10 +19,22 @@ from utils import DATA_PATH, make_dirs
 def mlm_task(args):
     merged = (args.data == 'merged')
 
+    print('Start: collect vocab of EMR.')
     vocab = create_vocab(merged=merged)
-    tokenizer = WordLevelBertTokenizer(vocab)
+    print('Finish: collect vocab of EMR.')
+    print('*' * 200)
 
-    dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path=DATA_PATH, max_length=args.max_length)
+    print('Start: load word level tokenizer.')
+    tokenizer = WordLevelBertTokenizer(vocab)
+    print('Finish: load word level tokenizer.')
+    print('*' * 200)
+
+    print('Start: load data (and encode to token sequence.)')
+    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, max_length=args.max_length,
+                                    truncate_method=args.truncate)
+    print('Finish: load data (and encode to token sequence.)')
+    print('*' * 200)
+
     mlm_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15, )
 
     if not os.listdir(trained_model) or args.force_new:
@@ -55,7 +67,7 @@ def mlm_task(args):
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=1,
                                           per_device_train_batch_size=args.bsz,
-                                          save_steps=10_000,)
+                                          save_steps=10_000, )
     else:
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=args.epochs,
@@ -72,25 +84,27 @@ def mlm_task(args):
     trainer.train()
     print('Finish: pre-train Bert with MLM.')
 
-    print('Start: save pre-train Bert with MLM.')
+    print(f'Start: save pre-train Bert with MLM to: {trained_model}.')
     trainer.save(trained_model)
-    print('Finish: save pre-train Bert with MLM.')
+    print(f'Finish: save pre-train Bert with MLM to: {trained_model}.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, choices=['daily', 'merged'], default='merged')
+    parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
-    parser.add_argument('--bsz', type=int, default=64, help='Batch size in training')
+    parser.add_argument('--bsz', type=int, default=3, help='Batch size in training')
     parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
 
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
-    parser.add_argument('--dev', action='store_true', default=True, help='Run dev version to make sure codes can run.')
-    parser.add_argument('--cuda', type=str, default='5,6,7', help='Visible CUDA to the task.')
+    parser.add_argument('--dev', action='store_true', default=False, help='Run dev version to make sure codes can run.')
+    parser.add_argument('--cuda', type=str, default='4', help='Visible CUDA to the task.')
     args = parser.parse_args()
 
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda if not args.dev else args.cuda[0]
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    print(f'Prepare: check process on cuda: {args.cuda}...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     result_path = os.path.join(curPath, 'results' if not args.dev else 'result-dev', 'MLM')

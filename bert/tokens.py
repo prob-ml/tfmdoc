@@ -31,10 +31,11 @@ class WordLevelTokenizer(BaseTokenizer):
         if vocab_file is not None:
             tokenizer = Tokenizer(WordLevel(vocab_file,
                                             unk_token=unk_token,
-                                            sep_token=sep_token,
-                                            cls_token=cls_token,
-                                            pad_token=pad_token,
-                                            mask_token=mask_token))
+                                            # sep_token=sep_token,
+                                            # cls_token=cls_token,
+                                            # pad_token=pad_token,
+                                            # mask_token=mask_token,
+                                            ))
         else:
             tokenizer = Tokenizer(WordLevel())
 
@@ -83,7 +84,7 @@ class WordLevelTokenizer(BaseTokenizer):
                 (str(cls_token), cls_token_id)
                 )
 
-        parameters = { "model": "WordLevel",
+        parameters = {"model": "WordLevel",
                        "unk_token": unk_token,
                        "sep_token": sep_token,
                        "cls_token": cls_token,
@@ -100,7 +101,9 @@ class WordLevelBertTokenizer(PreTrainedTokenizerFast):
 
     def __init__(self, vocab, bos_token="[CLS]", eos_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]",
             unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]", **kwargs):
+        # print('Start: create WordLevelTokenizer...')
         tokenizer = WordLevelTokenizer(vocab)
+        # print('Finish: create WordLevelTokenizer...')
         super().__init__(tokenizer,
                          bos_token=bos_token,
                          eos_token=eos_token,
