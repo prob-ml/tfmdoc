@@ -23,6 +23,7 @@ def create_vocab(merged=True, group=None):
 
             with open(read, 'r') as raw:
                 for line in raw:
+                    line = line.replace('\n', '')
                     user, hist = line.split(",")
                     hist = hist.strip()
                     tokens = hist.split(' ')

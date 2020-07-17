@@ -33,6 +33,7 @@ class LineByLineTextDataset(Dataset):
 
         truncated_lines = []
         for line in lines:
+            line = line.replace('\n', '')
             token_list = line.split(' ')
             if len(token_list) <= max_length:
                 truncated_lines.append(line)
