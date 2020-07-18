@@ -17,24 +17,24 @@ def create_vocab(merged=True, group=None):
     if not os.path.exists(vocab_file):
         user_group = [str(i) for i in range(10)] if group is None else [str(group)]
 
-        vocab, size, maxlen = {}, 0, 0
+        vocab, size = {}, 0
         for group in user_group:
             read = os.path.join(DATA_PATH, f'group_{group}_merged.csv' if merged else f'group_{group}.csv')
 
             with open(read, 'r') as raw:
                 for line in raw:
                     line = line.replace('\n', '')
-                    user, hist = line.split(",")
-                    hist = hist.strip()
-                    tokens = hist.split(' ')
+                    user, tokens = line.split(',')
+                    tokens = tokens.strip()
+                    token_list = tokens.split(' ')
 
-                    for token in tokens:
-                        if token != '[SEP]':
+                    for token in token_list:
+                        if token not in ['[SEP]', 'document', '']:
                             if token in vocab:
-                                # If a token is existed, don't update anything.
+                                # If a token is existed, don't do anything.
                                 pass
                             else:
-                                # A new token:
+                                # A new token: tokens value will start from 0
                                 vocab[token] = size
                                 size += 1
 
