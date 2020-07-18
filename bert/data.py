@@ -28,12 +28,12 @@ class LineByLineTextDataset(Dataset):
         for file in os.listdir(DATA_PATH):
             if self.is_target(file):
                 with open(os.path.join(DATA_PATH, file), encoding='utf-8') as f:
-                    lines += [line.split(',')[1] for line in f.read().splitlines() if
+                    #TODO: check this.
+                    lines += [line.replace('\n', '').split(',')[1] for line in f.read().splitlines() if
                               (len(line) > 0 and not line.isspace())][1:] # drop HEADER row.
 
         truncated_lines = []
         for line in lines:
-            line = line.replace('\n', '')
             token_list = line.split(' ')
             if len(token_list) <= max_length:
                 truncated_lines.append(line)
@@ -44,7 +44,7 @@ class LineByLineTextDataset(Dataset):
                     token_list = token_list[-max_length:]
                 elif truncate_method == 'random':
                     token_idx = random.sample(range(len(token_list)), max_length)
-                    token_list = [token_list[idx] for idx in token_idx]
+                    token_list = [token_list[idx] for idx in token_idx.sort()]
                 truncated_lines.append(' '.join(token_list))
         lines = truncated_lines
 
@@ -59,7 +59,7 @@ class LineByLineTextDataset(Dataset):
         return torch.tensor(self.examples[i], dtype=torch.long)
 
     def is_target(self, file):
-
+        # TODO: this function still doesn't work for daily data.
         if self.data_type in file:
             return max(map(lambda x: x in file, self.group))
 
