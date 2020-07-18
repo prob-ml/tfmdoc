@@ -100,7 +100,7 @@ def merge_field():
                 tmp = pd.merge(diag, proc, how='outer', on=['patid', 'date'])
                 tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
                 tmp = tmp.fillna('')
-                tmp['seq'] = tmp['diags'] + ' ' + tmp['procs'] + ' ' + tmp['drugs']
+                tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
                 tmp = tmp[['patid', 'date', 'seq']]
                 
                 to_write = os.path.join(result_path, f'{year}_{group}.csv')
