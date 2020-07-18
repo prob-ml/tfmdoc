@@ -21,16 +21,16 @@ class LineByLineTextDataset(Dataset):
                  add_special_tokens: bool = True,
                  truncate_method: str = 'first'):
 
-        self.group = [str(i) for i in range(10)] if group is None else [str(group)]
+        self.user_group = [str(i) for i in range(10)] if group is None else [str(group)]
         self.data_type = data_type
 
         lines = []
         for file in os.listdir(DATA_PATH):
             if self.is_target(file):
                 with open(os.path.join(DATA_PATH, file), encoding='utf-8') as f:
-                    #TODO: check this.
+                    # f.read().splitlines() will drop the '\n' at the end of each line automatically.
                     lines += [line.replace('\n', '').split(',')[1] for line in f.read().splitlines() if
-                              (len(line) > 0 and not line.isspace())][1:] # drop HEADER row.
+                              (len(line) > 0 and not line.isspace())][1:] #[1:] drop HEADER row.
 
         truncated_lines = []
         for line in lines:
@@ -59,9 +59,14 @@ class LineByLineTextDataset(Dataset):
         return torch.tensor(self.examples[i], dtype=torch.long)
 
     def is_target(self, file):
-        # TODO: this function still doesn't work for daily data.
-        if self.data_type in file:
-            return max(map(lambda x: x in file, self.group))
+        # Since a file name may contain 'merged', but will not contain 'daily',
+        # so we need to use nested if-condition.
+        if 'merged' in file:
+            if self.data_type == 'merged':
+                return max(map(lambda x: x in file, self.group))
+        else:
+            if self.data_type != 'merged':
+                return max(map(lambda x: x in file, self.group))
 
         return False
 
