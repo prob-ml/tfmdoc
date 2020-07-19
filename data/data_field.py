@@ -93,14 +93,17 @@ def merge_field():
 
             if os.path.exists(diag_file) and os.path.exists(proc_file) and os.path.exists(pharm_file):
                 logger.info(f'Start: Year: {year}, Group: {group}.')
-                diag = pd.read_csv(diag_file, sep=',', dtype = {'patid': str, 'date': str})
-                proc = pd.read_csv(proc_file, sep=',', dtype = {'patid': str, 'date': str})
-                pharm = pd.read_csv(pharm_file, sep=',', dtype = {'patid': str, 'date': str})
+                diag = pd.read_csv(diag_file, sep=',', dtype={'patid': str, 'date': str})
+                proc = pd.read_csv(proc_file, sep=',', dtype={'patid': str, 'date': str})
+                pharm = pd.read_csv(pharm_file, sep=',', dtype={'patid': str, 'date': str})
                 
                 tmp = pd.merge(diag, proc, how='outer', on=['patid', 'date'])
                 tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
                 tmp = tmp.fillna('')
-                tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
+                # tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
+                tmp['seq'] = (tmp['diags'] + ' ').str.strip()+ (tmp['procs'] + ' ').str.strip() + tmp['drugs'].str.strip()
+                tmp['seq'] = tmp['seq'].str.strip()
+                tmp['seq'] = tmp['seq'].str.replace('  ', ' ')
                 tmp = tmp[['patid', 'date', 'seq']]
                 
                 to_write = os.path.join(result_path, f'{year}_{group}.csv')

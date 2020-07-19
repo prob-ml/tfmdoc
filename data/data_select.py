@@ -81,9 +81,8 @@ if __name__ == '__main__':
                     
                     outfile.write(select_row)
         logger.info(f'Finish: {file_name}.')
-    logger.info('Start: Select proc data.')
+    logger.info('Finish: Select proc data.')
 
-    
     logger.info('*' * 100)
     logger.info('Start: Select pharm data.')
     for file in pharms:
@@ -111,4 +110,5 @@ if __name__ == '__main__':
                     outfile.write(select_row)
                     
         logger.info(f'Finish: {file_name}.')
-    
+    logger.info('Finish: Select pharm data.')
+
