@@ -95,7 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
     parser.add_argument('--bsz', type=int, default=3, help='Batch size in training')
-    parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
+    parser.add_argument('--epochs', type=int, default=5, help='Epoch in production version')
 
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
     parser.add_argument('--dev', action='store_true', default=False, help='Run dev version to make sure codes can run.')

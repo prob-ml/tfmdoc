@@ -50,8 +50,8 @@ fi
 if [[ ${field} == 'y' ]]; then
     echo "Start: create user-date-field data. "
     # NOTE: after making sure everything is fine, remove --dev here.
-#     python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
-    python3 ./data_field.py --merge_field --path $OUTPATH 2>&1
+     python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
+#    python3 ./data_field.py --merge_field --path $OUTPATH 2>&1
     echo "Finish: create user-date-field data. "
 fi 
 

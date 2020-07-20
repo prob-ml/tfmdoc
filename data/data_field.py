@@ -101,7 +101,7 @@ def merge_field():
                 tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
                 tmp = tmp.fillna('')
                 # tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
-                tmp['seq'] = (tmp['diags'] + ' ').str.strip()+ (tmp['procs'] + ' ').str.strip() + tmp['drugs'].str.strip()
+                tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
                 tmp['seq'] = tmp['seq'].str.strip()
                 tmp['seq'] = tmp['seq'].str.replace('  ', ' ')
                 tmp = tmp[['patid', 'date', 'seq']]
