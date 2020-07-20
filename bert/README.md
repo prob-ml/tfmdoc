@@ -56,8 +56,9 @@ Based on the offical guide regarding [out-of-memory-issues](https://github.com/g
 
 | System    | Max Seq Length | Max Batch Size |
 | --------- | -------------- | -------------- |
-| Bert-base | 256            | 16 |
-|           | 512            | 3            |
+| Bert-base | 256            | 16             |
+|	    | 384	     | 8              |
+|           | 512            | 2              |
 
 
 
