@@ -58,7 +58,7 @@ Based on the offical guide regarding [out-of-memory-issues](https://github.com/g
 | --------- | -------------- | -------------- |
 | Bert-base | 256            |                |
 |	    | 384	     | 5              |
-|           | 512            | 2              |
+|           | 512            | 3              |
 
 
 
