@@ -31,7 +31,7 @@ def mlm_task(args):
 
     print('Start: load data (and encode to token sequence.)')
     dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data,
-                                    max_length=args.max_length, min_length = args.min_length,
+                                    max_length=args.max_length, min_length=args.min_length,
                                     truncate_method=args.truncate)
     print('Finish: load data (and encode to token sequence.)')
     print('*' * 200)
@@ -83,7 +83,7 @@ def mlm_task(args):
     if args.model == 'behrt':
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=100,
-                                          per_device_train_batch_size=16,
+                                          per_device_train_batch_size=32,
                                           save_steps=10_000, )
 
     if args.model == 'med-bert':
@@ -130,8 +130,8 @@ if __name__ == '__main__':
     print(f'Prepare: check process on cuda: {args.cuda}...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    result_path = os.path.join(curPath, 'results' if not args.dev else 'result-dev', 'MLM')
-    trained_model = os.path.join(curPath, 'trained' if not args.dev else 'trained-dev', 'MLM')
+    result_path = os.path.join(curPath, 'results', args.model, 'MLM')
+    trained_model = os.path.join(curPath, 'trained', args.model, 'MLM')
     make_dirs(result_path, trained_model)
 
     assert args.model in ['dev', 'behrt', 'med-bert'], f'Not supported for model config: {args.model} yet...'

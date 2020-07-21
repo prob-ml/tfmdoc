@@ -67,10 +67,10 @@ class LineByLineTextDataset(Dataset):
         # so we need to use nested if-condition.
         if 'merged' in file:
             if self.data_type == 'merged':
-                return max(map(lambda x: x in file, self.group))
+                return max(map(lambda x: x in file, self.user_group))
         else:
             if self.data_type != 'merged':
-                return max(map(lambda x: x in file, self.group))
+                return max(map(lambda x: x in file, self.user_group))
 
         return False
 
