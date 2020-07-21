@@ -17,6 +17,7 @@ class LineByLineTextDataset(Dataset):
                  tokenizer: PreTrainedTokenizer,
                  data_type: str,
                  max_length: int,
+                 min_length: int,
                  group: int = None,
                  add_special_tokens: bool = True,
                  truncate_method: str = 'first'):
@@ -35,6 +36,9 @@ class LineByLineTextDataset(Dataset):
         truncated_lines = []
         for line in lines:
             token_list = line.split(' ')
+            if len(token_list) <= min_length:
+                continue
+
             if len(token_list) <= max_length:
                 truncated_lines.append(line)
             else:
@@ -63,10 +67,10 @@ class LineByLineTextDataset(Dataset):
         # so we need to use nested if-condition.
         if 'merged' in file:
             if self.data_type == 'merged':
-                return max(map(lambda x: x in file, self.user_group))
+                return max(map(lambda x: x in file, self.group))
         else:
             if self.data_type != 'merged':
-                return max(map(lambda x: x in file, self.user_group))
+                return max(map(lambda x: x in file, self.group))
 
         return False
 

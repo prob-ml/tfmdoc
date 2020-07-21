@@ -30,7 +30,8 @@ def mlm_task(args):
     print('*' * 200)
 
     print('Start: load data (and encode to token sequence.)')
-    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, max_length=args.max_length,
+    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data,
+                                    max_length=args.max_length, min_length = args.min_length,
                                     truncate_method=args.truncate)
     print('Finish: load data (and encode to token sequence.)')
     print('*' * 200)
@@ -41,18 +42,29 @@ def mlm_task(args):
         print('Train a new model...')
 
         from transformers import BertConfig
-        if args.dev:
+        if args.model == 'dev':
             config = BertConfig(vocab_size=len(tokenizer), max_position_embeddings=args.max_length,
                                 num_attention_heads=2,
                                 num_hidden_layers=4,
                                 hidden_size=128,
                                 type_vocab_size=1, )
-        else:
+
+        if args.model == 'behrt':
             config = BertConfig(vocab_size=len(tokenizer), max_position_embeddings=args.max_length,
                                 num_attention_heads=12,
-                                num_hidden_layers=12,
-                                hidden_size=768,
+                                num_hidden_layers=6,
+                                intermediate_size=512,
+                                hidden_size=288,
                                 type_vocab_size=1, )
+
+        if args.model == 'med-bert':
+            config = BertConfig(vocab_size=len(tokenizer), max_position_embeddings=args.max_length,
+                                num_attention_heads=6,
+                                num_hidden_layers=6,
+                                intermediate_size=32,
+                                hidden_size=32,
+                                type_vocab_size=1, )
+
 
     else:
         print('Load a trained model...')
@@ -63,14 +75,23 @@ def mlm_task(args):
     model = BertForMaskedLM(config=config)
     print(f'Bert model: contains {model.num_parameters()} parameters.')
 
-    if args.dev:
+    if args.model == 'dev':
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=1,
                                           per_device_train_batch_size=args.bsz,
                                           save_steps=10_000, )
-    else:
+    if args.model == 'behrt':
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
-                                          num_train_epochs=args.epochs,
+                                          num_train_epochs=100,
+                                          per_device_train_batch_size=16,
+                                          save_steps=10_000, )
+
+    if args.model == 'med-bert':
+        total_step = 450_0000
+        epoch_step = len(dataset) // args.bsz
+        epoch = total_step / epoch_step
+        training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
+                                          num_train_epochs=epoch,
                                           per_device_train_batch_size=args.bsz,
                                           save_steps=10_000, )
 
@@ -78,7 +99,8 @@ def mlm_task(args):
                       args=training_args,
                       data_collator=mlm_collator,
                       train_dataset=dataset,
-                      prediction_loss_only=True, )
+                      prediction_loss_only=True,
+                      )
 
     print('Start: pre-train Bert with MLM.')
     trainer.train()
@@ -93,12 +115,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, choices=['daily', 'merged'], default='merged')
     parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
+    parser.add_argument('--min-length', type=int, default=10, help='Min length of a sequence to be used in Bert')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
     parser.add_argument('--bsz', type=int, default=3, help='Batch size in training')
-    parser.add_argument('--epochs', type=int, default=5, help='Epoch in production version')
-
+    parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
-    parser.add_argument('--dev', action='store_true', default=False, help='Run dev version to make sure codes can run.')
+    parser.add_argument('--model', type=str, default='behrt', choices=['dev', 'behrt', 'med-bert'],
+                        help='Run dev version to make sure codes can run.')
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
     args = parser.parse_args()
 
@@ -111,6 +134,10 @@ if __name__ == '__main__':
     trained_model = os.path.join(curPath, 'trained' if not args.dev else 'trained-dev', 'MLM')
     make_dirs(result_path, trained_model)
 
+    assert args.model in ['dev', 'behrt', 'med-bert'], f'Not supported for model config: {args.model} yet...'
+    if args.model == 'med-bert':
+        raise UserWarning('Configuration of Med-Bert from the paper is still mysterious, '
+                          'the final result may be unexpected...')
     mlm_task(args)
     print('Finish all...')
 

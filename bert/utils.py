@@ -3,7 +3,6 @@ import os
 
 
 DATA_PATH = '/nfs/turbo/lsa-regier/emr-data'
-
 VOCAB_PATH = os.path.join(DATA_PATH, 'vocabs')
 
 
