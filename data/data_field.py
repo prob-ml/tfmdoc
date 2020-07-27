@@ -19,8 +19,8 @@ def create_field_seq():
     for file in diags:
         diag = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Diag': str})
         diag = diag[-diag['Diag'].isna()]
-#         diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_loc:' + diag['Loc_cd'].astype(str) + '_diag:' + diag['Diag'])
-        diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str) + '_diag:' + diag['Diag'])
+        # Note: pd.str.replace() will use reg-exp by default, where '10' will be caught by '.0'
+        diag = diag.assign(DiagId = 'icd:' + diag['Icd_Flag'].astype(str).str.replace('.0', '', regex=False) + '_diag:' + diag['Diag'])
         diag = diag.assign(PatGroup = diag['Patid'].apply(lambda x: x[-1]))
     
         year = re.findall(pattern, file)[0]
@@ -33,17 +33,13 @@ def create_field_seq():
             sub_diag_merged_df.rename(columns={'Patid': 'patid', 'Fst_Dt': 'date', 'DiagId': 'diags'}, inplace=True)
             
             to_write = os.path.join(result_path, f'diag_{year}_{group}.csv')
-            # if os.path.exists(to_write):
-            #     sub_diag_merged_df.to_csv(to_write, mode='a', header=False, index=False)
-            # else:
-            #     sub_diag_merged_df.to_csv(to_write, index=False)
             sub_diag_merged_df.to_csv(to_write, index=False)
             logger.info(f'Finish: {file}, group: {group}.')
 
     for file in procs:
         proc = pd.read_csv(file, sep=',', dtype = {'Patid': str, 'Proc': str})
         proc = proc[-proc['Proc'].isna()]
-        proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str) + '_proc:' + proc['Proc'])
+        proc = proc.assign(ProcId = 'icd:' + proc['Icd_Flag'].astype(str).str.replace('.0', '', regex=False) + '_proc:' + proc['Proc'])
         proc = proc.assign(PatGroup = proc['Patid'].apply(lambda x: x[-1]))
         year = re.findall(pattern, file)[0]
         for group in user_group:
@@ -100,7 +96,6 @@ def merge_field():
                 tmp = pd.merge(diag, proc, how='outer', on=['patid', 'date'])
                 tmp = pd.merge(tmp, pharm, how='outer', on=['patid', 'date'])
                 tmp = tmp.fillna('')
-                # tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
                 tmp['seq'] = tmp['diags'].str.strip() + ' ' + tmp['procs'].str.strip() + ' ' + tmp['drugs'].str.strip()
                 tmp['seq'] = tmp['seq'].str.strip()
                 tmp['seq'] = tmp['seq'].str.replace('  ', ' ')
@@ -127,8 +122,6 @@ if __name__ == '__main__':
     parser.add_argument('--path', type=str)
     args = parser.parse_args()
 
-#     data_path = '/home/liutianc/emr-data'
-#     result_path = os.path.join(data_path, 'merge')
     data_path = args.path
     result_path = data_path
     if os.path.exists(result_path) and args.force_new:

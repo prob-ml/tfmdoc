@@ -41,7 +41,7 @@ if __name__ == '__main__':
                 diagreader = csv.reader(infile)
                 
                 for row in diagreader:
-                    row = [cell.strip() for cell in row]
+                    row = [cell.replace('.0', '').strip() for cell in row]
                     
                     patid = row[0].split('.0')[0].strip()
                     claimid = row[2].split('.0')[0].strip()
@@ -52,8 +52,13 @@ if __name__ == '__main__':
                     Fst_Dt = row[10].strip()
                     
                     select_row = diag_pattern.format(patid, claimid, Diag, Diag_Position, Icd_Flag, Loc_cd, Fst_Dt)
-                    
+                    if '.0' in select_row:
+                        print(f'Failure at: {file}.')
+                        print(select_row)
+                        exit(1)
+                        
                     outfile.write(select_row)
+                    
         logger.info(f'Finish: {file_name}.')
     logger.info('Finish: Select diag data.')
     
@@ -69,7 +74,7 @@ if __name__ == '__main__':
                 procreader = csv.reader(infile)
                 
                 for row in procreader:
-                    row = [cell.strip() for cell in row]
+                    row = [cell.replace('.0', '').strip() for cell in row]
                     
                     patid = row[0].split('.0')[0].strip()
                     claimid = row[2].split('.0')[0].strip()
@@ -79,7 +84,13 @@ if __name__ == '__main__':
                     Fst_Dt = row[8]
                     select_row = proc_pattern.format(patid, claimid, Icd_Flag, Proc, Proc_Position, Fst_Dt)
                     
+                    if '.0' in select_row:
+                        print(f'Failure at: {file}.')
+                        print(select_row)
+                        exit(1)
+                        
                     outfile.write(select_row)
+                    
         logger.info(f'Finish: {file_name}.')
     logger.info('Finish: Select proc data.')
 
