@@ -65,7 +65,6 @@ def mlm_task(args):
                                 hidden_size=32,
                                 type_vocab_size=1, )
 
-
     else:
         print('Load a trained model...')
 
@@ -75,25 +74,26 @@ def mlm_task(args):
     model = BertForMaskedLM(config=config)
     print(f'Bert model: contains {model.num_parameters()} parameters.')
 
+    epoch_step = len(dataset) // args.bsz
     if args.model == 'dev':
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=1,
                                           per_device_train_batch_size=args.bsz,
-                                          save_steps=10_000, )
+                                          save_steps=epoch_step, )
     if args.model == 'behrt':
+        # Note: in Bert, pretrain is: bsz = 256, total iterations is 1_000_000
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
-                                          num_train_epochs=100,
-                                          per_device_train_batch_size=32,
-                                          save_steps=10_000, )
+                                          num_train_epochs=30,
+                                          per_device_train_batch_size=args.bsz,
+                                          save_steps=epoch_step, )
 
     if args.model == 'med-bert':
-        total_step = 450_0000
-        epoch_step = len(dataset) // args.bsz
-        epoch = total_step / epoch_step
+        total_step = 4_500_000
+        epoch = total_step // args.bsz
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
                                           num_train_epochs=epoch,
                                           per_device_train_batch_size=args.bsz,
-                                          save_steps=10_000, )
+                                          save_steps=epoch_step, )
 
     trainer = Trainer(model=model,
                       args=training_args,
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
     parser.add_argument('--min-length', type=int, default=10, help='Min length of a sequence to be used in Bert')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
-    parser.add_argument('--bsz', type=int, default=3, help='Batch size in training')
+    parser.add_argument('--bsz', type=int, default=6, help='Batch size in training')
     parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
     parser.add_argument('--model', type=str, default='behrt', choices=['dev', 'behrt', 'med-bert'],
@@ -139,6 +139,7 @@ if __name__ == '__main__':
         raise UserWarning('Configuration of Med-Bert from the paper is still mysterious, '
                           'the final result may be unexpected...')
     mlm_task(args)
+
     print('Finish all...')
 
 
