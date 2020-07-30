@@ -61,7 +61,7 @@ Based on the offical guide regarding [out-of-memory-issues](https://github.com/g
 |   |	       | 384	        | 5              |
 |   |           | 512            | 3              |
 |   | Behrt*    | 512 	        | 7              | 
-| UniDiag (86k) | Behrt*    | 512 	        | 7              | 
+| UniDiag (86k) | Behrt*    | 512 	        | 8              | 
 
 
 
