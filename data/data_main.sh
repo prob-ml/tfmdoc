@@ -57,7 +57,7 @@ fi
 
 if [[ ${merge} == 'y' ]]; then
     echo "Start: create user-seq data. "
-    ./data_merge.sh $OUTPATH
+#     ./data_merge.sh $OUTPATH
     python3 ./data_merge.py --path $OUTPATH 2>&1
     echo "Finish: create user-seq data. "
 fi 
