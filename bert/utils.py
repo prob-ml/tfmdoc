@@ -1,10 +1,16 @@
 import logging
 import os
-
+import csv
 
 DATA_PATH = '/nfs/turbo/lsa-regier/emr-data'
 VOCAB_PATH = os.path.join(DATA_PATH, 'vocabs')
+ICD_PATH = os.path.join('~/emr/data/', 'ICD_9_10_d_v1.1.csv')
 
+# ICD_CSV = csv.reader(open(ICD_PATH), delimiter='|')
+# ICD_DICT = {}
+# for code in open(ICD_CSV).readlines():
+#     code=code.strip()
+#     ICD_DICT[code.split("|")[1]] = code
 
 def get_logger(job):
     """from github: ffjord"""
@@ -33,4 +39,7 @@ def make_dirs(*dirnames):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-
+# def to_icd10(icd9):
+#     raw_code = icd9
+#     icd9_decimal = 
+    

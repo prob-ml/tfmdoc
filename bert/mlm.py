@@ -20,7 +20,7 @@ def mlm_task(args):
     merged = (args.data == 'merged')
 
     print('Start: collect vocab of EMR.')
-    vocab = create_vocab(merged=merged)
+    vocab = create_vocab(merged=merged, uni_diag=args.unidiag)
     print('Finish: collect vocab of EMR.')
     print('*' * 200)
 
@@ -30,7 +30,7 @@ def mlm_task(args):
     print('*' * 200)
 
     print('Start: load data (and encode to token sequence.)')
-    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data,
+    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
                                     max_length=args.max_length, min_length=args.min_length,
                                     truncate_method=args.truncate)
     print('Finish: load data (and encode to token sequence.)')
@@ -73,7 +73,7 @@ def mlm_task(args):
 
     model = BertForMaskedLM(config=config)
     print(f'Bert model: contains {model.num_parameters()} parameters.')
-
+    print(f'Data set: contains {len(dataset)} samples.')
     epoch_step = len(dataset) // args.bsz
     if args.model == 'dev':
         training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
@@ -114,10 +114,13 @@ def mlm_task(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, choices=['daily', 'merged'], default='merged')
+    parser.add_argument('--unidiag', action='store_true', default=False, help='Train on Uni-diag code data.')
+
+    # parser.add_argument('--create-vocab', action='stro, choices=['daily', 'merged'], default='merged')
     parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
     parser.add_argument('--min-length', type=int, default=10, help='Min length of a sequence to be used in Bert')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
-    parser.add_argument('--bsz', type=int, default=6, help='Batch size in training')
+    parser.add_argument('--bsz', type=int, default=7, help='Batch size in training')
     parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
     parser.add_argument('--model', type=str, default='behrt', choices=['dev', 'behrt', 'med-bert'],
@@ -130,9 +133,10 @@ if __name__ == '__main__':
     print(f'Prepare: check process on cuda: {args.cuda}...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    result_path = os.path.join(curPath, 'results', args.model, 'MLM')
-    trained_model = os.path.join(curPath, 'trained', args.model, 'MLM')
+    result_path = os.path.join(curPath, 'results', args.model, 'MLM', args.data, 'unidiag' if args.unidiag else 'original' )
+    trained_model = os.path.join(curPath, 'trained', args.model, 'MLM', 'unidiag' if args.unidiag else 'original')
     make_dirs(result_path, trained_model)
+    print(f'Prepare: check result at {result_path}.')
 
     assert args.model in ['dev', 'behrt', 'med-bert'], f'Not supported for model config: {args.model} yet...'
     if args.model == 'med-bert':

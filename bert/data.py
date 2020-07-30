@@ -16,6 +16,7 @@ class LineByLineTextDataset(Dataset):
     def __init__(self,
                  tokenizer: PreTrainedTokenizer,
                  data_type: str,
+                 is_unidiag: bool,
                  max_length: int,
                  min_length: int,
                  group: int = None,
@@ -24,6 +25,7 @@ class LineByLineTextDataset(Dataset):
 
         self.user_group = [str(i) for i in range(10)] if group is None else [str(group)]
         self.data_type = data_type
+        self.is_unidiag = is_unidiag
 
         lines = []
         for file in os.listdir(DATA_PATH):
@@ -32,7 +34,6 @@ class LineByLineTextDataset(Dataset):
                     # f.read().splitlines() will drop the '\n' at the end of each line automatically.
                     lines += [line.replace('\n', '').split(',')[1] for line in f.read().splitlines() if
                               (len(line) > 0 and not line.isspace())][1:] #[1:] drop HEADER row.
-
         truncated_lines = []
         for line in lines:
             token_list = line.split(' ')
@@ -49,6 +50,7 @@ class LineByLineTextDataset(Dataset):
                 elif truncate_method == 'random':
                     token_idx = random.sample(range(len(token_list)), max_length)
                     token_list = [token_list[idx] for idx in token_idx.sort()]
+
                 truncated_lines.append(' '.join(token_list))
         lines = truncated_lines
 
@@ -63,6 +65,15 @@ class LineByLineTextDataset(Dataset):
         return torch.tensor(self.examples[i], dtype=torch.long)
 
     def is_target(self, file):
+
+        # First check if 'unidiag' is correct.
+        if self.is_unidiag:
+            if 'unidiag' not in file:
+                return False
+        else:
+            if 'unidiag' in file:
+                return False
+
         # Since a file name may contain 'merged', but will not contain 'daily',
         # so we need to use nested if-condition.
         if 'merged' in file:
