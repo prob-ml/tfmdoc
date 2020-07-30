@@ -1,0 +1,1456 @@
+****************************************************************************************************
+Start: create_field_seq.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 9.
+Finish: create_field_seq.
+****************************************************************************************************
+****************************************************************************************************
+Start: merge_field.
+Start: Year: 2010, Group: 0.
+Finish: Year: 2010, Group: 0.
+Start: Year: 2010, Group: 1.
+Finish: Year: 2010, Group: 1.
+Start: Year: 2010, Group: 2.
+Finish: Year: 2010, Group: 2.
+Start: Year: 2010, Group: 3.
+Finish: Year: 2010, Group: 3.
+Start: Year: 2010, Group: 4.
+Finish: Year: 2010, Group: 4.
+Start: Year: 2010, Group: 5.
+Finish: Year: 2010, Group: 5.
+Start: Year: 2010, Group: 6.
+Finish: Year: 2010, Group: 6.
+Start: Year: 2010, Group: 7.
+Finish: Year: 2010, Group: 7.
+Start: Year: 2010, Group: 8.
+Finish: Year: 2010, Group: 8.
+Start: Year: 2010, Group: 9.
+Finish: Year: 2010, Group: 9.
+Start: Year: 2011, Group: 0.
+Finish: Year: 2011, Group: 0.
+Start: Year: 2011, Group: 1.
+Finish: Year: 2011, Group: 1.
+Start: Year: 2011, Group: 2.
+Finish: Year: 2011, Group: 2.
+Start: Year: 2011, Group: 3.
+Finish: Year: 2011, Group: 3.
+Start: Year: 2011, Group: 4.
+Finish: Year: 2011, Group: 4.
+Start: Year: 2011, Group: 5.
+Finish: Year: 2011, Group: 5.
+Start: Year: 2011, Group: 6.
+Finish: Year: 2011, Group: 6.
+Start: Year: 2011, Group: 7.
+Finish: Year: 2011, Group: 7.
+Start: Year: 2011, Group: 8.
+Finish: Year: 2011, Group: 8.
+Start: Year: 2011, Group: 9.
+Finish: Year: 2011, Group: 9.
+Start: Year: 2012, Group: 0.
+Finish: Year: 2012, Group: 0.
+Start: Year: 2012, Group: 1.
+Finish: Year: 2012, Group: 1.
+Start: Year: 2012, Group: 2.
+Finish: Year: 2012, Group: 2.
+Start: Year: 2012, Group: 3.
+Finish: Year: 2012, Group: 3.
+Start: Year: 2012, Group: 4.
+Finish: Year: 2012, Group: 4.
+Start: Year: 2012, Group: 5.
+Finish: Year: 2012, Group: 5.
+Start: Year: 2012, Group: 6.
+Finish: Year: 2012, Group: 6.
+Start: Year: 2012, Group: 7.
+Finish: Year: 2012, Group: 7.
+Start: Year: 2012, Group: 8.
+Finish: Year: 2012, Group: 8.
+Start: Year: 2012, Group: 9.
+Finish: Year: 2012, Group: 9.
+Start: Year: 2013, Group: 0.
+Finish: Year: 2013, Group: 0.
+Start: Year: 2013, Group: 1.
+Finish: Year: 2013, Group: 1.
+Start: Year: 2013, Group: 2.
+Finish: Year: 2013, Group: 2.
+Start: Year: 2013, Group: 3.
+Finish: Year: 2013, Group: 3.
+Start: Year: 2013, Group: 4.
+Finish: Year: 2013, Group: 4.
+Start: Year: 2013, Group: 5.
+Finish: Year: 2013, Group: 5.
+Start: Year: 2013, Group: 6.
+Finish: Year: 2013, Group: 6.
+Start: Year: 2013, Group: 7.
+Finish: Year: 2013, Group: 7.
+Start: Year: 2013, Group: 8.
+Finish: Year: 2013, Group: 8.
+Start: Year: 2013, Group: 9.
+Finish: Year: 2013, Group: 9.
+Start: Year: 2014, Group: 0.
+Finish: Year: 2014, Group: 0.
+Start: Year: 2014, Group: 1.
+Finish: Year: 2014, Group: 1.
+Start: Year: 2014, Group: 2.
+Finish: Year: 2014, Group: 2.
+Start: Year: 2014, Group: 3.
+Finish: Year: 2014, Group: 3.
+Start: Year: 2014, Group: 4.
+Finish: Year: 2014, Group: 4.
+Start: Year: 2014, Group: 5.
+Finish: Year: 2014, Group: 5.
+Start: Year: 2014, Group: 6.
+Finish: Year: 2014, Group: 6.
+Start: Year: 2014, Group: 7.
+Finish: Year: 2014, Group: 7.
+Start: Year: 2014, Group: 8.
+Finish: Year: 2014, Group: 8.
+Start: Year: 2014, Group: 9.
+Finish: Year: 2014, Group: 9.
+Start: Year: 2015, Group: 0.
+Finish: Year: 2015, Group: 0.
+Start: Year: 2015, Group: 1.
+Finish: Year: 2015, Group: 1.
+Start: Year: 2015, Group: 2.
+Finish: Year: 2015, Group: 2.
+Start: Year: 2015, Group: 3.
+Finish: Year: 2015, Group: 3.
+Start: Year: 2015, Group: 4.
+Finish: Year: 2015, Group: 4.
+Start: Year: 2015, Group: 5.
+Finish: Year: 2015, Group: 5.
+Start: Year: 2015, Group: 6.
+Finish: Year: 2015, Group: 6.
+Start: Year: 2015, Group: 7.
+Finish: Year: 2015, Group: 7.
+Start: Year: 2015, Group: 8.
+Finish: Year: 2015, Group: 8.
+Start: Year: 2015, Group: 9.
+Finish: Year: 2015, Group: 9.
+Start: Year: 2016, Group: 0.
+Finish: Year: 2016, Group: 0.
+Start: Year: 2016, Group: 1.
+Finish: Year: 2016, Group: 1.
+Start: Year: 2016, Group: 2.
+Finish: Year: 2016, Group: 2.
+Start: Year: 2016, Group: 3.
+Finish: Year: 2016, Group: 3.
+Start: Year: 2016, Group: 4.
+Finish: Year: 2016, Group: 4.
+Start: Year: 2016, Group: 5.
+Finish: Year: 2016, Group: 5.
+Start: Year: 2016, Group: 6.
+Finish: Year: 2016, Group: 6.
+Start: Year: 2016, Group: 7.
+Finish: Year: 2016, Group: 7.
+Start: Year: 2016, Group: 8.
+Finish: Year: 2016, Group: 8.
+Start: Year: 2016, Group: 9.
+Finish: Year: 2016, Group: 9.
+Start: Year: 2017, Group: 0.
+Finish: Year: 2017, Group: 0.
+Start: Year: 2017, Group: 1.
+Finish: Year: 2017, Group: 1.
+Start: Year: 2017, Group: 2.
+Finish: Year: 2017, Group: 2.
+Start: Year: 2017, Group: 3.
+Finish: Year: 2017, Group: 3.
+Start: Year: 2017, Group: 4.
+Finish: Year: 2017, Group: 4.
+Start: Year: 2017, Group: 5.
+Finish: Year: 2017, Group: 5.
+Start: Year: 2017, Group: 6.
+Finish: Year: 2017, Group: 6.
+Start: Year: 2017, Group: 7.
+Finish: Year: 2017, Group: 7.
+Start: Year: 2017, Group: 8.
+Finish: Year: 2017, Group: 8.
+Start: Year: 2017, Group: 9.
+Finish: Year: 2017, Group: 9.
+Start: Year: 2018, Group: 0.
+Finish: Year: 2018, Group: 0.
+Start: Year: 2018, Group: 1.
+Finish: Year: 2018, Group: 1.
+Start: Year: 2018, Group: 2.
+Finish: Year: 2018, Group: 2.
+Start: Year: 2018, Group: 3.
+Finish: Year: 2018, Group: 3.
+Start: Year: 2018, Group: 4.
+Finish: Year: 2018, Group: 4.
+Start: Year: 2018, Group: 5.
+Finish: Year: 2018, Group: 5.
+Start: Year: 2018, Group: 6.
+Finish: Year: 2018, Group: 6.
+Start: Year: 2018, Group: 7.
+Finish: Year: 2018, Group: 7.
+Start: Year: 2018, Group: 8.
+Finish: Year: 2018, Group: 8.
+Start: Year: 2018, Group: 9.
+Finish: Year: 2018, Group: 9.
+Finish: merge_field.
+****************************************************************************************************
+****************************************************************************************************
+Start: create_field_seq.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2014_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/diag_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2014_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/proc_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2017_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2015_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2013_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2011_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2010_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2018_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2012_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2016_tmp.csv, group: 9.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 0.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 0.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 1.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 1.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 2.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 2.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 3.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 3.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 4.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 4.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 5.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 5.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 6.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 6.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 7.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 7.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 8.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 8.
+Start: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 9.
+Finish: /home/jingoy/emr-data/pharm_2014_tmp.csv, group: 9.
+Finish: create_field_seq.
+****************************************************************************************************
+****************************************************************************************************
+Start: merge_field.
+Start: Year: 2010, Group: 0.
+Finish: Year: 2010, Group: 0.
+Start: Year: 2010, Group: 1.
+Finish: Year: 2010, Group: 1.
+Start: Year: 2010, Group: 2.
+Finish: Year: 2010, Group: 2.
+Start: Year: 2010, Group: 3.
+Finish: Year: 2010, Group: 3.
+Start: Year: 2010, Group: 4.
+Finish: Year: 2010, Group: 4.
+Start: Year: 2010, Group: 5.
+Finish: Year: 2010, Group: 5.
+Start: Year: 2010, Group: 6.
+Finish: Year: 2010, Group: 6.
+Start: Year: 2010, Group: 7.
+Finish: Year: 2010, Group: 7.
+Start: Year: 2010, Group: 8.
+Finish: Year: 2010, Group: 8.
+Start: Year: 2010, Group: 9.
+Finish: Year: 2010, Group: 9.
+Start: Year: 2011, Group: 0.
+Finish: Year: 2011, Group: 0.
+Start: Year: 2011, Group: 1.
+Finish: Year: 2011, Group: 1.
+Start: Year: 2011, Group: 2.
+Finish: Year: 2011, Group: 2.
+Start: Year: 2011, Group: 3.
+Finish: Year: 2011, Group: 3.
+Start: Year: 2011, Group: 4.
+Finish: Year: 2011, Group: 4.
+Start: Year: 2011, Group: 5.
+Finish: Year: 2011, Group: 5.
+Start: Year: 2011, Group: 6.
+Finish: Year: 2011, Group: 6.
+Start: Year: 2011, Group: 7.
+Finish: Year: 2011, Group: 7.
+Start: Year: 2011, Group: 8.
+Finish: Year: 2011, Group: 8.
+Start: Year: 2011, Group: 9.
+Finish: Year: 2011, Group: 9.
+Start: Year: 2012, Group: 0.
+Finish: Year: 2012, Group: 0.
+Start: Year: 2012, Group: 1.
+Finish: Year: 2012, Group: 1.
+Start: Year: 2012, Group: 2.
+Finish: Year: 2012, Group: 2.
+Start: Year: 2012, Group: 3.
+Finish: Year: 2012, Group: 3.
+Start: Year: 2012, Group: 4.
+Finish: Year: 2012, Group: 4.
+Start: Year: 2012, Group: 5.
+Finish: Year: 2012, Group: 5.
+Start: Year: 2012, Group: 6.
+Finish: Year: 2012, Group: 6.
+Start: Year: 2012, Group: 7.
+Finish: Year: 2012, Group: 7.
+Start: Year: 2012, Group: 8.
+Finish: Year: 2012, Group: 8.
+Start: Year: 2012, Group: 9.
+Finish: Year: 2012, Group: 9.
+Start: Year: 2013, Group: 0.
+Finish: Year: 2013, Group: 0.
+Start: Year: 2013, Group: 1.
+Finish: Year: 2013, Group: 1.
+Start: Year: 2013, Group: 2.
+Finish: Year: 2013, Group: 2.
+Start: Year: 2013, Group: 3.
+Finish: Year: 2013, Group: 3.
+Start: Year: 2013, Group: 4.
+Finish: Year: 2013, Group: 4.
+Start: Year: 2013, Group: 5.
+Finish: Year: 2013, Group: 5.
+Start: Year: 2013, Group: 6.
+Finish: Year: 2013, Group: 6.
+Start: Year: 2013, Group: 7.
+Finish: Year: 2013, Group: 7.
+Start: Year: 2013, Group: 8.
+Finish: Year: 2013, Group: 8.
+Start: Year: 2013, Group: 9.
+Finish: Year: 2013, Group: 9.
+Start: Year: 2014, Group: 0.
+Finish: Year: 2014, Group: 0.
+Start: Year: 2014, Group: 1.
+Finish: Year: 2014, Group: 1.
+Start: Year: 2014, Group: 2.
+Finish: Year: 2014, Group: 2.
+Start: Year: 2014, Group: 3.
+Finish: Year: 2014, Group: 3.
+Start: Year: 2014, Group: 4.
+Finish: Year: 2014, Group: 4.
+Start: Year: 2014, Group: 5.
+Finish: Year: 2014, Group: 5.
+Start: Year: 2014, Group: 6.
+Finish: Year: 2014, Group: 6.
+Start: Year: 2014, Group: 7.
+Finish: Year: 2014, Group: 7.
+Start: Year: 2014, Group: 8.
+Finish: Year: 2014, Group: 8.
+Start: Year: 2014, Group: 9.
+Finish: Year: 2014, Group: 9.
+Start: Year: 2015, Group: 0.
+Finish: Year: 2015, Group: 0.
+Start: Year: 2015, Group: 1.
+Finish: Year: 2015, Group: 1.
+Start: Year: 2015, Group: 2.
+Finish: Year: 2015, Group: 2.
+Start: Year: 2015, Group: 3.
+Finish: Year: 2015, Group: 3.
+Start: Year: 2015, Group: 4.
+Finish: Year: 2015, Group: 4.
+Start: Year: 2015, Group: 5.
+Finish: Year: 2015, Group: 5.
+Start: Year: 2015, Group: 6.
+Finish: Year: 2015, Group: 6.
+Start: Year: 2015, Group: 7.
+Finish: Year: 2015, Group: 7.
+Start: Year: 2015, Group: 8.
+Finish: Year: 2015, Group: 8.
+Start: Year: 2015, Group: 9.
+Finish: Year: 2015, Group: 9.
+Start: Year: 2016, Group: 0.
+Finish: Year: 2016, Group: 0.
+Start: Year: 2016, Group: 1.
+Finish: Year: 2016, Group: 1.
+Start: Year: 2016, Group: 2.
+Finish: Year: 2016, Group: 2.
+Start: Year: 2016, Group: 3.
+Finish: Year: 2016, Group: 3.
+Start: Year: 2016, Group: 4.
+Finish: Year: 2016, Group: 4.
+Start: Year: 2016, Group: 5.
+Finish: Year: 2016, Group: 5.
+Start: Year: 2016, Group: 6.
+Finish: Year: 2016, Group: 6.
+Start: Year: 2016, Group: 7.
+Finish: Year: 2016, Group: 7.
+Start: Year: 2016, Group: 8.
+Finish: Year: 2016, Group: 8.
+Start: Year: 2016, Group: 9.
+Finish: Year: 2016, Group: 9.
+Start: Year: 2017, Group: 0.
+Finish: Year: 2017, Group: 0.
+Start: Year: 2017, Group: 1.
+Finish: Year: 2017, Group: 1.
+Start: Year: 2017, Group: 2.
+Finish: Year: 2017, Group: 2.
+Start: Year: 2017, Group: 3.
+Finish: Year: 2017, Group: 3.
+Start: Year: 2017, Group: 4.
+Finish: Year: 2017, Group: 4.
+Start: Year: 2017, Group: 5.
+Finish: Year: 2017, Group: 5.
+Start: Year: 2017, Group: 6.
+Finish: Year: 2017, Group: 6.
+Start: Year: 2017, Group: 7.
+Finish: Year: 2017, Group: 7.
+Start: Year: 2017, Group: 8.
+Finish: Year: 2017, Group: 8.
+Start: Year: 2017, Group: 9.
+Finish: Year: 2017, Group: 9.
+Start: Year: 2018, Group: 0.
+Finish: Year: 2018, Group: 0.
+Start: Year: 2018, Group: 1.
+Finish: Year: 2018, Group: 1.
+Start: Year: 2018, Group: 2.
+Finish: Year: 2018, Group: 2.
+Start: Year: 2018, Group: 3.
+Finish: Year: 2018, Group: 3.
+Start: Year: 2018, Group: 4.
+Finish: Year: 2018, Group: 4.
+Start: Year: 2018, Group: 5.
+Finish: Year: 2018, Group: 5.
+Start: Year: 2018, Group: 6.
+Finish: Year: 2018, Group: 6.
+Start: Year: 2018, Group: 7.
+Finish: Year: 2018, Group: 7.
+Start: Year: 2018, Group: 8.
+Finish: Year: 2018, Group: 8.
+Start: Year: 2018, Group: 9.
+Finish: Year: 2018, Group: 9.
+Finish: merge_field.
+****************************************************************************************************
