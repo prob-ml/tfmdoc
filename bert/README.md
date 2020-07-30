@@ -1,7 +1,8 @@
 ## Highlighted Milestone:
 
-- [ ] Use multiple GPUs to train a large model like Bert-base.
-- [ ] Add better ways to encode daily token sequence, e.g.,  Deep set.
+- [ ] ~Use multiple GPUs to train a large model like Bert-base.~
+- [ ] Add better ways to encode daily token sequence, e.g. via Deep set.
+- [ ] Better ways to handle long length documents, e.g. Transformer XL.
 - [ ] Extract contextual embedding of tokens part from Bert which can be fine-tuned with different downstream tasks, e.g., Causal-Bert.
 - [x] Practical guide for training Bert-base on a Single GPU GTX 2080 Ti with 11 GB memory.
 - [x] A runable pipeline for Pre-train Bert-base on EMR data.
@@ -54,11 +55,13 @@ Useful tips:
 
 Based on the offical guide regarding [out-of-memory-issues](https://github.com/google-research/bert#out-of-memory-issues) of Bert, our single GPU can afford 
 
-| System    | Max Seq Length | Max Batch Size |
-| --------- | -------------- | -------------- |
-| Bert-base | 256            |                |
-|	    | 384	     | 5              |
-|           | 512            | 3              |
+| Vocab (size)    | Model     | Max Seq Length | Max Batch Size |
+| -------- | --------- | -------------- | -------------- |
+| Default(105k)  | Bert-base | 256            |                |
+|   |	       | 384	        | 5              |
+|   |           | 512            | 3              |
+|   | Behrt*    | 512 	        | 7              | 
+| UniDiag (86k) | Behrt*    | 512 	        | 8              | 
 
 
 
