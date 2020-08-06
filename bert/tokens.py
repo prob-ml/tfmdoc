@@ -10,8 +10,9 @@ from tokenizers.normalizers import Lowercase
 from tokenizers.pre_tokenizers import CharDelimiterSplit, WhitespaceSplit
 from tokenizers.implementations import BaseTokenizer
 
-from transformers import PreTrainedTokenizerFast
+from transformers import PreTrainedTokenizerFast, BertTokenizer
 from typing import List, Optional, Union
+
 
 
 class WordLevelTokenizer(BaseTokenizer):
@@ -168,3 +169,4 @@ class WordLevelBertTokenizer(PreTrainedTokenizerFast):
         cls = [self.cls_token_id]
         sep = [self.sep_token_id]
         return cls + token_ids_0 + sep + token_ids_1 + sep
+

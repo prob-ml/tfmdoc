@@ -19,14 +19,16 @@ class LineByLineTextDataset(Dataset):
                  is_unidiag: bool,
                  max_length: int,
                  min_length: int,
-                 group: int = None,
+                 device: str,
+                 group: list = None,
                  add_special_tokens: bool = True,
                  truncate_method: str = 'first'):
 
-        self.user_group = [str(i) for i in range(10)] if group is None else [str(group)]
+        if group is None: group = range(10)
+        self.user_group = [str(i) for i in group]# if group is None else [str(group)]
         self.data_type = data_type
         self.is_unidiag = is_unidiag
-
+        self.device = device
         lines = []
         for file in os.listdir(DATA_PATH):
             if self.is_target(file):
@@ -62,7 +64,7 @@ class LineByLineTextDataset(Dataset):
         return len(self.examples)
 
     def __getitem__(self, i) -> torch.Tensor:
-        return torch.tensor(self.examples[i], dtype=torch.long)
+        return torch.tensor(self.examples[i], dtype=torch.long)#, device=self.device)
 
     def is_target(self, file):
 

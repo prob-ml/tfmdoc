@@ -26,13 +26,27 @@ def mlm_task(args):
 
     print('Start: load word level tokenizer.')
     tokenizer = WordLevelBertTokenizer(vocab)
-    print('Finish: load word level tokenizer.')
+    print(f'Finish: load word level tokenizer. Vocab size: {len(tokenizer)}.')
     print('*' * 200)
 
     print('Start: load data (and encode to token sequence.)')
-    dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
-                                    max_length=args.max_length, min_length=args.min_length,
-                                    truncate_method=args.truncate)
+
+    # If want to evaluate model during trainning.
+    if args.eval_when_train:
+        train_group = list(range(9))
+        eval_group = [9]
+        train_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+                                              group=train_group, max_length=args.max_length, min_length=args.min_length,
+                                              truncate_method=args.truncate, device=device)
+        eval_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+                                              group=eval_group, max_length=args.max_length, min_length=args.min_length,
+                                              truncate_method=args.truncate, device=device)
+    else:
+        train_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+                                              max_length=args.max_length, min_length=args.min_length,
+                                              truncate_method=args.truncate, device=device)
+        eval_dataset = None
+
     print('Finish: load data (and encode to token sequence.)')
     print('*' * 200)
 
@@ -48,7 +62,7 @@ def mlm_task(args):
                                 num_hidden_layers=4,
                                 hidden_size=128,
                                 type_vocab_size=1, )
-
+            
         if args.model == 'behrt':
             config = BertConfig(vocab_size=len(tokenizer), max_position_embeddings=args.max_length,
                                 num_attention_heads=12,
@@ -72,33 +86,32 @@ def mlm_task(args):
         config = AutoConfig.from_pretrained(trained_model)
 
     model = BertForMaskedLM(config=config)
-    print(f'Bert model: contains {model.num_parameters()} parameters.')
-    print(f'Data set: contains {len(dataset)} samples.')
-    epoch_step = len(dataset) // args.bsz
-    if args.model == 'dev':
-        training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
-                                          num_train_epochs=1,
-                                          per_device_train_batch_size=args.bsz,
-                                          save_steps=epoch_step, )
-    if args.model == 'behrt':
-        # Note: in Bert, pretrain is: bsz = 256, total iterations is 1_000_000
-        training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
-                                          num_train_epochs=30,
-                                          per_device_train_batch_size=args.bsz,
-                                          save_steps=epoch_step, )
+    print(f'Bert model: contains {model.num_parameters()} parameters...')
+    print(f'Data set: contains {len(train_dataset)} samples.')
 
-    if args.model == 'med-bert':
+    epoch_step = len(train_dataset) // args.bsz
+    if args.model == 'dev':
+        epoch = 1
+    elif args.model == 'behrt':
+        # Note: in Bert base, pretrain is: bsz = 256, total iterations is 1_000_000
+        epoch = 30
+    elif args.model == 'med-bert':
         total_step = 4_500_000
         epoch = total_step // args.bsz
-        training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
-                                          num_train_epochs=epoch,
-                                          per_device_train_batch_size=args.bsz,
-                                          save_steps=epoch_step, )
+
+    training_args = TrainingArguments(output_dir=result_path, overwrite_output_dir=True,
+                                      num_train_epochs=epoch,
+                                      per_device_train_batch_size=args.bsz,
+                                      evaluate_during_training=True if args.eval_when_train else False,
+                                      save_total_limit=10,
+                                      save_steps=epoch_step,
+                                      )
 
     trainer = Trainer(model=model,
                       args=training_args,
                       data_collator=mlm_collator,
-                      train_dataset=dataset,
+                      train_dataset=train_dataset,
+                      eval_dataset=eval_dataset,
                       prediction_loss_only=True,
                       )
 
@@ -114,19 +127,27 @@ def mlm_task(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, choices=['daily', 'merged'], default='merged')
-    parser.add_argument('--unidiag', action='store_true', default=False, help='Train on Uni-diag code data.')
+    parser.add_argument('--diag', type=str, choices=['uni', 'raw'], default='uni',
+                        help='Which tokens to use: uni for Uni-diag code, and raw for raw data.')
 
     # parser.add_argument('--create-vocab', action='stro, choices=['daily', 'merged'], default='merged')
     parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
     parser.add_argument('--min-length', type=int, default=10, help='Min length of a sequence to be used in Bert')
     parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
-    parser.add_argument('--bsz', type=int, default=7, help='Batch size in training')
+    parser.add_argument('--bsz', type=int, default=8, help='Batch size in training')
     parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
     parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
-    parser.add_argument('--model', type=str, default='behrt', choices=['dev', 'behrt', 'med-bert'],
-                        help='Run dev version to make sure codes can run.')
+    parser.add_argument('--model', type=str, choices=['dev', 'behrt', 'med-bert'], default='behrt',
+                        help='Which bert to use')
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
+
+    parser.add_argument('--no-eval', action='store_true', default=False,
+                        help='Do not evaluate during training.')
+
     args = parser.parse_args()
+
+    args.unidiag = (args.diag == 'uni')
+    args.eval_when_train = not args.no_eval
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
@@ -145,5 +166,3 @@ if __name__ == '__main__':
     mlm_task(args)
 
     print('Finish all...')
-
-

@@ -73,7 +73,7 @@ if __name__ == '__main__':
                     user = user.strip()
                     hist = hist.strip()
                     
-                    # Convert to Uni Diag codes hist.
+                    # Convert to Uni Diag codes hist and clean some other outliers.
                     if args.unidiag:
                         reg_hist = ''
                         for token in hist.split(' '):
@@ -85,30 +85,37 @@ if __name__ == '__main__':
                             if 'icd:9_diag' in token:
                                 diag_code = token.split('_')[1]
                                 diag_code = diag_code.split(':')[1]
-                                
-                                # Some ICD-9 is directly ICD 10 codes.
+
+                                is_success = False
+
+                                # Some ICD-9 are exact ICD 10 codes.
                                 converted_diag_code = icd_10.get(diag_code, None)
-                                
+                                if converted_diag_code is not None:
+                                    is_success = True
+
                                 # Try to convert diag codes based on icd_map
-                                if converted_diag_code is None: 
-                                    is_success = False
+                                if not is_success:
                                     converted_diag_code = icd_map.get(diag_code, None)
                                     if converted_diag_code is not None:
                                         is_success = True
                                     else:
-                                        # Zero may be padded at the begining, remove it.
+                                        # Zero may be padded at the beginning, which is not handled in icd_map,
+                                        # try to remove it and match.
                                         cur_diag_code = diag_code
                                         while cur_diag_code[0] == '0':
                                             cur_diag_code = cur_diag_code[1:]
-                                            converted_diag_code = icd_map.get(diag_code, None)
+                                            converted_diag_code = icd_map.get(cur_diag_code, None)
                                             if converted_diag_code is not None:
                                                 is_success = True
                                                 break
+
                                 # Successful conversion
-                                if converted_diag_code:
+                                if is_success:
+                                    # converted_diag_code is a list, where the first element is the target.
                                     converted_diag_code = converted_diag_code[0]
-                                    # Replace icd flag from 9 to 10
+                                    # Replace icd flag from 9 to 10.
                                     token = token.replace('icd:9_', 'icd:10_')
+                                    # Replace icd codes from 9 to 10.
                                     token = token.replace(diag_code, converted_diag_code)
                             reg_hist += token + ' '
                         hist = reg_hist.strip()
