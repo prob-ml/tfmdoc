@@ -150,12 +150,14 @@ class CausalBertDataset(Dataset):
         # Create propensity score, treatment and response
         self.prop_score = torch.tensor(prop_score, dtype=torch.float32)
         self.treatment = Binomial(1, self.prop_score).sample()
-        self.response = self.generate_outcome(self.treatment, self.prop_score)
+        self.response = self.generate_response(self.treatment, self.prop_score)
+        self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_score)
 
         self.prop_score = self.prop_score.reshape(-1, 1).to(self.device)
         self.treatment = self.treatment.reshape(-1, 1).to(self.device)
         self.response = self.response.reshape(-1, 1).to(self.device)
-        
+        self.pseudo_response = self.pseudo_response.reshape(-1, 1).to(self.device)
+
     def __len__(self) -> int:
         return len(self.tokens)
 
@@ -174,15 +176,15 @@ class CausalBertDataset(Dataset):
                 if 'diag' not in token:
                     treat_cnt += 1
 
-        score = (treat_cnt + 1e-8)/ (len(token_list) + 1e-8)
+        score = (treat_cnt + 1e-8) / (len(token_list) + 1e-8)
         score = max(score, 0.1)
         score = min(score, 0.9)
 
         return score
 
-    def generate_outcome(self, treatment, prop_score, alpha=0.25, beta=1., c=0.2):
-        prob = torch.sigmoid(alpha * treatment + beta * (prop_score - c))
+    def generate_response(self, treatment, prop_score, alpha=0.25, beta=1., c=0.2):
 
+        prob = torch.sigmoid(alpha * treatment + beta * (prop_score - c))
         return Binomial(1, prob).sample()
     
     def is_target(self, file):

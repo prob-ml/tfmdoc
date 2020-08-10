@@ -47,7 +47,7 @@ class CausalBert(nn.Module):
                     nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
             self.q0 = nn.Sequential(
                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-                    nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
+                    nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
 
     def forward(self, tokens):
         embed_token = self.token_embed(tokens)
