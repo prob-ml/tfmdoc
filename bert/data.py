@@ -1,6 +1,7 @@
 import os
 from typing import Any, List
 import random
+import re 
 
 import numpy as np
 
@@ -105,7 +106,8 @@ class CausalBertDataset(Dataset):
                  device: str,
                  group: list = None,
                  add_special_tokens: bool = True,
-                 truncate_method: str = 'first'):
+                 truncate_method: str = 'first',
+                 ):
 
         if group is None: group = range(10)
         self.user_group = [str(i) for i in group]# if group is None else [str(group)]
@@ -141,7 +143,7 @@ class CausalBertDataset(Dataset):
                 line = ' '.join(token_list)
                 
             truncated_lines.append(line)
-            prop_score.append(self.treatment_portion(line))
+            prop_score.append(self.treat_portion(line))
         lines = truncated_lines
         batch_encoding = tokenizer.batch_encode_plus(lines, add_special_tokens=add_special_tokens,
                                                      max_length=max_length, truncation=True, padding=True)
@@ -167,9 +169,10 @@ class CausalBertDataset(Dataset):
         response = self.response[i]
         return token, treatment, response
 
-    def treat_portion(x, pattern):
+    def treat_portion(self, x):
         score = 0.2
-        if re.match(pattern, x) is not None:
+        pattern = 'diag:J45' # Asthma
+        if pattern in x:
             score = 0.8
         return score
 
