@@ -167,19 +167,10 @@ class CausalBertDataset(Dataset):
         response = self.response[i]
         return token, treatment, response
 
-    def treatment_portion(self, x):
-        x = x.replace(' [SEP] ', '').strip()
-        token_list = x.split(' ')
-        treat_cnt = 0
-        if len(token_list) > 0:
-            for token in token_list:
-                if 'diag' not in token:
-                    treat_cnt += 1
-
-        score = (treat_cnt + 1e-8) / (len(token_list) + 1e-8)
-        score = max(score, 0.1)
-        score = min(score, 0.9)
-
+    def treat_portion(x, pattern):
+        score = 0.2
+        if re.match(pattern, x) is not None:
+            score = 0.8
         return score
 
     def generate_response(self, treatment, prop_score, alpha=0.25, beta=1., c=0.2):
