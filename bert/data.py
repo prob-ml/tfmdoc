@@ -107,6 +107,9 @@ class CausalBertDataset(Dataset):
                  group: list = None,
                  add_special_tokens: bool = True,
                  truncate_method: str = 'first',
+                 alpha: float = 0.25,
+                 beta: float = 1.,
+                 c: float = 0.2,
                  ):
 
         if group is None: group = range(10)
@@ -152,6 +155,11 @@ class CausalBertDataset(Dataset):
         # Create propensity score, treatment and response
         self.prop_score = torch.tensor(prop_score, dtype=torch.float32)
         self.treatment = Binomial(1, self.prop_score).sample()
+        
+        self.alpha = alpha
+        self.beta = beta
+        self.c = c
+        
         self.response = self.generate_response(self.treatment, self.prop_score)
         self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_score)
 
@@ -176,13 +184,11 @@ class CausalBertDataset(Dataset):
             score = 0.8
         return score
 
-    def generate_response(self, treatment, prop_score, alpha=0.25, beta=10., c=0.2):
-
-        prob = torch.sigmoid(alpha * treatment + beta * (prop_score - c))
+    def generate_response(self, treatment, prop_score):
+        prob = torch.sigmoid(self.alpha * treatment + self.beta * (prop_score - self.c))
         return Binomial(1, prob).sample()
     
     def is_target(self, file):
-
         # First check if 'unidiag' is correct.
         if self.is_unidiag:
             if 'unidiag' not in file:
