@@ -10,7 +10,7 @@ import torch
 from transformers import DataCollatorForLanguageModeling, BertForMaskedLM
 from transformers import Trainer, TrainingArguments
 
-from data import LineByLineTextDataset
+from data import MLMDataset
 from tokens import WordLevelBertTokenizer
 from vocab import create_vocab
 from utils import DATA_PATH, make_dirs
@@ -35,14 +35,14 @@ def mlm_task(args):
     if args.eval_when_train:
         train_group = list(range(9))
         eval_group = [9]
-        train_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+        train_dataset = MLMDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
                                               group=train_group, max_length=args.max_length, min_length=args.min_length,
                                               truncate_method=args.truncate, device=device)
-        eval_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+        eval_dataset = MLMDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
                                               group=eval_group, max_length=args.max_length, min_length=args.min_length,
                                               truncate_method=args.truncate, device=device)
     else:
-        train_dataset = LineByLineTextDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
+        train_dataset = MLMDataset(tokenizer=tokenizer, data_type=args.data, is_unidiag=args.unidiag,
                                               max_length=args.max_length, min_length=args.min_length,
                                               truncate_method=args.truncate, device=device)
         eval_dataset = None
@@ -153,6 +153,9 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
     print(f'Prepare: check process on cuda: {args.cuda}...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    result_path = os.path.join(DATA_PATH, 'results', args.model, 'MLM', args.data, 'unidiag' if args.unidiag else 'original' )
+    trained_model = os.path.join(curPath, 'trained', args.model, 'MLM', 'unidiag' if args.unidiag else 'original')
 
     result_path = os.path.join(curPath, 'results', args.model, 'MLM', args.data, 'unidiag' if args.unidiag else 'original' )
     trained_model = os.path.join(curPath, 'trained', args.model, 'MLM', 'unidiag' if args.unidiag else 'original')

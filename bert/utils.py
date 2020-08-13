@@ -2,6 +2,7 @@ import logging
 import os
 import csv
 
+EMR_PATH = 'nfs/turbo/lsa-regier'
 DATA_PATH = '/nfs/turbo/lsa-regier/emr-data'
 VOCAB_PATH = os.path.join(DATA_PATH, 'vocabs')
 ICD_PATH = os.path.join('~/emr/data/', 'ICD_9_10_d_v1.1.csv')
