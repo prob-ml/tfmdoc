@@ -61,9 +61,9 @@ class CausalBert(nn.Module):
         if self.learnable_docu_embed:
             bsz = embed_token.shape[0]
             max_len = embed_token.shape[1]
-            embed_token = embed_token.permute(0, 2, 1).view(-1, max_len)
+            embed_token = embed_token.permute(0, 2, 1).reshape(-1, max_len)
             embed_docu = self.docu_embed(embed_token)
-            embed_docu = embed_docu.view(bsz, -1)
+            embed_docu = embed_docu.reshape(bsz, -1)
         else:
             embed_docu = torch.sum(embed_token, axis=1)
 
