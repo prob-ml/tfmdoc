@@ -176,7 +176,7 @@ class CausalBertDataset(Dataset):
             score = 0.8
         return score
 
-    def generate_response(self, treatment, prop_score, alpha=0.25, beta=1., c=0.2):
+    def generate_response(self, treatment, prop_score, alpha=0.25, beta=10., c=0.2):
 
         prob = torch.sigmoid(alpha * treatment + beta * (prop_score - c))
         return Binomial(1, prob).sample()
