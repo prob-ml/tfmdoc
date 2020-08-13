@@ -27,9 +27,15 @@ class CausalBert(nn.Module):
     def __init__(self, token_embed, hidden_size=256, binary_response=True, learnable_docu_embed=False):
         super().__init__()
         self.token_embed = token_embed
+        self.learnable_docu_embed = learnable_docu_embed
 
         embed_out = self.token_embed.weight.shape[1]
-
+        
+        # A learnable sum of embed to document.
+        if self.learnable_docu_embed:
+            max_length = self.token_embed.weight.shape[0]
+            self.docu_embed = nn.Linear(max_length, 1)
+            
         # G head: logit-linear mapping
         self.g = nn.Sequential(*[nn.Linear(embed_out, 1), nn.Sigmoid()])
 
@@ -51,7 +57,15 @@ class CausalBert(nn.Module):
 
     def forward(self, tokens):
         embed_token = self.token_embed(tokens)
-        embed_docu = torch.sum(embed_token, axis=1)
+        
+        if self.learnable_docu_embed:
+            bsz = embed_token.shape[0]
+            max_len = embed_token.shape[1]
+            embed_token = embed_token.permute(0, 2, 1).view(-1, max_len)
+            embed_docu = self.docu_embed(embed_token)
+            embed_docu = embed_docu.view(bsz, -1)
+        else:
+            embed_docu = torch.sum(embed_token, axis=1)
 
         return self.g(embed_docu), self.q1(embed_docu), self.q0(embed_docu)
 
