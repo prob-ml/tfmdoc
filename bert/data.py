@@ -110,8 +110,12 @@ class CausalBertDataset(Dataset):
                  alpha: float = 0.25,
                  beta: float = 1.,
                  c: float = 0.,
-                 i: float = -2,
+                 i: float = 0.,
+                 seed=2020,
                  ):
+        
+        np.random.seed(seed)
+        torch.manual_seed(seed)
 
         if group is None: group = range(10)
         self.user_group = [str(i) for i in group]# if group is None else [str(group)]
@@ -156,7 +160,7 @@ class CausalBertDataset(Dataset):
         # Create propensity score, treatment and response
         self.prop_score = torch.tensor(prop_score, dtype=torch.float32)
         self.treatment = Binomial(1, self.prop_score).sample()
-        
+
         self.alpha = alpha
         self.beta = beta
         self.c = c
