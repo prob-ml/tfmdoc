@@ -131,7 +131,7 @@ class CausalBertDataset(Dataset):
                               (len(line) > 0 and not line.isspace())][1:] #[1:] drop HEADER row.
 
         truncated_lines = []
-        prop_score = []
+        prop_scores = []
         for line in lines:
             token_list = line.split(' ')
             
@@ -151,25 +151,25 @@ class CausalBertDataset(Dataset):
                 line = ' '.join(token_list)
                 
             truncated_lines.append(line)
-            prop_score.append(self.treat_portion(line))
+            prop_scores.append(self.treat_portion(line))
         lines = truncated_lines
         batch_encoding = tokenizer.batch_encode_plus(lines, add_special_tokens=add_special_tokens,
                                                      max_length=max_length, truncation=True, padding=True)
         self.tokens = batch_encoding["input_ids"]
 
         # Create propensity score, treatment and response
-        self.prop_score = torch.tensor(prop_score, dtype=torch.float32)
-        self.treatment = Binomial(1, self.prop_score).sample()
+        self.prop_scores = torch.tensor(prop_scores, dtype=torch.float32)
+        self.treatment = Binomial(1, self.prop_scores).sample()
 
         self.alpha = alpha
         self.beta = beta
         self.c = c
         self.i = i
         
-        self.response = self.generate_response(self.treatment, self.prop_score)
-        self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_score)
+        self.response = self.generate_response(self.treatment, self.prop_scores)
+        self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_scores)
 
-        self.prop_score = self.prop_score.reshape(-1, 1).to(self.device)
+        self.prop_scores = self.prop_scores.reshape(-1, 1).to(self.device)
         self.treatment = self.treatment.reshape(-1, 1).to(self.device)
         self.response = self.response.reshape(-1, 1).to(self.device)
         self.pseudo_response = self.pseudo_response.reshape(-1, 1).to(self.device)
@@ -181,7 +181,8 @@ class CausalBertDataset(Dataset):
         token = torch.tensor(self.tokens[i], dtype=torch.long, device=self.device)
         treatment = self.treatment[i]
         response = self.response[i]
-        return token, treatment, response
+        prop_score = self.prop_scores[i]
+        return token, treatment, response, prop_score
 
     def treat_portion(self, x):
         score = 0.2
@@ -190,8 +191,8 @@ class CausalBertDataset(Dataset):
             score = 0.8
         return score
 
-    def generate_response(self, treatment, prop_score):
-        prob = torch.sigmoid(self.alpha * treatment + self.beta * (prop_score - self.c) + self.i)
+    def generate_response(self, treatment, prop_scores):
+        prob = torch.sigmoid(self.alpha * treatment + self.beta * (prop_scores - self.c) + self.i)
         return Binomial(1, prob).sample()
     
     def is_target(self, file):
