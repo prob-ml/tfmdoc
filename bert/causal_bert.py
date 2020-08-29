@@ -96,7 +96,7 @@ class CausalBert(nn.Module):
     Use a Bert last hidden-state embedding architecture,
     see discussion here for more details: https://github.com/huggingface/transformers/issues/1950
     """
-    def __init__(self, bert, hidden_size=256, max_length=512, binary_response=True, learnable_docu_embed=False):
+    def __init__(self, bert, hidden_size=256, max_length=512, binary_response=True, learnable_docu_embed=False, prop_is_logit=False):
         super().__init__()
         self.bert = bert
         self.learnable_docu_embed = learnable_docu_embed
@@ -108,23 +108,39 @@ class CausalBert(nn.Module):
             self.docu_embed = nn.Linear(max_length, 1)
 
         # G head: logit-linear mapping
-        self.g = nn.Sequential(*[nn.Linear(embed_out, 1), nn.Sigmoid()])
+        seq = [nn.Linear(embed_out, 1)]
+        if not prop_is_logit:
+            seq += [nn.Sigmoid()]
+        self.g = nn.Sequential(*seq)
 
         # Q_1 and Q_0 heads: two-hidden layers mapping.
+        seq = [nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+                    nn.ReLU(inplace=True), nn.Linear(hidden_size, 1)]
         if binary_response:
-            self.q1 = nn.Sequential(
-                *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-                  nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-            self.q0 = nn.Sequential(
-                *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-                  nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-        else:
-            self.q1 = nn.Sequential(
-                *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-                  nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
-            self.q0 = nn.Sequential(
-                *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-                  nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
+            seq += [nn.Sigmoid()]
+        self.q1 = nn.Sequential(*seq)
+        
+        seq = [nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+                    nn.ReLU(inplace=True), nn.Linear(hidden_size, 1)]
+        if binary_response:
+            seq += [nn.Sigmoid()]
+        self.q0 = nn.Sequential(*seq)
+        
+        self.prop_is_logit = prop_is_logit
+#         if binary_response:
+#             self.q1 = nn.Sequential(
+#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
+#             self.q0 = nn.Sequential(
+#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
+#         else:
+#             self.q1 = nn.Sequential(
+#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
+#             self.q0 = nn.Sequential(
+#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
+#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
 
     def forward(self, tokens):
         embed_token = self.bert(tokens)[0]
