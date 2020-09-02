@@ -1,6 +1,5 @@
 ## Highlighted Milestone:
 
-- [ ] ~Use multiple GPUs to train a large model like Bert-base.~
 - [ ] Add better ways to encode daily token sequence, e.g. via Deep set.
 - [ ] Better ways to handle long length documents, e.g. Transformer XL.
 - [x] Get comparable model, e.g., Causal-Bow to show validity and effectiness of Causal-Bert.
