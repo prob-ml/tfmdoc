@@ -1,6 +1,9 @@
 import os
 import sys
+import time
 import argparse
+import random
+
 from tqdm.auto import tqdm, trange
 
 curPath = os.path.abspath(os.path.dirname(__file__))
@@ -10,7 +13,8 @@ sys.path.append(rootPath)
 import numpy as np
 import torch
 import pandas as pd
-import random
+import matplotlib.pyplot as plt
+
 from torch.distributions.binomial import Binomial
 from torch.distributions.bernoulli import Bernoulli
 import torch.nn as nn
@@ -23,6 +27,9 @@ from tokens import WordLevelBertTokenizer
 from vocab import create_vocab
 from data import CausalBertDataset, MLMDataset
 from utils import DATA_PATH, make_dirs
+
+
+TRAINED_BERT = '/nfs/turbo/lsa-regier/bert-results/results/behrt/MLM/merged/unidiag/checkpoint-6018425/'
 
 
 class CausalBOW(nn.Module):
@@ -157,9 +164,11 @@ class CausalBert(nn.Module):
         return self.g(embed_docu), self.q1(embed_docu), self.q0(embed_docu)
 
 
-def true_casual_effect(data_loader, effect='ate', estimation='Q'):
+def true_casual_effect(data_loader, effect='ate', estimation='q'):
+    assert effect == 'ate' and estimation == 'q', f'unallowed effect/estimation: {effect}/{estimation}'
+    
     dataset = data_loader.dataset
-
+    
     Q1 = dataset.treatment * dataset.response + (1 - dataset.treatment) * dataset.pseudo_response
     Q1 = Q1.cpu().data.numpy().squeeze()
 
@@ -167,62 +176,198 @@ def true_casual_effect(data_loader, effect='ate', estimation='Q'):
     Q0 = Q0.cpu().data.numpy().squeeze()
 
     treatment = dataset.treatment.cpu().data.numpy().squeeze()
-    prop_scores = dataset.prop_score.cpu().data.numpy().squeeze()
-
+    prop_scores = dataset.prop_scores.cpu().data.numpy().squeeze()
+    
     if estimation == 'q':
         if effect == 'att':
             phi = (treatment * (Q1 - Q0))
             return phi.sum() / treatment.sum()
         elif effect == 'ate':
             return (Q1 - Q0).mean()
-
+        
     elif estimation == 'plugin':
         phi = (prop_scores * (Q1 - Q0)).mean()
         if effect == 'att':
             return phi / treatment.mean()
-        elif effect == 'ate':
+        elif effect == 'ate': 
             return phi
 
+        
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-def est_casual_effect(data_loader, causal_bert, effect='ate', estimation='Q'):
+        
+def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate=True, **kwargs):
     # We use `real_treatment` here to emphasize the estimations use real instead of estimated treatment.
-    real_response, real_treatment = [], []
+    real_response, real_treatment, real_prop_scores = [], [], []
     prop_scores, Q1, Q0 = [], [], []
+    
+    if evaluate:
+        p_loss = kwargs.get('g_loss')
+        q_loss = kwargs.get('q_loss')
+        p_loss_test, q1_loss_test, q0_loss_test  = [], [], []
+        
+    model.eval()
+    for idx, (tokens, treatment, response, real_prop_score) in enumerate(data_loader):
+        real_response.append(response.cpu().data.numpy().squeeze())
+        real_treatment.append(treatment.cpu().data.numpy().squeeze())
+        real_prop_scores.append(real_prop_score.cpu().data.numpy().squeeze())
 
-    causal_bert.eval()
-    with torch.no_grad():
-        for idx, (tokens, treatment, response) in enumerate(data_loader):
-            real_response.append(response.cpu().data.numpy().squeeze())
-            real_treatment.append(treatment.cpu().data.numpy().squeeze())
+        prop_score, q1, q0 = model(tokens)
+        
+        prop_scores.append(prop_score.cpu().data.numpy().squeeze())
+        Q1.append(q1.cpu().data.numpy().squeeze())
+        Q0.append(q0.cpu().data.numpy().squeeze())
+        
+        # Evaulate loss
+        if evaluate:
+            p_loss_val  = p_loss(prop_score, treatment)
+            p_loss_test.append(p_loss_val.item())
+            
+            if len(response[treatment == 1]) > 0:
+                q1_loss_val = q_loss(q1[treatment==1], response[treatment==1])
+                q1_loss_test.append(q1_loss_val.item())
 
-            prop_score, q1, q0 = causal_bert(tokens)
+            if len(response[treatment == 0]) > 0:
+                q0_loss_val = q_loss(q0[treatment==0], response[treatment==0])
+                q0_loss_test.append(q0_loss_val.item())            
+               
+    p_loss = np.array(p_loss_test).mean() if evaluate else None
+    q1_loss = np.array(q1_loss_test).mean() if evaluate else None
+    q0_loss = np.array(q0_loss_test).mean() if evaluate else None
 
-            prop_scores.append(prop_score.cpu().data.numpy().squeeze())
-            Q1.append(q1.cpu().data.numpy().squeeze())
-            Q0.append(q0.cpu().data.numpy().squeeze())
+    Q1 = np.concatenate(Q1, axis=0)
+    Q0 = np.concatenate(Q0, axis=0)
+    prop_scores = np.concatenate(prop_scores, axis=0)
+    
+    real_response = np.concatenate(real_response, axis=0)
+    real_treatment = np.concatenate(real_treatment, axis=0)
+    real_prop_scores = np.concatenate(real_prop_scores, axis=0)
+    
+    # Evaluate accuracy.
+    if evaluate:
+        dataset = data_loader.dataset
+        
+        real_q1_prob = sigmoid(dataset.alpha + dataset.beta * (real_prop_scores - dataset.c) + dataset.i)
+        real_q0_prob = sigmoid(dataset.beta * (real_prop_scores - dataset.c) + dataset.i)
+        thre = (real_q1_prob + real_q0_prob) / 2
 
-        real_response = np.concatenate(real_response, axis=0)
-        real_treatment = np.concatenate(real_treatment, axis=0)
-
-        Q1 = np.concatenate(Q1, axis=0)
-        Q0 = np.concatenate(Q0, axis=0)
-        prop_scores = np.concatenate(prop_scores, axis=0)
-
-    causal_bert.train()
+    # prop score: real and estimated must locate one the same side of 0.5.
+    prop_accu = (1. * (((real_prop_scores - .5) * (prop_scores - .5)) > 0.)).mean() if evaluate else None
+    # q: estimate is more close to corresponding real value than the other.
+    q1_accu = (1. * (dataset.alpha > 0) * (Q1 > thre)).mean() if evaluate else None
+    q0_accu = (1. * (dataset.alpha > 0) * (Q0 < thre)).mean() if evaluate else None
 
     if estimation == 'q':
         if effect == 'att':
             phi = (real_treatment * (Q1 - Q0))
-            return phi.sum() / real_treatment.sum()
+            effect = phi.sum() / real_treatment.sum()
         elif effect == 'ate':
-            return (Q1 - Q0).mean()
+            effect = (Q1 - Q0).mean()
 
     elif estimation == 'plugin':
         phi = (prop_scores * (Q1 - Q0)).mean()
         if effect == 'att':
-            return phi / real_treatment.mean()
+            effect = phi / real_treatment.mean()
         elif effect == 'ate':
-            return phi
+            effect = phi
+    
+    model.train()
+
+    return effect, p_loss, q1_loss, q0_loss, prop_accu, q1_accu, q0_accu
+
+
+def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epoch, sep_loss=True):
+    train_loss_hist_p = np.array(train_loss_hist['p'])
+    train_loss_hist_q1 = np.array(train_loss_hist['q1'])
+    train_loss_hist_q0 = np.array(train_loss_hist['q0'])
+
+    test_loss_hist_p = np.array(test_loss_hist['p'])
+    test_loss_hist_q1 = np.array(test_loss_hist['q1'])
+    test_loss_hist_q0 = np.array(test_loss_hist['q0'])
+    
+    est_effect = np.array(est_effect)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    if sep_loss:
+        lns_p = ax.plot(np.arange(epoch), test_loss_hist_p, label='Eval loss: prop_score', color='darkgreen')
+        lns_q = ax.plot(np.arange(epoch), test_loss_hist_q1 + test_loss_hist_q0,  label='Eval loss: q1+q0', color='blue')
+        ax_r = plt.twinx()
+        lns_est_eff = ax_r.plot(np.arange(epoch), est_effect, color='coral', label='Estimate ATE', ls='--')
+        lns_real_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * real, color='red', ls=':', label='Real ATE')
+        lns_unad_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * unadjust, color='green', ls=':', label='Unadjusted ATE')
+
+        lns = lns_p + lns_q + lns_est_eff + lns_real_eff + lns_unad_eff
+        labs = [l.get_label() for l in lns]
+        ax_r.legend(lns, labs, loc=0)
+        ax.set_ylabel('Eval loss')
+        ax_r.set_ylabel('ATEs')
+    
+    else:
+        lns_l = ax.plot(np.arange(epoch), test_loss_hist_p + test_loss_hist_q1 + test_loss_hist_q0, label='Eval loss')
+        ax_r = plt.twinx()
+        lns_est_eff = ax_r.plot(np.arange(epoch), est_effect, color='coral', label='Estimate ATE', ls='--')
+        lns_real_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * real, color='red', ls=':', label='Real ATE')
+        lns_unad_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * unadjust, color='green', ls=':', label='Unadjusted ATE')
+
+        lns = lns_l + lns_est_eff + lns_real_eff + lns_unad_eff
+        labs = [l.get_label() for l in lns]
+        ax_r.legend(lns, labs, loc=0)
+        ax.set_ylabel('Eval loss')
+        ax_r.set_ylabel('ATEs')
+        
+    plt.show()
+    
+    
+
+def load_data(alpha, beta, c=0.2, i=0, bsz=256, train_group=[1], test_group=[9], device='cpu'):
+    if isinstance(train_group, int):
+        train_group = [train_group]
+    
+    if isinstance(test_group, int):
+        test_group = [test_group]
+    
+    assert not set(train_group).intersection(set(test_group)), 'Error: train group and test group have overlaps...'
+    
+    vocab = create_vocab(merged=True, uni_diag=True)
+    tokenizer = WordLevelBertTokenizer(vocab)
+    
+    start = time.time()
+    trainset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
+                                 alpha=alpha, beta=beta, c=c, i=i, 
+                                 group=train_group, max_length=512, min_length=10,
+                                 truncate_method='first', device=device, seed=1)
+
+    print(f'Load training set in {(time.time() - start):.2f} sec')
+
+    start = time.time()
+    testset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
+                                alpha=alpha, beta=beta, c=c, i=i, 
+                                group=[9], max_length=512, min_length=10,
+                                truncate_method='first', device=device)
+
+    print(f'Load validation set in {(time.time() - start):.2f} sec')
+    
+    train_loader = DataLoader(trainset, batch_size=bsz, drop_last=True, shuffle=True)
+    test_loader = DataLoader(testset, batch_size=bsz, drop_last=True, shuffle=True)
+    
+    return train_loader, test_loader
+
+
+def load_model(model, hidden_size, prop_is_logit=True, device='cpu'):
+    model = model.lower()
+    assert model in ['bow', 'bert'], f'Error: Invalid model argument: {model}...'
+    bert = BertForMaskedLM.from_pretrained(TRAINED_BERT)
+        
+    if model == 'bow':
+        token_embed = bert.get_input_embeddings()
+        model = CausalBOW(token_embed, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
+    else:
+        model = CausalBert(bert, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=True)
+        
+    return model.to(device)
 
 
 def causal_bert_task(args):
@@ -313,6 +458,8 @@ def causal_bert_task(args):
     print('Finish training...')
 
     # With only 3 groups to train.
+
+
 
 
 if __name__ == '__main__':
