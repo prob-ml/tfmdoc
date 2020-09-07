@@ -203,7 +203,7 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     prop_scores, Q1, Q0 = [], [], []
     
     if evaluate:
-        p_loss = kwargs.get('g_loss')
+        p_loss = kwargs.get('p_loss')
         q_loss = kwargs.get('q_loss')
         p_loss_test, q1_loss_test, q0_loss_test  = [], [], []
         
@@ -358,14 +358,15 @@ def load_data(alpha, beta, c=0.2, i=0, bsz=256, train_group=[1], test_group=[9],
 
 def load_model(model, hidden_size, prop_is_logit=True, device='cpu'):
     model = model.lower()
-    assert model in ['bow', 'bert'], f'Error: Invalid model argument: {model}...'
-    bert = BertForMaskedLM.from_pretrained(TRAINED_BERT)
+    assert model in ['bow', 'bert'], f'Error: Invalid model argument: {model}, should be one of [bow, bert]...'
+    
+    bert = BertModel.from_pretrained(TRAINED_BERT)
         
     if model == 'bow':
         token_embed = bert.get_input_embeddings()
         model = CausalBOW(token_embed, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
     else:
-        model = CausalBert(bert, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=True)
+        model = CausalBert(bert, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
         
     return model.to(device)
 
