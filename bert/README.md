@@ -37,8 +37,6 @@ python3 mlm.py \
 
 TODO
 
-- [ ] Fine-tune Causal Bert
-
 - [ ] Fine-tune with other application
 
   

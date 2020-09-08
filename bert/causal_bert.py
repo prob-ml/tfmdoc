@@ -22,6 +22,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from transformers import DataCollatorForLanguageModeling, BertForMaskedLM, BertModel
 from transformers import Trainer, TrainingArguments
+from transformers import get_linear_schedule_with_warmup, AdamW
 
 from tokens import WordLevelBertTokenizer
 from vocab import create_vocab
@@ -103,7 +104,8 @@ class CausalBert(nn.Module):
     Use a Bert last hidden-state embedding architecture,
     see discussion here for more details: https://github.com/huggingface/transformers/issues/1950
     """
-    def __init__(self, bert, hidden_size=256, max_length=512, binary_response=True, learnable_docu_embed=False, prop_is_logit=False):
+    def __init__(self, bert, hidden_size=256, max_length=512, binary_response=True, learnable_docu_embed=False,
+                 prop_is_logit=False):
         super().__init__()
         self.bert = bert
         self.learnable_docu_embed = learnable_docu_embed
@@ -277,7 +279,7 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     return effect, p_loss, q1_loss, q0_loss, prop_accu, q1_accu, q0_accu
 
 
-def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epoch, sep_loss=True):
+def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epoch, sep_loss=True, save_path=None):
     train_loss_hist_p = np.array(train_loss_hist['p'])
     train_loss_hist_q1 = np.array(train_loss_hist['q1'])
     train_loss_hist_q0 = np.array(train_loss_hist['q0'])
@@ -317,7 +319,9 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epo
         ax_r.legend(lns, labs, loc=0)
         ax.set_ylabel('Eval loss')
         ax_r.set_ylabel('ATEs')
-        
+
+    if save_path:
+        plt.savefig(save_path)
     plt.show()
     
     
@@ -371,113 +375,17 @@ def load_model(model, hidden_size, prop_is_logit=True, device='cpu'):
     return model.to(device)
 
 
-def causal_bert_task(args):
-    merged = (args.data == 'merged')
-
-    print('Start: collect vocab of EMR.')
-    vocab = create_vocab(merged=merged, uni_diag=args.unidiag)
-    print('Finish: collect vocab of EMR.')
-    print('*' * 200)
-
-    print('Start: load word level tokenizer.')
-    tokenizer = WordLevelBertTokenizer(vocab)
-    print(f'Finish: load word level tokenizer. Vocab size: {len(tokenizer)}.')
-    print('*' * 200)
-
-    print('Start: load data (and encode to token sequence.)')
-
-    if args.dev:
-        train_group = list(range(3))
-    else:
-        train_group = list(range(9))
-
-    trainset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                 alpha=args.alpha, beta=args.beta, c=args.c, i=args.i,
-                                 group=train_group, max_length=512, min_length=10, truncate_method='first',
-                                 device=device)
-    testset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                 alpha=args.alpha, beta=args.beta, c=args.c, i=args.i,
-                                 group=[9], max_length=512, min_length=10, truncate_method='first',
-                                 device=device)
-
-    train_loader = DataLoader(trainset, batch_size=args.bsz, drop_last=True, shuffle=True)
-    test_loader = DataLoader(testset, batch_size=args.bsz, drop_last=True, shuffle=True)
-    print('Finish: load data (and encode to token sequence.)')
-    print('*' * 200)
-
-    bert = BertModel.from_pretrained(trained_bert).to(device)
-    causal_bert = CausalBert(bert, learnable_docu_embed=False).to(device)
-
-    optimizer = torch.optim.Adam(causal_bert.parameters(), lr=5e-5)
-    q_loss = nn.BCELoss()
-    prop_score_loss = nn.BCELoss()
-
-    print('Finish: create model.')
-    real_att_q = true_casual_effect(test_loader, effect, estimation)
-    est_att_q = est_casual_effect(test_loader, causal_bert, effect, estimation)
-    print(f'Real: [effect: {effect}], [estimation: {estimation}], [value: {real_att_q:.5f}]')
-    print(f'Before training: [effect: {effect}], [estimation: {estimation}], [value: {est_att_q:.5f}]')
-    print('*' * 200)
-
-    for e in trange(1, args.epochs + 1, desc='Epoch', disable=False):
-        causal_bert.train()
-
-        rg_loss, rq1_loss, rq0_loss = [0.] * 3
-        epoch_iterator = tqdm(train_loader, desc="Iteration", disable=False)
-        for step, (tokens, treatment, response) in enumerate(epoch_iterator):
-            optimizer.zero_grad()
-            prop_score, q1, q0 = causal_bert(tokens)
-
-            g_loss = prop_score_loss(prop_score, treatment)
-            g_loss.backward(retain_graph=True)
-            rg_loss += g_loss.item()
-
-            if len(q1[treatment == 1]) > 0:
-                q1_loss = q_loss(q1[treatment == 1], response[treatment == 1])
-                q1_loss.backward(retain_graph=True)
-                rq1_loss += q1_loss.item()
-
-            if len(q1[treatment == 0]) > 0:
-                q0_loss = q_loss(q0[treatment == 0], response[treatment == 0])
-                q0_loss.backward()
-                rq0_loss += q0_loss.item()
-
-            optimizer.step()
-
-            epoch_iterator.set_description('Epoch {}/{}'.format(e, args.epochs))
-            # epoch_iterator.set_postfix(g_loss='{:.5f}'.format(rg_loss / (step + 1)),
-            #     q1_loss='{:.5f}'.format(rq1_loss / (step + 1)), q0_loss='{:.5f}'.format(rq0_loss / (step + 1)), )
-
-            epoch_iterator.set_postfix(g_loss='{:.5f}'.format(g_loss.item()),
-                q1_loss='{:.5f}'.format(q1_loss.item()), q0_loss='{:.5f}'.format(q0_loss.item()), )
-
-        print('Finsh Epoch {}/{}'.format(e, args.epochs) + f'[effect: {effect}], [estimation: {estimation}], ' +
-              # 'train_effect: {:.5f}, '.format(est_casual_effect(train_loader, causal_bert, effect, estimation)) +
-            'test_effect: {:.5f}.'.format(est_casual_effect(test_loader, causal_bert, effect, estimation)))
-        rg_loss, rq1_loss, rq0_loss = [0.] * 3
-
-    print('Finish training...')
-
-    # With only 3 groups to train.
-
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, choices=['daily', 'merged'], default='merged')
-    parser.add_argument('--diag', type=str, choices=['uni', 'raw'], default='uni',
-                        help='Which tokens to use: uni for Uni-diag code, and raw for raw data.')
-    # parser.add_argument('--create-vocab', action='stro, choices=['daily', 'merged'], default='merged')
-    parser.add_argument('--truncate', type=str, choices=['first', 'last', 'random'], default='first')
-    parser.add_argument('--min-length', type=int, default=10, help='Min length of a sequence to be used in Bert')
-    parser.add_argument('--max-length', type=int, default=512, help='Max length of a sequence used in Bert')
-    parser.add_argument('--bsz', type=int, default=16, help='Batch size in training')
-    parser.add_argument('--epochs', type=int, default=10, help='Epoch in production version')
-    parser.add_argument('--force-new', action='store_true', default=False, help='Force to train a new MLM.')
-    parser.add_argument('--model', type=str, choices=['dev', 'behrt', 'med-bert'], default='behrt',
-                        help='Which bert to use')
+    parser.add_argument('--model', type=str, default='bow', choices=['bow', 'bert'], help='Which Causal Model to use.')
 
+    parser.add_argument('--hidden_size', type=int, default=64, help='Batch size in training')
+    parser.add_argument('--bsz', type=int, default=16, help='Batch size in training')
+    parser.add_argument('--epoch', type=int, default=50, help='Epoch in production version')
+    parser.add_argument('--lr', type=float, default=5e-6, help='Epoch in production version')
+
+    parser.add_argument('--dataset', type=str, choices=['med', 'low', 'high', 'med2'], 
+                        default=None, help='Which pre specified dataset to use')
     parser.add_argument('--alpha', type=float, default=.25, help='')
     parser.add_argument('--beta', type=float, default=1, help='')
     parser.add_argument('--c', type=float, default=.2, help='')
@@ -487,34 +395,145 @@ if __name__ == '__main__':
     parser.add_argument('--estimation', type=str, default='q', choices=['q', 'plugin'], help='Estimation method')
 
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
-    parser.add_argument('--no-eval', action='store_true', default=False,
-                        help='Do not evaluate during training.')
-
-    parser.add_argument('--dev', action='store_true', help='Dev mode only use 3 groups in training.')
 
     args = parser.parse_args()
-
-    effect = args.effect
-    estimation = args.estimation
-
-    args.unidiag = (args.diag == 'uni')
-    args.eval_when_train = not args.no_eval
-    trained_bert = '/nfs/turbo/lsa-regier/bert-results/results/behrt/MLM/merged/unidiag/checkpoint-4574003/'
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
     print(f'Prepare: check process on cuda: {args.cuda}...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    effect = args.effect.lower()
+    estimation = args.estimation.lower()
+    assert effect in ['att', 'ate'], f'Wrong effect: {effect}...'
+    assert estimation in ['q', 'plugin'], f'Wrong estimation: {estimation}...'
 
-    result_path = os.path.join(curPath, 'results', args.model, 'MLM', args.data, 'unidiag' if args.unidiag else 'original' )
-    trained_model = os.path.join(curPath, 'trained', args.model, 'MLM', 'unidiag' if args.unidiag else 'original')
-    make_dirs(result_path, trained_model)
-    print(f'Prepare: check result at {result_path}.')
+    if args.dataset:
+        if args.dataset == 'low':
+            alpha = 0.25
+            beta = 1.
+            c = 0.2
+            i = 0.
+        elif args.dataset == 'med1':
+            alpha = 0.25
+            beta = 5.
+            c = 0.2
+            i = 0.
+        elif args.dataset == 'med2':
+            alpha = 0.5
+            beta = 5.
+            c = 0.2
+            i = 0.
+        elif args.dataset == 'high':
+            alpha = 0.75
+            beta = 25.
+            c = 0.2
+            i = 0.
+    else:
+        alpha = args.alpha
+        beta = args.beta
+        c = args.c
+        i = args.i
+    
+    print(f'Start: create dataset: [alpha: {alpha}], [beta: {beta}]')
 
-    assert args.model in ['dev', 'behrt', 'med-bert'], f'Not supported for model config: {args.model} yet...'
-    if args.model == 'med-bert':
-        raise UserWarning('Configuration of Med-Bert from the paper is still mysterious, '
-                          'the final result may be unexpected...')
-    causal_bert_task(args)
+    if args.model == 'bow' and args.bsz < 256:
+        print(f'Suggestion: current bsz is {args.bsz}, which may be too small, we change it to 256 by default.')
+        args.bsz = 256
+    train_loader, test_loader = load_data(alpha, beta, c, i, args.bsz, device=device)
+    
+    real_att_q = true_casual_effect(test_loader)
 
-    print('Finish all...')
+    print(f'Real: [effect: ate], [estimation: q], [value: {real_att_q:.5f}]')
+    unadjust = (test_loader.dataset.response[test_loader.dataset.treatment == 1].mean() -
+                test_loader.dataset.response[test_loader.dataset.treatment == 0].mean()).item()
+    print(f'Unadjusted: [value: {unadjust:.4f}]')
+
+    model = load_model(model=args.model, hidden_size=args.hidden_size, device=device)
+    pos_portion = train_loader.dataset.treatment.mean()
+    pos_weight = (1 - pos_portion) / pos_portion
+
+    epoch_iter = len(train_loader)
+    total_steps = args.epoch * epoch_iter
+
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-8)
+
+    q_loss = nn.BCELoss()
+    prop_score_loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    
+    train_loss_hist_p, train_loss_hist_q1, train_loss_hist_q0 = [], [], []
+    test_loss_hist_p, test_loss_hist_q1, test_loss_hist_q0 = [], [], []
+    est_effect, prop_score_hist = [], []
+
+    print('Start training...')
+    for e in range(1, args.epoch + 1):
+        model.train()
+        start = time.time()
+
+        p_loss_train, q1_loss_train, q0_loss_train  = [], [], []
+        for idx, (tokens, treatment, response, _) in enumerate(train_loader):
+            optimizer.zero_grad()
+            prop_score, q1, q0 = model(tokens)
+
+            loss_p = prop_score_loss(prop_score, treatment)
+            loss = loss_p
+
+            p_loss_train.append(loss_p.item())
+            if len(response[treatment == 1]) > 0:
+                loss_q1 = q_loss(q1[treatment==1], response[treatment==1])
+                loss += loss_q1
+                q1_loss_train.append(loss_q1.item())
+
+            if len(response[treatment == 0]) > 0:
+                loss_q0 = q_loss(q0[treatment==0], response[treatment==0])
+                loss += loss_q0
+                q0_loss_train.append(loss_q0.item())
+
+            loss.backward()
+            optimizer.step()
+
+        run_idx = idx
+
+        # Evaluation.
+        p_loss_train = np.array(p_loss_train).mean()
+        q1_loss_train = np.array(q1_loss_train).mean()
+        q0_loss_train = np.array(q0_loss_train).mean()
+
+        train_effect, _, _, _, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
+        test_effect, p_loss_test, q1_loss_test, q0_loss_test, prop_accu_test, q1_accu_test, q0_accu_test = \
+            est_casual_effect(test_loader, model, effect, estimation, evaluate=True,
+                              p_loss=prop_score_loss, q_loss=q_loss)
+
+        train_loss_hist_p.append(p_loss_train)
+        train_loss_hist_q1.append(q1_loss_train)
+        train_loss_hist_q0.append(q0_loss_train)
+
+        test_loss_hist_p.append(p_loss_test)
+        test_loss_hist_q1.append(q1_loss_test)
+        test_loss_hist_q0.append(q0_loss_test)
+
+        est_effect.append(test_effect)
+    
+
+        print(f'''Finish: epoch: {e} / {args.epoch}, time cost: {(time.time() - start):.2f} sec, 
+              Loss: [Train: p = {p_loss_train:.5f}, q = {(q1_loss_train + q0_loss_train):.5f}], 
+              Loss: [Test: p = {p_loss_test:.5f}, q = {(q1_loss_test + q0_loss_test):.5f}],
+              Effect: [{effect}-{estimation}], [train: {train_effect:.5f}], [test: {test_effect:.5f}]''')
+        print('*'* 80)
+        start = time.time()
+
+    train_loss_hist = dict(p=train_loss_hist_p, q1=train_loss_hist_q1, q0=train_loss_hist_q1)
+    test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0)
+
+    real = true_casual_effect(test_loader)
+
+    save_path = f'[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    save_path = save_path.replace('.', ',') + '.jpg'
+    result_path = os.path.join(curPath, 'causal-effect', 'results')
+    make_dirs(result_path)    
+    
+    save_path = os.path.join(result_path, save_path)
+    show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, args.epoch, save_path=save_path)
+
+    print('Finish training...')
