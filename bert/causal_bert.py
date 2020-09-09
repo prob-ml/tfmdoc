@@ -543,7 +543,7 @@ if __name__ == '__main__':
     else:
         smoothed_window = max(args.epoch // 10, 1)
     # TODO: A more advanced way: automatically choose the loss starts to become flat, smoothed the remaining part.
-    smmothed_est_effect = np.array(test_effect[-smoothed_window:]).mean()
+    smmothed_est_effect = np.array(est_effect[-smoothed_window:]).mean()
 
     print('*' * 50 + 'Final result' + '*' * 50)
     print(f"""Real: [effect: ate], [estimation: q], [value: {real_att_q:.5f}],
