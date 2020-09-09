@@ -9,7 +9,7 @@
 
 ## Updates
 
-###### 2020/09/08: create scripts for universe_causal_model
+#### 2020/09/08: create scripts for universe_causal_model
 
 To run the C-Bert or C-Bow, use the below cmd. For different model and dataset, please change `--model bow/bert` and `--dataset low/med/med2/high`, **please remember to change the log file name as well.**
 ```bash
@@ -26,8 +26,9 @@ Here are explicit explanations of some basic terms we will use:
   - In other usages: it may refer to fine tune the whole Bert with other applications. 
 - *Bert-base*: the **cased** 12-layer, 768-hidden, 12-heads, 110M parameters, note: we didn't explicitly transforming all characters to lower case currently(2020/07/16). 
 
+## Overview of Causal model.
 
-## Overview of the project
+## Overview of MLM.
 
 There are several main scripts:
 
