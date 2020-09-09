@@ -393,7 +393,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--effect', type=str, default='ate', choices=['ate', 'att'], help='Causal Effect')
     parser.add_argument('--estimation', type=str, default='q', choices=['q', 'plugin'], help='Estimation method')
-
+    parser.add_argument('--smoothed', type=int, default=None)
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
 
     args = parser.parse_args()
@@ -457,6 +457,7 @@ if __name__ == '__main__':
     total_steps = args.epoch * epoch_iter
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # TODO: different head may have different lr.
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-8)
 
     q_loss = nn.BCELoss()
@@ -514,7 +515,6 @@ if __name__ == '__main__':
         test_loss_hist_q0.append(q0_loss_test)
 
         est_effect.append(test_effect)
-    
 
         print(f'''Finish: epoch: {e} / {args.epoch}, time cost: {(time.time() - start):.2f} sec, 
               Loss: [Train: p = {p_loss_train:.5f}, q = {(q1_loss_train + q0_loss_train):.5f}], 
@@ -523,17 +523,29 @@ if __name__ == '__main__':
         print('*'* 80)
         start = time.time()
 
+    print('Finish training...')
+
     train_loss_hist = dict(p=train_loss_hist_p, q1=train_loss_hist_q1, q0=train_loss_hist_q1)
     test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0)
 
-    real = true_casual_effect(test_loader)
 
     save_path = f'[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     save_path = save_path.replace('.', ',') + '.jpg'
     result_path = os.path.join(curPath, 'causal-effect', 'results')
-    make_dirs(result_path)    
-    
+    make_dirs(result_path)
     save_path = os.path.join(result_path, save_path)
+
+    real = true_casual_effect(test_loader)
     show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, args.epoch, save_path=save_path)
 
-    print('Finish training...')
+    if args.smoothed:
+        smoothed_window = args.smoothed
+    else:
+        smoothed_window = max(args.epoch // 10, 1)
+    # TODO: A more advanced way: automatically choose the loss starts to become flat, smoothed the remaining part.
+    smmothed_est_effect = np.array(test_effect[-smoothed_window:]).mean()
+
+    print('*' * 50 + 'Final result' + '*' * 50)
+    print(f"""Real: [effect: ate], [estimation: q], [value: {real_att_q:.5f}],
+              Unadjusted: [value: {unadjust:.4f}],
+              Smoothed: [value: {smmothed_est_effect:.4f}], [window: {smoothed_window}]...""")
