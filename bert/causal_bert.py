@@ -414,7 +414,7 @@ if __name__ == '__main__':
             beta = 1.
             c = 0.2
             i = 0.
-        elif args.dataset == 'med1':
+        elif args.dataset == 'med':
             alpha = 0.25
             beta = 5.
             c = 0.2

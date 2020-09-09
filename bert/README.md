@@ -7,6 +7,15 @@
 - [x] Practical guide for training Bert-base on a Single GPU GTX 2080 Ti with 11 GB memory.
 - [x] A runable pipeline for Pre-train Bert-base on EMR data.
 
+## Updates
+
+###### 2020/09/08: create scripts for universe_causal_model
+
+To run the C-Bert or C-Bow, use the below cmd. For different model and dataset, please change `--model bow/bert` and `--dataset low/med/med2/high`, **please remember to change the log file name as well.**
+```bash
+nohup python3 -u -m causal_bert --dataset low --cuda 7 --model bert --epoch 30 > cbert_low.log &
+```
+
 ## Term explanation
 
 Here are explicit explanations of some basic terms we will use:
@@ -16,6 +25,7 @@ Here are explicit explanations of some basic terms we will use:
   - In Causal-Bert, it refers to fine tune the layers in Bert producing the contextual embeddings, and three heads in Dragonnet.
   - In other usages: it may refer to fine tune the whole Bert with other applications. 
 - *Bert-base*: the **cased** 12-layer, 768-hidden, 12-heads, 110M parameters, note: we didn't explicitly transforming all characters to lower case currently(2020/07/16). 
+
 
 ## Overview of the project
 
@@ -40,7 +50,6 @@ TODO
 - [ ] Fine-tune with other application
 
   
-
 Useful tips: 
 
 - In the cmd, you only need to include parameters which you want to use other values than default. For example, if you want to train a Bert-base on `CUDA 5` with `max-length 256`, just run `python3 mlm.py --cuda 5 --max-length 256`. 
