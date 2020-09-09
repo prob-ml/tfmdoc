@@ -46,11 +46,6 @@ python3 mlm.py \
 	--cuda '4' # or, '4,5,6,7' to allow Bert see GPU 4~7.
 ```
 
-TODO
-
-- [ ] Fine-tune with other application
-
-  
 Useful tips: 
 
 - In the cmd, you only need to include parameters which you want to use other values than default. For example, if you want to train a Bert-base on `CUDA 5` with `max-length 256`, just run `python3 mlm.py --cuda 5 --max-length 256`. 
