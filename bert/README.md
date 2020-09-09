@@ -9,11 +9,11 @@
 
 ## Updates
 
-#### 2020/09/08: create scripts for universe_causal_model
+#### Last update: 2020/09/09: create scripts for universe_causal_model
 
 To run the C-Bert or C-Bow, use the below cmd. For different model and dataset, please change `--model bow/bert` and `--dataset low/med/med2/high`, **please remember to change the log file name as well.**
 ```bash
-nohup python3 -u -m causal_bert --dataset low --cuda 7 --model bert --epoch 30 > cbert_low.log &
+nohup python3 -u -m causal_bert --dataset low --cuda 7 --model bert --epoch 30 --smoothed 5 > cbert_low.log &
 ```
 
 ## Term explanation
