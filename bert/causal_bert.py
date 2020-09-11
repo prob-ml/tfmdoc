@@ -324,9 +324,8 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epo
         plt.savefig(save_path)
     plt.show()
     
-    
 
-def load_data(alpha, beta, c=0.2, i=0, bsz=256, train_group=[1], test_group=[9], device='cpu'):
+def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_group=[9], device='cpu'):
     if isinstance(train_group, int):
         train_group = [train_group]
     
@@ -340,23 +339,30 @@ def load_data(alpha, beta, c=0.2, i=0, bsz=256, train_group=[1], test_group=[9],
     
     start = time.time()
     trainset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                 alpha=alpha, beta=beta, c=c, i=i, 
+                                 alpha=alpha, beta=beta, offset_t=offset_t, offset_p=offset_p,
                                  group=train_group, max_length=512, min_length=10,
                                  truncate_method='first', device=device, seed=1)
 
     print(f'Load training set in {(time.time() - start):.2f} sec')
+    train_prop = trainset.prop_scores
+    print(f'Training set: [treated: {(trainset.treatment.mean().item()):.4f}], '
+          f'[prop scores counts: {(((train_prop == 0.8) * 1.0).mean().item()):.4f}]')
 
     start = time.time()
     testset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                alpha=alpha, beta=beta, c=c, i=i, 
+                                alpha=alpha, beta=beta, offset_t=offset_t, offset_p=offset_p,
                                 group=[9], max_length=512, min_length=10,
                                 truncate_method='first', device=device)
 
     print(f'Load validation set in {(time.time() - start):.2f} sec')
-    
+    test_prop = testset.prop_scores
+    print(f'Testing set: [treated: {(testset.treatment.mean().item()):.4f}], '
+          f'[prop scores counts: {(((test_prop == 0.8) * 1.0).mean().item()):.4f}]')
+
     train_loader = DataLoader(trainset, batch_size=bsz, drop_last=True, shuffle=True)
     test_loader = DataLoader(testset, batch_size=bsz, drop_last=True, shuffle=True)
-    
+
+    print('*' * 100)
     return train_loader, test_loader
 
 
@@ -382,18 +388,26 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_size', type=int, default=64, help='Batch size in training')
     parser.add_argument('--bsz', type=int, default=16, help='Batch size in training')
     parser.add_argument('--epoch', type=int, default=50, help='Epoch in production version')
-    parser.add_argument('--lr', type=float, default=5e-6, help='Epoch in production version')
+    parser.add_argument('--lr', type=float, default=5e-6, help='learning rate')
 
-    parser.add_argument('--dataset', type=str, choices=['med', 'low', 'high', 'med2'], 
+    parser.add_argument('--dataset', type=str, choices=['low', 'med', 'med2', 'high'],
                         default=None, help='Which pre specified dataset to use')
-    parser.add_argument('--alpha', type=float, default=.25, help='')
-    parser.add_argument('--beta', type=float, default=1, help='')
-    parser.add_argument('--c', type=float, default=.2, help='')
-    parser.add_argument('--i', type=float, default=0, help='')
+    parser.add_argument('--alpha', type=float, default=.25,
+                        help='alpha: P(Y = 1) = sigma(alpha (ti - offset_t) + beta (gi - offset_p))')
+    parser.add_argument('--beta', type=float, default=1,
+                        help='alpha: P(Y = 1) = sigma(alpha (ti - offset_t) + beta (gi - offset_p))')
+    parser.add_argument('--offset_p', type=float, default=.2,
+                        help='alpha: P(Y = 1) = sigma(alpha (ti - offset_t) + beta (gi - offset_p))')
+    parser.add_argument('--offset_t', type=float, default=0.,
+                        help='alpha: P(Y = 1) = sigma(alpha (ti - offset_t) + beta (gi - offset_p))')
+    
+    parser.add_argument('--q1_loss_scale', type=float, default=1.0, help='Scale of q1 loss')
+    parser.add_argument('--q0_loss_scale', type=float, default=1.0, help='Scale of q0 loss')
+    parser.add_argument('--p_loss_scale', type=float, default=1.0, help='Scale of prop score loss.')
 
     parser.add_argument('--effect', type=str, default='ate', choices=['ate', 'att'], help='Causal Effect')
     parser.add_argument('--estimation', type=str, default='q', choices=['q', 'plugin'], help='Estimation method')
-    parser.add_argument('--smoothed', type=int, default=None)
+    parser.add_argument('--smoothed', type=int, default=None, help='How many epochs to use to smooth the result')
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
 
     args = parser.parse_args()
@@ -412,35 +426,35 @@ if __name__ == '__main__':
         if args.dataset == 'low':
             alpha = 0.25
             beta = 1.
-            c = 0.2
-            i = 0.
-        elif args.dataset == 'med':
+            offset_t = 0.
+            offset_p = 0.2
+        elif args.dataset == 'med1':
             alpha = 0.25
             beta = 5.
-            c = 0.2
-            i = 0.
+            offset_t = 0.
+            offset_p = 0.2
         elif args.dataset == 'med2':
             alpha = 0.5
             beta = 5.
-            c = 0.2
-            i = 0.
+            offset_t = 0
+            offset_p = 0.2
         elif args.dataset == 'high':
             alpha = 0.75
             beta = 25.
-            c = 0.2
-            i = 0.
+            offset_t = 0
+            offset_p = 0.2
     else:
         alpha = args.alpha
         beta = args.beta
-        c = args.c
-        i = args.i
+        offset_t = args.offset_t
+        offset_p = args.offset_p
     
-    print(f'Start: create dataset: [alpha: {alpha}], [beta: {beta}]')
+    print(f'Start: create dataset: [alpha: {alpha}], [beta: {beta}], [offset_t: {offset_t}], [offset_p: {offset_p}]...')
 
     if args.model == 'bow' and args.bsz < 256:
-        print(f'Suggestion: current bsz is {args.bsz}, which may be too small, we change it to 256 by default.')
+        print(f'Suggestion: current bsz is {args.bsz}, which may be too small, we change it to 256.')
         args.bsz = 256
-    train_loader, test_loader = load_data(alpha, beta, c, i, args.bsz, device=device)
+    train_loader, test_loader = load_data(alpha, beta, offset_t, offset_p, args.bsz, device=device)
     
     real_att_q = true_casual_effect(test_loader)
 
@@ -458,6 +472,9 @@ if __name__ == '__main__':
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # TODO: different head may have different lr.
+    if args.model == 'bert' and args.lr >= 5e-6:
+        print(f'Suggestion: current lr for causal-Bert is {args.lr}, which may be too large, we change it to 5e-7.')
+        args.lr = 5e-7
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-8)
 
     q_loss = nn.BCELoss()
@@ -472,23 +489,23 @@ if __name__ == '__main__':
         model.train()
         start = time.time()
 
-        p_loss_train, q1_loss_train, q0_loss_train  = [], [], []
+        p_loss_train, q1_loss_train, q0_loss_train = [], [], []
         for idx, (tokens, treatment, response, _) in enumerate(train_loader):
             optimizer.zero_grad()
             prop_score, q1, q0 = model(tokens)
 
             loss_p = prop_score_loss(prop_score, treatment)
-            loss = loss_p
+            loss = loss_p * args.p_loss_scale
 
             p_loss_train.append(loss_p.item())
             if len(response[treatment == 1]) > 0:
                 loss_q1 = q_loss(q1[treatment==1], response[treatment==1])
-                loss += loss_q1
+                loss += loss_q1 * args.q1_loss_scale
                 q1_loss_train.append(loss_q1.item())
 
             if len(response[treatment == 0]) > 0:
                 loss_q0 = q_loss(q0[treatment==0], response[treatment==0])
-                loss += loss_q0
+                loss += loss_q0 * args.q0_loss_scale
                 q0_loss_train.append(loss_q0.item())
 
             loss.backward()
@@ -527,7 +544,6 @@ if __name__ == '__main__':
 
     train_loss_hist = dict(p=train_loss_hist_p, q1=train_loss_hist_q1, q0=train_loss_hist_q1)
     test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0)
-
 
     save_path = f'[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     save_path = save_path.replace('.', ',') + '.jpg'

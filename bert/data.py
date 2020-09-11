@@ -109,8 +109,8 @@ class CausalBertDataset(Dataset):
                  truncate_method: str = 'first',
                  alpha: float = 0.25,
                  beta: float = 1.,
-                 c: float = 0.,
-                 i: float = 0.,
+                 offset_t: float = 0.,
+                 offset_p: float = 0.,
                  seed=2020,
                  ):
         
@@ -163,8 +163,8 @@ class CausalBertDataset(Dataset):
 
         self.alpha = alpha
         self.beta = beta
-        self.c = c
-        self.i = i
+        self.offset_t = offset_t
+        self.offset_p = offset_p
         
         self.response = self.generate_response(self.treatment, self.prop_scores)
         self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_scores)
@@ -192,7 +192,7 @@ class CausalBertDataset(Dataset):
         return score
 
     def generate_response(self, treatment, prop_scores):
-        prob = torch.sigmoid(self.alpha * treatment + self.beta * (prop_scores - self.c) + self.i)
+        prob = torch.sigmoid(self.alpha * (treatment - self.offset_t) + self.beta * (prop_scores - self.offset_p))
         return Binomial(1, prob).sample()
     
     def is_target(self, file):
