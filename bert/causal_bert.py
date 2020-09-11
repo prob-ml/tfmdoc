@@ -250,8 +250,8 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     if evaluate:
         dataset = data_loader.dataset
         
-        real_q1_prob = sigmoid(dataset.alpha + dataset.beta * (real_prop_scores - dataset.c) + dataset.i)
-        real_q0_prob = sigmoid(dataset.beta * (real_prop_scores - dataset.c) + dataset.i)
+        real_q1_prob = sigmoid(dataset.alpha * (1. - dataset.offset_t) + dataset.beta * (real_prop_scores - dataset.offset_p))
+        real_q0_prob = sigmoid(dataset.alpha * (0. - dataset.offset_t) + dataset.beta * (real_prop_scores - dataset.offset_p))
         thre = (real_q1_prob + real_q0_prob) / 2
 
     # prop score: real and estimated must locate one the same side of 0.5.
