@@ -13,7 +13,7 @@
 
 To run the C-Bert or C-Bow, use the below cmd. For different model and dataset, please change `--model bow/bert` and `--dataset low/med/med2/high`, **please remember to change the log file name as well.**
 ```bash
-nohup python3 -u -m causal_bert --cuda 7 --model bert --epoch 30 --smoothed 5 --alpha 0.5--beta 25--offset_p 0.2--offset_t 0--q1_loss_scale 1.0--q0_loss_scale 1.0 --p_loss_scale 1.0 --lr 5e-7 > cbert_low.log &
+nohup python3 -u -m causal_bert --cuda 7 --model bert --epoch 30 --smoothed 5 --alpha 0.5 --beta 25 --offset_p 0.2 --offset_t 0 --q1_loss_scale 1.0 --q0_loss_scale 1.0 --p_loss_scale 1.0 --lr 5e-7 > cbert_low.log &
 ```
 
 ## Term explanation
