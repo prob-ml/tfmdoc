@@ -14,6 +14,9 @@ import numpy as np
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.metrics import roc_auc_score
 
 from torch.distributions.binomial import Binomial
 from torch.distributions.bernoulli import Bernoulli
@@ -69,20 +72,6 @@ class CausalBOW(nn.Module):
         self.q0 = nn.Sequential(*seq)
         
         self.prop_is_logit = prop_is_logit
-#         if binary_response:
-#             self.q1 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                     nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-#             self.q0 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                     nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-#         else:
-#             self.q1 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                     nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
-#             self.q0 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                     nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
 
     def forward(self, tokens):
         embed_token = self.token_embed(tokens)
@@ -136,20 +125,6 @@ class CausalBert(nn.Module):
         self.q0 = nn.Sequential(*seq)
         
         self.prop_is_logit = prop_is_logit
-#         if binary_response:
-#             self.q1 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-#             self.q0 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), nn.Sigmoid()])
-#         else:
-#             self.q1 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
-#             self.q0 = nn.Sequential(
-#                 *[nn.Linear(embed_out, hidden_size), nn.ReLU(inplace=True), nn.Linear(hidden_size, hidden_size),
-#                   nn.ReLU(inplace=True), nn.Linear(hidden_size, 1), ])
 
     def forward(self, tokens):
         embed_token = self.bert(tokens)[0]
@@ -246,19 +221,14 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     real_treatment = np.concatenate(real_treatment, axis=0)
     real_prop_scores = np.concatenate(real_prop_scores, axis=0)
     
-    # Evaluate accuracy.
+    # Evaluate propensity score AUC.
     if evaluate:
         dataset = data_loader.dataset
-        
-        real_q1_prob = sigmoid(dataset.alpha * (1. - dataset.offset_t) + dataset.beta * (real_prop_scores - dataset.offset_p))
-        real_q0_prob = sigmoid(dataset.alpha * (0. - dataset.offset_t) + dataset.beta * (real_prop_scores - dataset.offset_p))
-        thre = (real_q1_prob + real_q0_prob) / 2
-
-    # prop score: real and estimated must locate one the same side of 0.5.
-    prop_accu = (1. * (((real_prop_scores - .5) * (prop_scores - .5)) > 0.)).mean() if evaluate else None
-    # q: estimate is more close to corresponding real value than the other.
-    q1_accu = (1. * (dataset.alpha > 0) * (Q1 > thre)).mean() if evaluate else None
-    q0_accu = (1. * (dataset.alpha > 0) * (Q0 < thre)).mean() if evaluate else None
+        # prop score: AUC
+        real_prop_scores = 1. * (real_prop_scores > 0.5)
+        prop_auc = roc_auc_score(real_prop_scores, prop_scores)
+    else:
+        prop_auc = None
 
     if estimation == 'q':
         if effect == 'att':
@@ -276,7 +246,7 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     
     model.train()
 
-    return effect, p_loss, q1_loss, q0_loss, prop_accu, q1_accu, q0_accu
+    return effect, p_loss, q1_loss, q0_loss, prop_auc
 
 
 def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epoch, sep_loss=True, save_path=None):
@@ -287,7 +257,8 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epo
     test_loss_hist_p = np.array(test_loss_hist['p'])
     test_loss_hist_q1 = np.array(test_loss_hist['q1'])
     test_loss_hist_q0 = np.array(test_loss_hist['q0'])
-    
+    test_loss_hist_p_auc = np.array(test_loss_hist['prop_auc'])
+
     est_effect = np.array(est_effect)
     
     fig = plt.figure()
@@ -295,13 +266,14 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epo
     
     if sep_loss:
         lns_p = ax.plot(np.arange(epoch), test_loss_hist_p, label='Eval loss: prop_score', color='darkgreen')
+        lns_p_auc = ax.plot(np.arange(epoch), test_loss_hist_p_auc, label='Eval AUC: prop_score', color='gold')
         lns_q = ax.plot(np.arange(epoch), test_loss_hist_q1 + test_loss_hist_q0,  label='Eval loss: q1+q0', color='blue')
         ax_r = plt.twinx()
-        lns_est_eff = ax_r.plot(np.arange(epoch), est_effect, color='coral', label='Estimate ATE', ls='--')
+        lns_est_eff = ax_r.plot(np.arange(epoch), est_effect, color='coral', label='Estimate ATE')
         lns_real_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * real, color='red', ls=':', label='Real ATE')
         lns_unad_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * unadjust, color='green', ls=':', label='Unadjusted ATE')
 
-        lns = lns_p + lns_q + lns_est_eff + lns_real_eff + lns_unad_eff
+        lns = lns_p + lns_q + lns_p_auc + lns_est_eff + lns_real_eff + lns_unad_eff
         labs = [l.get_label() for l in lns]
         ax_r.legend(lns, labs, loc=0)
         ax.set_ylabel('Eval loss')
@@ -309,21 +281,51 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, epo
     
     else:
         lns_l = ax.plot(np.arange(epoch), test_loss_hist_p + test_loss_hist_q1 + test_loss_hist_q0, label='Eval loss')
+        lns_p_auc = ax.plot(np.arange(epoch), test_loss_hist_p_auc, label='Eval AUC: prop_score', color='gold')
+
         ax_r = plt.twinx()
         lns_est_eff = ax_r.plot(np.arange(epoch), est_effect, color='coral', label='Estimate ATE', ls='--')
         lns_real_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * real, color='red', ls=':', label='Real ATE')
         lns_unad_eff = ax_r.plot(np.arange(epoch), np.ones(epoch) * unadjust, color='green', ls=':', label='Unadjusted ATE')
 
-        lns = lns_l + lns_est_eff + lns_real_eff + lns_unad_eff
+        lns = lns_l + lns_p_auc + lns_est_eff + lns_real_eff + lns_unad_eff
         labs = [l.get_label() for l in lns]
         ax_r.legend(lns, labs, loc=0)
-        ax.set_ylabel('Eval loss')
+        ax.set_ylabel('Eval loss/AUC value')
         ax_r.set_ylabel('ATEs')
 
     if save_path:
         plt.savefig(save_path)
     plt.show()
-    
+
+
+def show_propensity_score(data_loader, model, save_path=None):
+    prop_scores, Q1, Q0 = [], [], []
+    real_response, real_treatment, real_prop_scores = [], [], []
+    model.eval()
+    for idx, (tokens, treatment, response, real_prop_score) in enumerate(data_loader):
+        real_prop_scores.append(real_prop_score.cpu().data.numpy().squeeze())
+
+        prop_score, _, _ = model(tokens)
+        prop_scores.append(prop_score.cpu().data.numpy().squeeze())
+    model.train()
+
+    prop_scores = np.concatenate(prop_scores, axis=0)
+    real_prop_scores = np.concatenate(real_prop_scores, axis=0)
+
+    dat = np.array([real_prop_scores, prop_scores]).T
+    dat = pd.DataFrame(dat, columns=['real_prop_scores', 'pred_prop_scores'])
+
+    plt.cla()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    sns.boxplot(y='pred_prop_scores', x='real_prop_scores', data=dat, palette="colorblind", )
+    ax.set_xlabel('Real propensity scores')
+    ax.set_ylabel('Predicted propensity scores')
+    if save_path:
+        plt.savefig(save_path)
+    plt.show()
+
 
 def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_group=[9], device='cpu'):
     if isinstance(train_group, int):
@@ -471,23 +473,35 @@ if __name__ == '__main__':
     total_steps = args.epoch * epoch_iter
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # TODO: different head may have different lr.
     if args.model == 'bert' and args.lr >= 5e-6:
         print(f'Suggestion: current lr for causal-Bert is {args.lr}, which may be too large, we change it to 5e-7.')
         args.lr = 5e-7
-    optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-8)
+    optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-7)
 
     q_loss = nn.BCELoss()
     prop_score_loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     
     train_loss_hist_p, train_loss_hist_q1, train_loss_hist_q0 = [], [], []
-    test_loss_hist_p, test_loss_hist_q1, test_loss_hist_q0 = [], [], []
+    test_loss_hist_p, test_loss_hist_q1, test_loss_hist_q0, test_loss_hist_p_auc = [], [], [], []
     est_effect, prop_score_hist = [], []
+
+    best_p_loss_test = np.inf
+    best_p_loss_test_epoch = 0.
 
     print('Start training...')
     for e in range(1, args.epoch + 1):
         model.train()
         start = time.time()
+
+        p_loss_scale = args.p_loss_scale
+
+        # At first epoch, mainly focus on the propensity score learning.
+        if e == 1:
+            q1_loss_scale = 0.01
+            q0_loss_scale = 0.01
+        else:
+            q1_loss_scale = args.q1_loss_scale
+            q0_loss_scale = args.q0_loss_scale
 
         p_loss_train, q1_loss_train, q0_loss_train = [], [], []
         for idx, (tokens, treatment, response, _) in enumerate(train_loader):
@@ -495,17 +509,17 @@ if __name__ == '__main__':
             prop_score, q1, q0 = model(tokens)
 
             loss_p = prop_score_loss(prop_score, treatment)
-            loss = loss_p * args.p_loss_scale
-
+            loss = loss_p * p_loss_scale
             p_loss_train.append(loss_p.item())
+
             if len(response[treatment == 1]) > 0:
                 loss_q1 = q_loss(q1[treatment==1], response[treatment==1])
-                loss += loss_q1 * args.q1_loss_scale
+                loss += loss_q1 * q1_loss_scale
                 q1_loss_train.append(loss_q1.item())
 
             if len(response[treatment == 0]) > 0:
                 loss_q0 = q_loss(q0[treatment==0], response[treatment==0])
-                loss += loss_q0 * args.q0_loss_scale
+                loss += loss_q0 * q0_loss_scale
                 q0_loss_train.append(loss_q0.item())
 
             loss.backward()
@@ -518,8 +532,8 @@ if __name__ == '__main__':
         q1_loss_train = np.array(q1_loss_train).mean()
         q0_loss_train = np.array(q0_loss_train).mean()
 
-        train_effect, _, _, _, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
-        test_effect, p_loss_test, q1_loss_test, q0_loss_test, prop_accu_test, q1_accu_test, q0_accu_test = \
+        train_effect, _, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
+        test_effect, p_loss_test, q1_loss_test, q0_loss_test, prop_auc_test = \
             est_casual_effect(test_loader, model, effect, estimation, evaluate=True,
                               p_loss=prop_score_loss, q_loss=q_loss)
 
@@ -530,22 +544,34 @@ if __name__ == '__main__':
         test_loss_hist_p.append(p_loss_test)
         test_loss_hist_q1.append(q1_loss_test)
         test_loss_hist_q0.append(q0_loss_test)
+        test_loss_hist_p_auc.append(prop_auc_test)
 
         est_effect.append(test_effect)
 
+        # Save boxplot if achieves a best evaluation p-loss.
+        if p_loss_test < best_p_loss_test:
+            save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            save_path = save_path.replace('.', ',') + '.jpg'
+            result_path = os.path.join(curPath, 'causal-effect', 'results')
+            make_dirs(result_path)
+            box_save_path = os.path.join(result_path, save_path)
+            show_propensity_score(test_loader, model, save_path=box_save_path)
+            best_p_loss_test = p_loss_test
+            best_p_loss_test_epoch = e
+
         print(f'''Finish: epoch: {e} / {args.epoch}, time cost: {(time.time() - start):.2f} sec, 
               Loss: [Train: p = {p_loss_train:.5f}, q = {(q1_loss_train + q0_loss_train):.5f}], 
-              Loss: [Test: p = {p_loss_test:.5f}, q = {(q1_loss_test + q0_loss_test):.5f}],
+              Loss: [Test: p = {p_loss_test:.5f}, q = {(q1_loss_test + q0_loss_test):.5f}, AUC = {prop_auc_test:.5f}],
               Effect: [{effect}-{estimation}], [train: {train_effect:.5f}], [test: {test_effect:.5f}]''')
-        print('*'* 80)
+        print('*' * 80)
         start = time.time()
 
     print('Finish training...')
 
     train_loss_hist = dict(p=train_loss_hist_p, q1=train_loss_hist_q1, q0=train_loss_hist_q1)
-    test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0)
+    test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0, prop_auc=test_loss_hist_p_auc)
 
-    save_path = f'[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    save_path = f'[Log]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     save_path = save_path.replace('.', ',') + '.jpg'
     result_path = os.path.join(curPath, 'causal-effect', 'results')
     make_dirs(result_path)
@@ -555,7 +581,7 @@ if __name__ == '__main__':
     show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, args.epoch, save_path=save_path)
 
     if args.smoothed:
-        smoothed_window = args.smoothed
+        smoothed_window = max(args.smoothed, args.epoch)
     else:
         smoothed_window = max(args.epoch // 10, 1)
     # TODO: A more advanced way: automatically choose the loss starts to become flat, smoothed the remaining part.
@@ -564,4 +590,5 @@ if __name__ == '__main__':
     print('*' * 50 + 'Final result' + '*' * 50)
     print(f"""Real: [effect: ate], [estimation: q], [value: {real_att_q:.5f}],
               Unadjusted: [value: {unadjust:.4f}],
-              Smoothed: [value: {smmothed_est_effect:.4f}], [window: {smoothed_window}]...""")
+              Smoothed: [value: {smmothed_est_effect:.4f}], [window: {smoothed_window}],
+              Best Prop Loss: [Epoch: {best_p_loss_test_epoch}], [Value: {best_p_loss_test:.5f}]...""")
