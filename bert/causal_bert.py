@@ -41,7 +41,8 @@ class CausalBOW(nn.Module):
     Use a WOB embedding architecture: this is a word-of-bag model where we take the sum (or equivalently, average) of
     token input embedding without positional information.
     """
-    def __init__(self, token_embed, hidden_size=256, max_length=512, binary_response=True, learnable_docu_embed=False, prop_is_logit=False):
+    def __init__(self, token_embed, hidden_size=256, max_length=512, binary_response=True,
+                 learnable_docu_embed=False, prop_is_logit=False):
         super().__init__()
         self.token_embed = token_embed
         self.learnable_docu_embed = learnable_docu_embed
@@ -86,6 +87,18 @@ class CausalBOW(nn.Module):
             embed_docu = torch.mean(embed_token, axis=1)
 
         return self.g(embed_docu), self.q1(embed_docu), self.q0(embed_docu)
+
+    def freeze_representation(self):
+        for child in self.children():
+            if type(child) == nn.Embedding:
+                for params in child.parameters():
+                    params.requires_grad = False
+
+    def unfreeze_representation(self):
+        for child in self.children():
+            if type(child) == nn.Embedding:
+                for params in child.parameters():
+                    params.requires_grad = True
 
 
 class CausalBert(nn.Module):
@@ -140,6 +153,19 @@ class CausalBert(nn.Module):
 
         return self.g(embed_docu), self.q1(embed_docu), self.q0(embed_docu)
 
+    def freeze_representation(self):
+        for child in self.children():
+            if type(child) == BertModel:
+                for params in child.parameters():
+                    params.requires_grad = False
+
+    def unfreeze_representation(self):
+        for child in self.children():
+            if type(child) == BertModel:
+                for params in child.parameters():
+                    params.requires_grad = True
+
+
 
 def true_casual_effect(data_loader, effect='ate', estimation='q'):
     assert effect == 'ate' and estimation == 'q', f'unallowed effect/estimation: {effect}/{estimation}'
@@ -180,6 +206,7 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     prop_scores, Q1, Q0 = [], [], []
     
     if evaluate:
+        best_p_loss_test = kwargs.get('best_p_loss')
         p_loss = kwargs.get('p_loss')
         q_loss = kwargs.get('q_loss')
         p_loss_test, q1_loss_test, q0_loss_test  = [], [], []
@@ -191,8 +218,13 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
         real_prop_scores.append(real_prop_score.cpu().data.numpy().squeeze())
 
         prop_score, q1, q0 = model(tokens)
-        
-        prop_scores.append(prop_score.cpu().data.numpy().squeeze())
+
+        if model.prop_is_logit:
+            sigmoid = nn.Sigmoid()
+            prop_scores.append(sigmoid(prop_score).cpu().data.numpy().squeeze())
+        else:
+            prop_scores.append(prop_score.cpu().data.numpy().squeeze())
+
         Q1.append(q1.cpu().data.numpy().squeeze())
         Q0.append(q0.cpu().data.numpy().squeeze())
         
@@ -227,6 +259,26 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
         # prop score: AUC
         real_prop_scores = 1. * (real_prop_scores > 0.5)
         prop_auc = roc_auc_score(real_prop_scores, prop_scores)
+
+        # I
+        if p_loss < best_p_loss_test:
+            save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            save_path = save_path.replace('.', ',') + '.jpg'
+            result_path = os.path.join(curPath, 'causal-effect', 'results')
+            make_dirs(result_path)
+            box_save_path = os.path.join(result_path, save_path)
+            dat = np.array([real_prop_scores, prop_scores]).T
+            dat = pd.DataFrame(dat, columns=['real_prop_scores', 'pred_prop_scores'])
+
+            plt.cla()
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            sns.boxplot(y='pred_prop_scores', x='real_prop_scores', data=dat, palette="colorblind", )
+            ax.set_xlabel('Real propensity scores')
+            ax.set_ylabel('Predicted propensity scores')
+            if save_path:
+                plt.savefig(box_save_path)
+            plt.clf()
     else:
         prop_auc = None
 
@@ -307,7 +359,11 @@ def show_propensity_score(data_loader, model, save_path=None):
         real_prop_scores.append(real_prop_score.cpu().data.numpy().squeeze())
 
         prop_score, _, _ = model(tokens)
+        if model.prop_is_logit:
+            sigmoid = nn.Sigmoid()
+            prop_score = sigmoid(prop_score)
         prop_scores.append(prop_score.cpu().data.numpy().squeeze())
+
     model.train()
 
     prop_scores = np.concatenate(prop_scores, axis=0)
@@ -324,7 +380,7 @@ def show_propensity_score(data_loader, model, save_path=None):
     ax.set_ylabel('Predicted propensity scores')
     if save_path:
         plt.savefig(save_path)
-    plt.show()
+    plt.clf()
 
 
 def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_group=[9], device='cpu'):
@@ -368,7 +424,7 @@ def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_gr
     return train_loader, test_loader
 
 
-def load_model(model, hidden_size, prop_is_logit=True, device='cpu'):
+def load_model(model, hidden_size, learnable_docu_embed=False, prop_is_logit=True, device='cpu'):
     model = model.lower()
     assert model in ['bow', 'bert'], f'Error: Invalid model argument: {model}, should be one of [bow, bert]...'
     
@@ -376,9 +432,9 @@ def load_model(model, hidden_size, prop_is_logit=True, device='cpu'):
         
     if model == 'bow':
         token_embed = bert.get_input_embeddings()
-        model = CausalBOW(token_embed, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
+        model = CausalBOW(token_embed, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
     else:
-        model = CausalBert(bert, learnable_docu_embed=False, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
+        model = CausalBert(bert, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
         
     return model.to(device)
 
@@ -387,6 +443,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='bow', choices=['bow', 'bert'], help='Which Causal Model to use.')
 
+    parser.add_argument('--learnable_docu_embed', action='store_true', default=False,
+                        help='Learn the token embedding weights in document embedding')
+    parser.add_argument('--freeze_representation', action='store_true', default=False,
+                        help='Freeze the representation layer for token embedding')
     parser.add_argument('--hidden_size', type=int, default=64, help='Batch size in training')
     parser.add_argument('--bsz', type=int, default=16, help='Batch size in training')
     parser.add_argument('--epoch', type=int, default=50, help='Epoch in production version')
@@ -411,7 +471,6 @@ if __name__ == '__main__':
     parser.add_argument('--estimation', type=str, default='q', choices=['q', 'plugin'], help='Estimation method')
     parser.add_argument('--smoothed', type=int, default=None, help='How many epochs to use to smooth the result')
     parser.add_argument('--cuda', type=str, help='Visible CUDA to the task.')
-
     args = parser.parse_args()
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -465,7 +524,11 @@ if __name__ == '__main__':
                 test_loader.dataset.response[test_loader.dataset.treatment == 0].mean()).item()
     print(f'Unadjusted: [value: {unadjust:.4f}]')
 
-    model = load_model(model=args.model, hidden_size=args.hidden_size, device=device)
+    model = load_model(model=args.model, hidden_size=args.hidden_size, learnable_docu_embed=args.learnable_docu_embed,
+                       device=device)
+    if args.freeze_representation:
+        model.freeze_representation()
+
     pos_portion = train_loader.dataset.treatment.mean()
     pos_weight = (1 - pos_portion) / pos_portion
 
@@ -495,13 +558,13 @@ if __name__ == '__main__':
 
         p_loss_scale = args.p_loss_scale
 
+        q1_loss_scale = args.q1_loss_scale
+        q0_loss_scale = args.q0_loss_scale
+
         # At first epoch, mainly focus on the propensity score learning.
         if e == 1:
-            q1_loss_scale = 0.01
-            q0_loss_scale = 0.01
-        else:
-            q1_loss_scale = args.q1_loss_scale
-            q0_loss_scale = args.q0_loss_scale
+            q1_loss_scale *= 0.01
+            q0_loss_scale *= 0.01
 
         p_loss_train, q1_loss_train, q0_loss_train = [], [], []
         for idx, (tokens, treatment, response, _) in enumerate(train_loader):
@@ -535,7 +598,10 @@ if __name__ == '__main__':
         train_effect, _, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
         test_effect, p_loss_test, q1_loss_test, q0_loss_test, prop_auc_test = \
             est_casual_effect(test_loader, model, effect, estimation, evaluate=True,
-                              p_loss=prop_score_loss, q_loss=q_loss)
+                              p_loss=prop_score_loss, q_loss=q_loss, best_p_loss=best_p_loss_test)
+        if p_loss_test < best_p_loss_test:
+            best_p_loss_test = p_loss_test
+            best_p_loss_test_epoch = e
 
         train_loss_hist_p.append(p_loss_train)
         train_loss_hist_q1.append(q1_loss_train)
@@ -549,15 +615,15 @@ if __name__ == '__main__':
         est_effect.append(test_effect)
 
         # Save boxplot if achieves a best evaluation p-loss.
-        if p_loss_test < best_p_loss_test:
-            save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
-            save_path = save_path.replace('.', ',') + '.jpg'
-            result_path = os.path.join(curPath, 'causal-effect', 'results')
-            make_dirs(result_path)
-            box_save_path = os.path.join(result_path, save_path)
-            show_propensity_score(test_loader, model, save_path=box_save_path)
-            best_p_loss_test = p_loss_test
-            best_p_loss_test_epoch = e
+        # if p_loss_test < best_p_loss_test:
+        #     save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+        #     save_path = save_path.replace('.', ',') + '.jpg'
+        #     result_path = os.path.join(curPath, 'causal-effect', 'results')
+        #     make_dirs(result_path)
+        #     box_save_path = os.path.join(result_path, save_path)
+        #     show_propensity_score(test_loader, model, save_path=box_save_path)
+        #     best_p_loss_test = p_loss_test
+        #     best_p_loss_test_epoch = e
 
         print(f'''Finish: epoch: {e} / {args.epoch}, time cost: {(time.time() - start):.2f} sec, 
               Loss: [Train: p = {p_loss_train:.5f}, q = {(q1_loss_train + q0_loss_train):.5f}], 
