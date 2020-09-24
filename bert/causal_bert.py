@@ -34,6 +34,8 @@ from utils import DATA_PATH, make_dirs
 
 
 TRAINED_BERT = '/nfs/turbo/lsa-regier/bert-results/results/behrt/MLM/merged/unidiag/checkpoint-6018425/'
+TRAINED_CAUSAL = '/nfs/turbo/lsa-regier/bert-results/results/casualmodel/'
+make_dirs(TRAINED_CAUSAL)
 
 
 class CausalBOW(nn.Module):
@@ -166,9 +168,8 @@ class CausalBert(nn.Module):
                     params.requires_grad = True
 
 
-
 def true_casual_effect(data_loader, effect='ate', estimation='q'):
-    assert effect == 'ate' and estimation == 'q', f'unallowed effect/estimation: {effect}/{estimation}'
+    assert estimation == 'q', f'unallowed estimation: {estimation}'
     
     dataset = data_loader.dataset
     
@@ -255,18 +256,12 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
     
     # Evaluate propensity score AUC.
     if evaluate:
-        dataset = data_loader.dataset
         # prop score: AUC
         real_prop_scores = 1. * (real_prop_scores > 0.5)
         prop_auc = roc_auc_score(real_prop_scores, prop_scores)
 
         # I
         if p_loss < best_p_loss_test:
-            save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
-            save_path = save_path.replace('.', ',') + '.jpg'
-            result_path = os.path.join(curPath, 'causal-effect', 'results')
-            make_dirs(result_path)
-            box_save_path = os.path.join(result_path, save_path)
             dat = np.array([real_prop_scores, prop_scores]).T
             dat = pd.DataFrame(dat, columns=['real_prop_scores', 'pred_prop_scores'])
 
@@ -276,8 +271,11 @@ def est_casual_effect(data_loader, model, effect='ate', estimation='q', evaluate
             sns.boxplot(y='pred_prop_scores', x='real_prop_scores', data=dat, palette="colorblind", )
             ax.set_xlabel('Real propensity scores')
             ax.set_ylabel('Predicted propensity scores')
-            if save_path:
-                plt.savefig(box_save_path)
+
+            save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            save_path = save_path.replace('.', ',') + '.jpg'
+            box_save_path = os.path.join(result_path, save_path)
+            plt.savefig(box_save_path)                
             plt.clf()
     else:
         prop_auc = None
@@ -442,11 +440,11 @@ def load_model(model, hidden_size, learnable_docu_embed=False, prop_is_logit=Tru
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='bow', choices=['bow', 'bert'], help='Which Causal Model to use.')
-
     parser.add_argument('--learnable_docu_embed', action='store_true', default=False,
                         help='Learn the token embedding weights in document embedding')
     parser.add_argument('--freeze_representation', action='store_true', default=False,
                         help='Freeze the representation layer for token embedding')
+    parser.add_argument('--pos_weight_p', type=float, default=None, help='Pos weight in propensity score loss')
     parser.add_argument('--hidden_size', type=int, default=64, help='Batch size in training')
     parser.add_argument('--bsz', type=int, default=16, help='Batch size in training')
     parser.add_argument('--epoch', type=int, default=50, help='Epoch in production version')
@@ -482,6 +480,9 @@ if __name__ == '__main__':
     estimation = args.estimation.lower()
     assert effect in ['att', 'ate'], f'Wrong effect: {effect}...'
     assert estimation in ['q', 'plugin'], f'Wrong estimation: {estimation}...'
+
+    result_path = os.path.join(curPath, 'causal-effect', 'results', '0919')
+    make_dirs(result_path)
 
     if args.dataset:
         if args.dataset == 'low':
@@ -529,21 +530,23 @@ if __name__ == '__main__':
     if args.freeze_representation:
         model.freeze_representation()
 
-    pos_portion = train_loader.dataset.treatment.mean()
-    pos_weight = (1 - pos_portion) / pos_portion
-
     epoch_iter = len(train_loader)
     total_steps = args.epoch * epoch_iter
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     if args.model == 'bert' and args.lr >= 5e-6:
-        print(f'Suggestion: current lr for causal-Bert is {args.lr}, which may be too large, we change it to 5e-7.')
-        args.lr = 5e-7
+        print(f'Suggestion: current lr for causal-Bert is {args.lr}, which may be too large, we change it to 1e-6.')
+        args.lr = 1e-6
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=1e-7)
 
-    q_loss = nn.BCELoss()
+    if args.pos_weight_p:
+        pos_weight = args.pos_weight_p * torch.ones(1, device=device)
+    else:
+        pos_portion = train_loader.dataset.treatment.mean()
+        pos_weight = (1 - pos_portion) / pos_portion
     prop_score_loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    
+    q_loss = nn.BCELoss()
+
     train_loss_hist_p, train_loss_hist_q1, train_loss_hist_q0 = [], [], []
     test_loss_hist_p, test_loss_hist_q1, test_loss_hist_q0, test_loss_hist_p_auc = [], [], [], []
     est_effect, prop_score_hist = [], []
@@ -565,6 +568,10 @@ if __name__ == '__main__':
         if e == 1:
             q1_loss_scale *= 0.01
             q0_loss_scale *= 0.01
+        #
+        # if e == 2:
+        #     q1_loss_scale *= 0.1
+        #     q0_loss_scale *= 0.1
 
         p_loss_train, q1_loss_train, q0_loss_train = [], [], []
         for idx, (tokens, treatment, response, _) in enumerate(train_loader):
@@ -596,12 +603,24 @@ if __name__ == '__main__':
         q0_loss_train = np.array(q0_loss_train).mean()
 
         train_effect, _, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
+
+        #
+        # The box plot is drawn in est_casual_effect function as well, while this disobey the single role principle,
+        # we want to avoid a second enumeration of dataset since it migh be time consuming.
         test_effect, p_loss_test, q1_loss_test, q0_loss_test, prop_auc_test = \
             est_casual_effect(test_loader, model, effect, estimation, evaluate=True,
                               p_loss=prop_score_loss, q_loss=q_loss, best_p_loss=best_p_loss_test)
         if p_loss_test < best_p_loss_test:
             best_p_loss_test = p_loss_test
             best_p_loss_test_epoch = e
+            model_path = f'[BEST]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            model_path = model_path.replace('.', ',') + '.pth'
+            model_path = os.path.join(TRAINED_CAUSAL, model_path)
+
+            model.eval()
+            torch.save(model.to('cpu'), model_path)
+            model = model.to(device)
+            model.train()
 
         train_loss_hist_p.append(p_loss_train)
         train_loss_hist_q1.append(q1_loss_train)
@@ -613,17 +632,6 @@ if __name__ == '__main__':
         test_loss_hist_p_auc.append(prop_auc_test)
 
         est_effect.append(test_effect)
-
-        # Save boxplot if achieves a best evaluation p-loss.
-        # if p_loss_test < best_p_loss_test:
-        #     save_path = f'[Prop-Score]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
-        #     save_path = save_path.replace('.', ',') + '.jpg'
-        #     result_path = os.path.join(curPath, 'causal-effect', 'results')
-        #     make_dirs(result_path)
-        #     box_save_path = os.path.join(result_path, save_path)
-        #     show_propensity_score(test_loader, model, save_path=box_save_path)
-        #     best_p_loss_test = p_loss_test
-        #     best_p_loss_test_epoch = e
 
         print(f'''Finish: epoch: {e} / {args.epoch}, time cost: {(time.time() - start):.2f} sec, 
               Loss: [Train: p = {p_loss_train:.5f}, q = {(q1_loss_train + q0_loss_train):.5f}], 
@@ -639,10 +647,8 @@ if __name__ == '__main__':
 
     save_path = f'[Log]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     save_path = save_path.replace('.', ',') + '.jpg'
-    result_path = os.path.join(curPath, 'causal-effect', 'results')
-    make_dirs(result_path)
-    save_path = os.path.join(result_path, save_path)
 
+    save_path = os.path.join(result_path, save_path)
     real = true_casual_effect(test_loader)
     show_result(train_loss_hist, test_loss_hist, est_effect, real, unadjust, args.epoch, save_path=save_path)
 
@@ -658,3 +664,14 @@ if __name__ == '__main__':
               Unadjusted: [value: {unadjust:.4f}],
               Smoothed: [value: {smmothed_est_effect:.4f}], [window: {smoothed_window}],
               Best Prop Loss: [Epoch: {best_p_loss_test_epoch}], [Value: {best_p_loss_test:.5f}]...""")
+
+    model_path = f'[FINAL]_[{alpha}-{beta}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    model_path = model_path.replace('.', ',') + '.pth'
+    model_path = os.path.join(TRAINED_CAUSAL, model_path)
+
+    model.eval()
+    torch.save(model.to('cpu'), model_path)
+
+    print(f'''Save model successfully to: 
+            {model_path}...
+            Finish all...''')
