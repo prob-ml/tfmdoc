@@ -228,8 +228,9 @@ class CausalBertRealDataset(Dataset):
                  max_length: int,
                  min_length: int,
                  device: str,
-                 treat_tokens: list,
-                 response_tokens: list,
+                 pretreat_tokens: list = None,
+                 treat_tokens: list = None,
+                 response_tokens: list = None,
                  group: list = None,
                  add_special_tokens: bool = True,
                  truncate_method: str = 'last',
@@ -237,9 +238,13 @@ class CausalBertRealDataset(Dataset):
 
         # np.random.seed(seed)
         # torch.manual_seed(seed)
+        assert treat_tokens is not None and response_tokens is not None
+        self.pretreat_tokens = pretreat_tokens
+        self.treat_tokens = treat_tokens
+        self.response_tokens = response_tokens
 
         if group is None: group = range(10)
-        self.user_group = [str(i) for i in group]  # if group is None else [str(group)]
+        self.user_group = [str(i) for i in group]
         self.data_type = data_type
         self.is_unidiag = is_unidiag
         self.device = device
@@ -247,13 +252,13 @@ class CausalBertRealDataset(Dataset):
         for file in os.listdir(DATA_PATH):
             if self.is_target(file):
                 with open(os.path.join(DATA_PATH, file), encoding='utf-8') as f:
-                    # f.read().splitlines() will drop the '\n' at the end of each line automatically.
+                    # Note: f.read().splitlines() will drop the '\n' at the end of each line automatically.
                     lines += [line.replace('\n', '').split(',')[1] for line in f.read().splitlines() if
                               (len(line) > 0 and not line.isspace())][1:]  # [1:] drop HEADER row.
 
         truncated_lines = []
-        treatment = []
-        response = []
+        treatments = []
+        responses = []
         for line in lines:
             token_list = line.split(' ')
 
@@ -270,38 +275,98 @@ class CausalBertRealDataset(Dataset):
                 elif truncate_method == 'random':
                     token_idx = random.sample(range(len(token_list)), max_length)
                     token_list = [token_list[idx] for idx in token_idx.sort()]
+
                 line = ' '.join(token_list)
 
-            treatment.append(self.is_contain(line, treat_tokens))
-            response.append(self.is_contain(line, response_tokens))
+            treatment, response, line = self.get_causal_data(line)
+            if line is not None:
+                treatments.append(treatment)
+                responses.append(response)
+                truncated_lines.append(line)
 
-            truncated_lines.append(line)
         lines = truncated_lines
         batch_encoding = tokenizer.batch_encode_plus(lines, add_special_tokens=add_special_tokens,
                                                      max_length=max_length, truncation=True, padding=True)
         self.tokens = batch_encoding["input_ids"]
 
         # Create propensity score, treatment and response
-        self.treatment = torch.tensor(treatment, dtype=torch.float32).reshape(-1, 1).to(self.device)
-        self.response = torch.tensor(response, dtype=torch.float32).reshape(-1, 1).to(self.device)
+        # print(treatments[:10])
+        self.treatments = torch.tensor(treatments, dtype=torch.float32).reshape(-1, 1).to(self.device)
+        self.responses = torch.tensor(responses, dtype=torch.float32).reshape(-1, 1).to(self.device)
 
     def __len__(self) -> int:
         return len(self.tokens)
 
     def __getitem__(self, i) -> list:
         token = torch.tensor(self.tokens[i], dtype=torch.long, device=self.device)
-        treatment = self.treatment[i]
-        response = self.response[i]
+        treatment = self.treatments[i]#.to(self.device)
+        response = self.responses[i]#.to(self.device)
         return token, treatment, response
 
-    def is_contain(self, x, to_contain):
-        for token in to_contain:
-            if 'diag' not in token:
-                token = 'diag:' + token
-            if token in x:
-                return True
+    def get_causal_data(self, x):
+        token_list = x.split(' ')
 
+        first_pretreat_idx = 0
+        if self.pretreat_tokens:
+            is_target = False
+            for idx, token in enumerate(token_list):
+                for pretreat in self.pretreat_tokens:
+                    if pretreat in token and is_target == False:
+                        is_target = True
+                        first_pretreat_idx = idx
+                        break
+                if is_target:
+                    break
+            if not is_target:
+                return None, None, None
+
+        treatment, response = False, False
+        first_treat_idx = first_pretreat_idx
+        for idx, token in enumerate(token_list[first_pretreat_idx:]):
+            for treat in self.treat_tokens:
+                if treat in token and treatment == False:
+                    treatment = True
+                    first_treat_idx = idx
+                    break
+            if treatment:
+                break
+
+        if treatment:
+            # discard treatment tokens.
+            token_list_new = token_list[:first_treat_idx] + token_list[(first_treat_idx + 1):]
+            line = ' '.join(token_list_new)
+
+            if first_treat_idx == len(token_list) - 1:
+                return treatment, response, line
+
+            while token_list[first_treat_idx] != '[SEP]':
+                # Since patient is probably prescribed pain killer right after the surgery,
+                # we move the starting point of "after treatment" to the next visit, namely,
+                # after it passes a special token [SEP]
+                first_treat_idx += 1
+                if first_treat_idx == len(token_list) - 1:
+                    return treatment, response, line
+
+            # Find responses tokens in tokens after the first treatment occurs.
+            response = self.response_match(token_list[first_treat_idx:])
+        else:
+            # Find responses tokens after the first pretreatment (diagnosis) occurs, note now
+            # first_pretreat_idx == first_treat_idx, we separate codes here for better readability.
+            response = self.response_match(token_list[first_pretreat_idx:])
+
+            line = x
+        return treatment, response, line
+
+    def response_match(self, token_list):
+        if len(token_list) <= 0:
+            return False
+
+        for token in token_list:
+            for response_token in self.response_tokens:
+                if response_token in token:
+                    return True
         return False
+
 
     def is_target(self, file):
         # First check if 'unidiag' is correct.
