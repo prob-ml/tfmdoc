@@ -29,16 +29,13 @@ from transformers import get_linear_schedule_with_warmup, AdamW
 
 from tokens import WordLevelBertTokenizer
 from vocab import create_vocab
-from data import CausalBertSynDataset, MLMDataset, CausalBertRealDataset
+from data import CausalBertRealDataset
 from utils import DATA_PATH, make_dirs
-
+from causal_tokens import *
 
 TRAINED_BERT = '/nfs/turbo/lsa-regier/bert-results/results/behrt/MLM/merged/unidiag/checkpoint-6018425/'
 TRAINED_CAUSAL = '/nfs/turbo/lsa-regier/bert-results/results/casualmodel/realdata/'
 make_dirs(TRAINED_CAUSAL)
-
-ASTHMA_TOKENS = ['diag:J45']
-FLU_TOKENS =  ['diag:A492', 'diag:B963', 'diag:J09', 'diag:J10', 'diag:J11']
 
 
 class CausalBOW(nn.Module):
@@ -289,7 +286,7 @@ def show_result(train_loss_hist, test_loss_hist, est_effect, unadjust, epoch, se
     plt.show()
 
 
-def load_data(treat_tokens, response_tokens, bsz=256, train_group=[1], test_group=[9], device='cpu'):
+def load_data(pretreat_tokens, treat_tokens, response_tokens, bsz=256, train_group=[1], test_group=[9], device='cpu'):
     if isinstance(train_group, int):
         train_group = [train_group]
     
@@ -303,23 +300,23 @@ def load_data(treat_tokens, response_tokens, bsz=256, train_group=[1], test_grou
     
     start = time.time()
     trainset = CausalBertRealDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                 treat_tokens=treat_tokens, response_tokens=response_tokens,
-                                 group=train_group, max_length=512, min_length=10,
-                                 truncate_method='last', device=device, seed=1)
+                                     pretreat_tokens=pretreat_tokens, treat_tokens=treat_tokens,
+                                     response_tokens=response_tokens, group=train_group, max_length=512, min_length=10,
+                                     truncate_method='last', device=device, seed=1)
 
     print(f'Load training set in {(time.time() - start):.2f} sec')
-    print(f'Training set: [treated: {(trainset.treatment.mean().item()):.4f}], '
-          f'Training set: [response: {(trainset.response.mean().item()):.4f}]')
+    print(f'Training set: [treated: {(trainset.treatments.mean().item()):.4f}], '
+          f'Training set: [response: {(trainset.responses.mean().item()):.4f}]')
 
     start = time.time()
     testset = CausalBertRealDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
-                                    treat_tokens=treat_tokens, response_tokens=response_tokens,
-                                    group=[9], max_length=512, min_length=10,
-                                    truncate_method='last', device=device)
+                                    pretreat_tokens=pretreat_tokens, treat_tokens=treat_tokens,
+                                    response_tokens=response_tokens, group=test_group, max_length=512, min_length=10,
+                                    truncate_method='last', device=device, seed=1)
 
     print(f'Load validation set in {(time.time() - start):.2f} sec')
-    print(f'Validation set: [treated: {(testset.treatment.mean().item()):.4f}], '
-          f'Validation set: [response: {(testset.response.mean().item()):.4f}]')
+    print(f'Validation set: [treated: {(testset.treatments.mean().item()):.4f}], '
+          f'Validation set: [response: {(testset.responses.mean().item()):.4f}]')
 
     train_loader = DataLoader(trainset, batch_size=bsz, drop_last=True, shuffle=True)
     test_loader = DataLoader(testset, batch_size=bsz, drop_last=True, shuffle=True)
@@ -336,9 +333,11 @@ def load_model(model, hidden_size, learnable_docu_embed=False, prop_is_logit=Tru
         
     if model == 'bow':
         token_embed = bert.get_input_embeddings()
-        model = CausalBOW(token_embed, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
+        model = CausalBOW(token_embed, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size,
+                          prop_is_logit=prop_is_logit)
     else:
-        model = CausalBert(bert, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size, prop_is_logit=prop_is_logit)
+        model = CausalBert(bert, learnable_docu_embed=learnable_docu_embed, hidden_size=hidden_size,
+                           prop_is_logit=prop_is_logit)
         
     return model.to(device)
 
@@ -356,9 +355,11 @@ if __name__ == '__main__':
     parser.add_argument('--epoch', type=int, default=50, help='Epoch in production version')
     parser.add_argument('--lr', type=float, default=5e-6, help='learning rate')
 
-    parser.add_argument('--treat', type=str, choices=['asthma', 'flu'],
-                        default=None, help='The treatment diagnosis codes group in the dataset')
-    
+    parser.add_argument('--treat', type=str, choices=['asthma', 'flu', 'back'],
+                        default=None, help='The treatment')
+    parser.add_argument('--fulldata', action='store_true', default=False,
+                        help='Use all data to train/evaluate model')
+
     parser.add_argument('--q1_loss_scale', type=float, default=1.0, help='Scale of q1 loss')
     parser.add_argument('--q0_loss_scale', type=float, default=1.0, help='Scale of q0 loss')
     parser.add_argument('--p_loss_scale', type=float, default=1.0, help='Scale of prop score loss.')
@@ -382,13 +383,20 @@ if __name__ == '__main__':
     make_dirs(result_path)
 
     if args.treat.lower() == 'asthma':
+        pretreat_tokens = None
         treat_tokens = ASTHMA_TOKENS
         response_tokens = FLU_TOKENS
         args.response = 'flu'
     elif args.treat.lower() == 'flu':
+        pretreat_tokens = None
         treat_tokens = FLU_TOKENS
         response_tokens = ASTHMA_TOKENS
         args.response = 'asthma'
+    elif args.treat.lower() == 'back':
+        pretreat_tokens = BACKPAIN_DIAG_TOKENS
+        treat_tokens = BACKPAIN_PROC_TOKENS
+        response_tokens = PAINKILLER_TOKENS
+        args.response = 'painkiller'
 
     print(f'Start: create dataset: [treatment: {args.treat}], [response: {args.response}]...')
 
@@ -396,10 +404,17 @@ if __name__ == '__main__':
         print(f'Suggestion: current bsz is {args.bsz}, which may be too small, we change it to 256.')
         args.bsz = 256
 
-    train_loader, test_loader = load_data(treat_tokens, response_tokens, args.bsz, device=device)
+    train_group = [1]
+    test_group = [9]
 
-    unadjust = (test_loader.dataset.response[test_loader.dataset.treatment == 1].mean() -
-                test_loader.dataset.response[test_loader.dataset.treatment == 0].mean()).item()
+    if args.fulldata:
+        train_group = [0, 1, 2, 3, 4]
+        test_group = [5, 6, 7, 8, 9]
+    train_loader, test_loader = load_data(pretreat_tokens, treat_tokens, response_tokens, args.bsz, device=device,
+                                          train_group=train_group, test_group=test_group)
+
+    unadjust = (test_loader.dataset.responses[test_loader.dataset.treatments == 1].mean() -
+                test_loader.dataset.responses[test_loader.dataset.treatments == 0].mean()).item()
     print(f'Unadjusted: [value: {unadjust:.4f}]')
 
     model = load_model(model=args.model, hidden_size=args.hidden_size,
@@ -421,7 +436,7 @@ if __name__ == '__main__':
     if args.pos_weight_p:
         pos_weight = args.pos_weight_p * torch.ones(1, device=device)
     else:
-        pos_portion = train_loader.dataset.treatment.mean()
+        pos_portion = train_loader.dataset.treatments.mean()
         pos_weight = (1 - pos_portion) / pos_portion
     prop_score_loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     q_loss = nn.BCELoss()
@@ -489,7 +504,9 @@ if __name__ == '__main__':
         if p_loss_test < best_p_loss_test:
             best_p_loss_test = p_loss_test
             best_p_loss_test_epoch = e
-            model_path = f'[BEST]_[{args.treat}->{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            model_path = f'[BEST]_[{args.treat}-{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+            if args.fulldata:
+                model_path = '[FULL]_' + model_path
             model_path = model_path.replace('.', ',') + '.pth'
             model_path = os.path.join(TRAINED_CAUSAL, model_path)
 
@@ -520,20 +537,16 @@ if __name__ == '__main__':
     train_loss_hist = dict(p=train_loss_hist_p, q1=train_loss_hist_q1, q0=train_loss_hist_q1)
     test_loss_hist = dict(p=test_loss_hist_p, q1=test_loss_hist_q1, q0=test_loss_hist_q0)
 
-    save_path = f'[Log]_[{args.treat}->{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    save_path = f'[Log]_[{args.treat}-{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     save_path = save_path.replace('.', ',') + '.jpg'
 
     save_path = os.path.join(result_path, save_path)
     show_result(train_loss_hist, test_loss_hist, est_effect, unadjust, args.epoch, save_path=save_path)
 
-    # if args.smoothed:
-    #     smoothed_window = max(args.smoothed, args.epoch)
-    # else:
-    #     smoothed_window = max(args.epoch // 10, 1)
-    # # TODO: A more advanced way: automatically choose the loss starts to become flat, smoothed the remaining part.
-    # smmothed_est_effect = np.array(est_effect[-smoothed_window:]).mean()
 
-    model_path = f'[FINAL]_[{args.treat}->{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    model_path = f'[FINAL]_[{args.treat}-{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
+    if args.fulldata:
+        model_path = '[FULL]_' + model_path
     model_path = model_path.replace('.', ',') + '.pth'
     model_path = os.path.join(TRAINED_CAUSAL, model_path)
 
@@ -549,10 +562,13 @@ if __name__ == '__main__':
     test_loss_hist_q0 = np.array(test_loss_hist_q0)
     test_loss_hist_q = test_loss_hist_q0 + test_loss_hist_q1
     test_loss_hist_ = test_loss_hist_q + test_loss_hist_p
-    est_effect = np.array(test_loss_hist_q0)
+    est_effect = np.array(est_effect)
     dat = np.array([test_loss_hist_p, test_loss_hist_q, test_loss_hist_, est_effect]).T
-    dat = pd.DataFrame(dat, columns = ['propensity_score_loss', 'Q_loss', 'total_loss', 'est EFFECT'])
+    dat = pd.DataFrame(dat, columns=['propensity_score_loss', 'Q_loss', 'total_loss', 'est EFFECT'])
 
-    dat.to_csv(os.path.join(result_path, '[log]_[{args.treat}->{args.response}].csv'))
+    csv_path = f'[log]_[{args.treat}->{args.response}].csv'
+    if args.fulldata:
+        csv_path = '[FULL]_' + csv_path
+    dat.to_csv(os.path.join(result_path, csv_path))
 
     print(f'Finish all...')
