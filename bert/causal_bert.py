@@ -29,7 +29,7 @@ from transformers import get_linear_schedule_with_warmup, AdamW
 
 from tokens import WordLevelBertTokenizer
 from vocab import create_vocab
-from data import CausalBertDataset, MLMDataset
+from data import CausalBertSynDataset
 from utils import DATA_PATH, make_dirs
 
 
@@ -394,7 +394,7 @@ def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_gr
     tokenizer = WordLevelBertTokenizer(vocab)
     
     start = time.time()
-    trainset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
+    trainset = CausalBertSynDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
                                  alpha=alpha, beta=beta, offset_t=offset_t, offset_p=offset_p,
                                  group=train_group, max_length=512, min_length=10,
                                  truncate_method='first', device=device, seed=1)
@@ -405,7 +405,7 @@ def load_data(alpha, beta, offset_t, offset_p, bsz=256, train_group=[1], test_gr
           f'[prop scores counts: {(((train_prop == 0.8) * 1.0).mean().item()):.4f}]')
 
     start = time.time()
-    testset = CausalBertDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
+    testset = CausalBertSynDataset(tokenizer=tokenizer, data_type='merged', is_unidiag=True,
                                 alpha=alpha, beta=beta, offset_t=offset_t, offset_p=offset_p,
                                 group=[9], max_length=512, min_length=10,
                                 truncate_method='first', device=device)
