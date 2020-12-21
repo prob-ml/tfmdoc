@@ -169,19 +169,19 @@ class CausalBertSynDataset(Dataset):
         self.response = self.generate_response(self.treatment, self.prop_scores)
         self.pseudo_response = self.generate_response(1. - self.treatment, self.prop_scores)
 
-        self.prop_scores = self.prop_scores.reshape(-1, 1).to(self.device)
-        self.treatment = self.treatment.reshape(-1, 1).to(self.device)
-        self.response = self.response.reshape(-1, 1).to(self.device)
-        self.pseudo_response = self.pseudo_response.reshape(-1, 1).to(self.device)
+        self.prop_scores = self.prop_scores.reshape(-1, 1)#.to(self.device)
+        self.treatment = self.treatment.reshape(-1, 1)#.to(self.device)
+        self.response = self.response.reshape(-1, 1)#.to(self.device)
+        self.pseudo_response = self.pseudo_response.reshape(-1, 1)#.to(self.device)
 
     def __len__(self) -> int:
         return len(self.tokens)
 
     def __getitem__(self, i) -> list:
         token = torch.tensor(self.tokens[i], dtype=torch.long, device=self.device)
-        treatment = self.treatment[i]
-        response = self.response[i]
-        prop_score = self.prop_scores[i]
+        treatment = self.treatment[i].to(self.device)
+        response = self.response[i].to(self.device)
+        prop_score = self.prop_scores[i].to(self.device)
         return token, treatment, response, prop_score
 
     def treat_portion(self, x):

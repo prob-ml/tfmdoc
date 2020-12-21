@@ -496,11 +496,15 @@ if __name__ == '__main__':
         q1_loss_train = np.array(q1_loss_train).mean()
         q0_loss_train = np.array(q0_loss_train).mean()
 
+        print('tmp: eval on train set')
         train_effect, _, _, _ = est_casual_effect(train_loader, model, effect, estimation, evaluate=False)
 
+        print('tmp: eval on valid set')
         test_effect, p_loss_test, q1_loss_test, q0_loss_test = \
             est_casual_effect(test_loader, model, effect, estimation, evaluate=True,
                               p_loss=prop_score_loss, q_loss=q_loss, best_p_loss=best_p_loss_test)
+        print('tmp: finish eval on valid set')
+
         if p_loss_test < best_p_loss_test:
             best_p_loss_test = p_loss_test
             best_p_loss_test_epoch = e
@@ -542,7 +546,6 @@ if __name__ == '__main__':
 
     save_path = os.path.join(result_path, save_path)
     show_result(train_loss_hist, test_loss_hist, est_effect, unadjust, args.epoch, save_path=save_path)
-
 
     model_path = f'[FINAL]_[{args.treat}-{args.response}]_C-{args.model.upper()}_{args.hidden_size}_{args.epoch}'
     if args.fulldata:
