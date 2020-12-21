@@ -7,7 +7,7 @@ merge='n'
 clean='n'
 
 INPATH='/nfs/turbo/lsa-regier/OPTUMInsight_csv/'
-# OUTPATH='/nfs/turbo/lsa-regier/emr-data/'
+#OUTPATH='/nfs/turbo/lsa-regier/emr-data/'
 OUTPATH='/home/'$USER'/emr-data/'
 
 para_num=$#
@@ -50,13 +50,14 @@ fi
 if [[ ${field} == 'y' ]]; then
     echo "Start: create user-date-field data. "
     # NOTE: after making sure everything is fine, remove --dev here.
-    python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
+     python3 ./data_field.py --create_field_seq --merge_field --path $OUTPATH 2>&1
+#    python3 ./data_field.py --merge_field --path $OUTPATH 2>&1
     echo "Finish: create user-date-field data. "
 fi 
 
 if [[ ${merge} == 'y' ]]; then
     echo "Start: create user-seq data. "
-    ./data_merge.sh $OUTPATH
+#     ./data_merge.sh $OUTPATH
     python3 ./data_merge.py --path $OUTPATH 2>&1
     echo "Finish: create user-seq data. "
 fi 

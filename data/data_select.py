@@ -38,22 +38,27 @@ if __name__ == '__main__':
         logger.info(f'Start: {file_name}.')
         with open(file, newline='') as infile:
             with open(output_file, 'w') as outfile:
-                spamreader = csv.reader(infile)
+                diagreader = csv.reader(infile)
                 
-                for row in spamreader:
-                    row = [cell.strip() for cell in row]
+                for row in diagreader:
+                    row = [cell.replace('.0', '').strip() for cell in row]
                     
-                    patid = row[0].split('.0')[0]
-                    claimid = row[2].split('.0')[0]
-                    Diag = row[3].split('.0')[0]
-                    Diag_Position = row[4].split('.0')[0]
-                    Icd_Flag = row[5].split('.0')[0]
-                    Loc_cd = row[6].split('.0')[0]
-                    Fst_Dt = row[10]
+                    patid = row[0].split('.0')[0].strip()
+                    claimid = row[2].split('.0')[0].strip()
+                    Diag = row[3].split('.0')[0].strip()
+                    Diag_Position = row[4].split('.0')[0].strip()
+                    Icd_Flag = row[5].split('.0')[0].strip()
+                    Loc_cd = row[6].split('.0')[0].strip()
+                    Fst_Dt = row[10].strip()
                     
                     select_row = diag_pattern.format(patid, claimid, Diag, Diag_Position, Icd_Flag, Loc_cd, Fst_Dt)
-                    
+                    if '.0' in select_row:
+                        print(f'Failure at: {file}.')
+                        print(select_row)
+                        exit(1)
+                        
                     outfile.write(select_row)
+                    
         logger.info(f'Finish: {file_name}.')
     logger.info('Finish: Select diag data.')
     
@@ -66,24 +71,29 @@ if __name__ == '__main__':
         logger.info(f'Start: {file_name}.')
         with open(file, newline='') as infile:
             with open(output_file, 'w') as outfile:
-                spamreader = csv.reader(infile)
+                procreader = csv.reader(infile)
                 
-                for row in spamreader:
-                    row = [cell.strip() for cell in row]
+                for row in procreader:
+                    row = [cell.replace('.0', '').strip() for cell in row]
                     
-                    patid = row[0].split('.0')[0]
-                    claimid = row[2].split('.0')[0]
-                    Icd_Flag = row[3].split('.0')[0]
-                    Proc = row[4].split('.0')[0]
-                    Proc_Position = row[5].split('.0')[0]
+                    patid = row[0].split('.0')[0].strip()
+                    claimid = row[2].split('.0')[0].strip()
+                    Icd_Flag = row[3].split('.0')[0].strip()
+                    Proc = row[4].split('.0')[0].strip()
+                    Proc_Position = row[5].split('.0')[0].strip()
                     Fst_Dt = row[8]
                     select_row = proc_pattern.format(patid, claimid, Icd_Flag, Proc, Proc_Position, Fst_Dt)
                     
+                    if '.0' in select_row:
+                        print(f'Failure at: {file}.')
+                        print(select_row)
+                        exit(1)
+                        
                     outfile.write(select_row)
+                    
         logger.info(f'Finish: {file_name}.')
-    logger.info('Start: Select proc data.')
+    logger.info('Finish: Select proc data.')
 
-    
     logger.info('*' * 100)
     logger.info('Start: Select pharm data.')
     for file in pharms:
@@ -93,22 +103,23 @@ if __name__ == '__main__':
         logger.info(f'Start: {file_name}.')
         with open(file, newline='') as infile:
             with open(output_file, 'w') as outfile:
-                spamreader = csv.reader(infile)
+                pharmreader = csv.reader(infile)
                 
-                for row in spamreader:
+                for row in pharmreader:
                     row = [cell.strip() for cell in row]
                     
-                    patid = row[0].split('.0')[0]
-                    claimid = row[7].split('.0')[0]
-                    Fill_Date = row[14].split('.0')[0]
-                    Gnrc_Nm = row[19].split('.0')[0]
-                    Quantity = row[25].split('.0')[0]
-                    Rfl_Nbr = row[26].split('.0')[0]
+                    patid = row[0].split('.0')[0].strip()
+                    claimid = row[7].split('.0')[0].strip()
+                    Fill_Date = row[14].split('.0')[0].strip()
+                    Gnrc_Nm = row[19].split('.0')[0].strip()
+                    Quantity = row[25].split('.0')[0].strip()
+                    Rfl_Nbr = row[26].split('.0')[0].strip()
                     
-                    Gnrc_Nm = Gnrc_Nm.replace('"', '').replace(',', '_').replace(' ', '_')
+                    Gnrc_Nm = Gnrc_Nm.replace('"', '').replace(',', '_').replace(' ', '_').strip()
 
                     select_row = pharm_pattern.format(patid, claimid, Fill_Date, Gnrc_Nm, Quantity, Rfl_Nbr)
                     outfile.write(select_row)
                     
         logger.info(f'Finish: {file_name}.')
-    
+    logger.info('Finish: Select pharm data.')
+
