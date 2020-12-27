@@ -14,6 +14,6 @@ do
     echo "Start: "$pharm
     for pharm_drug in `cat pharm_cancer`
     do
-    	sed "s/\\.0//g" $INPATH$pharm | cut -d "," -f 1,5,8,15,20,26,27 | grep -i $pharm_drug | sed 's/ /_/g' | sed "s/\"//g" >> $OUTFILE
+    	sed "s/\\.0//g" $INPATH$pharm | cut -d "," -f 1,5,8,15,20,26,27 | sed 's/ /_/g' | grep -i $pharm_drug | sed "s/\"//g" >> $OUTFILE
     done
 done
