@@ -149,18 +149,12 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-*.idea/
-
-bert-dev/*.py
-*_archive*
-
-*_dev*
-*tmp*
-*checkpoint*
-*pth*
-*/nohup.out
-
+# added
+.idea/
 .DS_Store
-
 *.ipynb_checkpoints
 __pycache__
+data
+lightning_logs
+.vscode
+.nohup.out
