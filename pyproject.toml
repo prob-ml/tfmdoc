@@ -6,7 +6,7 @@ authors = ["Tianci Liu", "Jing Ouyang", "Jeffrey Regier"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "~3.9"
+python = "~3.8"
 torch = {url = "https://download.pytorch.org/whl/cu111/torch-1.8.1%2Bcu111-cp38-cp38-linux_x86_64.whl"}
 scikit-learn = "^0.24.1"
 jupyter = "^1.0.0"
