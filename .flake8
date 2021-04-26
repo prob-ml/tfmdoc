@@ -50,3 +50,18 @@ ignore =
 
     # seems to work fine
     WPS465,
+
+    # already enforced by pylint
+    WPS211,
+
+    # not too many assert statements
+    WPS218,
+
+    # reusing string constants is less verbose that defining a variable
+    WPS226,
+
+    # positional arguments to formatting strings are redundant
+    P101,
+
+    # I am not worried about security issues associate with pickle
+    S301, S403,
