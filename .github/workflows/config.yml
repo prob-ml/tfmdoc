@@ -49,7 +49,7 @@ jobs:
 
     - name: Run black
       run: |
-        poetry run black --check .
+        poetry run black --check ehr/ tests/
 
     - name: Run Tests
       run: |
