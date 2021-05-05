@@ -1,18 +1,24 @@
+import copy
 import random
 from string import ascii_uppercase, digits
 
 import pandas as pd
+import torch
+
+
+def clones(module, n_copies):
+    """Clone n identical copies of a module"""
+    return torch.nn.ModuleList([copy.deepcopy(module) for i in range(n_copies)])
 
 
 def random_icd():
     ans = random.choice(ascii_uppercase)
-    # k = random.randrange(2, 6)
     ans += "".join(random.choices(digits, k=2))
     return ans
 
 
 def set_outcome(codes):
-    outcome = any(t in codes for t in ["14", "28", "42"])
+    outcome = any(t in codes for t in ("14", "28", "42"))
     return int(outcome)
 
 
@@ -21,10 +27,10 @@ def generate_dummy_data():
     Generate dataset for testing: each patient id has 16 dates on record, each with
     a random chance of containing a (fake) ICD code.
     """
-    data = dict()
+    data = {}
     random.seed(12)
     for i in range(1024):
-        patid = "P" + str.zfill(str(i), 4)
+        patid = f"P{str.zfill(str(i), 4)}"
         data[patid] = {}
         for date in range(16):
             # date is currently just an integer, could make it a datetime
@@ -36,7 +42,7 @@ def generate_dummy_data():
                 # null entry
                 data[patid][date] = "_"
 
-    df = pd.concat(
+    df_dummy = pd.concat(
         {
             k: pd.DataFrame.from_dict(v, "index", columns=["icd_code"])
             for k, v in data.items()
@@ -44,7 +50,7 @@ def generate_dummy_data():
         axis=0,
     )
 
-    df.index = df.index.set_names(["patient_id", "date"])
-    df.reset_index(inplace=True)
+    df_dummy.index = df_dummy.index.set_names(["patient_id", "date"])
+    df_dummy.reset_index(inplace=True)
 
-    return df
+    return df_dummy
