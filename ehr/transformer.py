@@ -1,6 +1,7 @@
+import torch
 from torch import nn
 
-from helpers.utils import clones
+from .utils import clones
 
 
 class Transformer(nn.Module):
@@ -24,12 +25,13 @@ class Transformer(nn.Module):
         self.to_scores = nn.Linear(d_model, n_classes)
 
     def forward(self, x):
+        tokens = self.embed(x)
+        b, t, e = tokens.size()
+        # find more elegant way to manage the device
+        positions = torch.arange(t, device=next(self.parameters()).device)
+        positions = self.pos(positions)[None, :, :].expand(b, t, e)
 
-        x = self.embed(x)
-        t = x.size()[1]
-
-        positions = self.pos[:, :t, :]
-        x += positions
+        x = tokens + positions
 
         for layer in self.layers:
             x = layer(x)
@@ -56,7 +58,7 @@ class DecoderLayer(nn.Module):
         )
 
     def forward(self, x):
-        attn = self.self_attn(x)
+        attn, attn_weights = self.self_attn(x, x, x, need_weights=False)
         x = x + self.dropout1(attn)
         x = self.norm1(x)
         fedfwd = self.ff(x)
