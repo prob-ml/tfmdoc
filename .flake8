@@ -71,3 +71,6 @@ ignore =
 
     # just let me use my f strings
     WPS237, WPS305,
+
+    #this conflicts with Black
+    E203,
