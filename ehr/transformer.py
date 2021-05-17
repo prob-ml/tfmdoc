@@ -6,7 +6,14 @@ from .utils import clones
 
 class Transformer(nn.Module):
     def __init__(
-        self, n_tokens, d_model, n_blocks, seq_length, block_dropout=0, n_classes=2
+        self,
+        n_tokens,
+        d_model,
+        n_blocks,
+        seq_length,
+        block_dropout=0,
+        n_classes=2,
+        max_pool=False,
     ):
 
         super().__init__()
@@ -23,6 +30,7 @@ class Transformer(nn.Module):
 
         self.norm = nn.LayerNorm(d_model)
         self.to_scores = nn.Linear(d_model, n_classes)
+        self.max_pool = max_pool
 
     def forward(self, x):
         tokens = self.embed(x)
@@ -37,6 +45,7 @@ class Transformer(nn.Module):
             x = layer(x)
 
         x = self.norm(x)
+        x = x.max(dim=1)[0] if self.max_pool else x.mean(dim=1)
         return self.to_scores(x)
 
 

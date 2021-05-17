@@ -25,10 +25,10 @@ def test_dummy_data():
     assert X_train.shape[0] == y_train.shape[0]
 
     tf_model = Transformer(
-        n_tokens=mapping.shape[0], d_model=64, n_blocks=1, seq_length=seq_length
+        n_tokens=mapping.shape[0], d_model=32, n_blocks=1, seq_length=seq_length
     )
     adam = torch.optim.Adam(tf_model.parameters())
 
     trainer = Trainer(model=tf_model, batch_size=32, optimizer=adam)
-    trainer.train(training_data=(X_train, y_train), epochs=1)
+    losses = trainer.train(training_data=(X_train, y_train), epochs=1)
     assert True
