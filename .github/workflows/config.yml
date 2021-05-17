@@ -43,9 +43,9 @@ jobs:
       run: |
         poetry run pylint ehr/ tests/
 
-    - name: Run flake8
-      run: |
-        poetry run flake8 ehr/ tests/
+    # - name: Run flake8
+    #   run: |
+    #     poetry run flake8 ehr/ tests/
 
     - name: Run black
       run: |
