@@ -45,3 +45,9 @@ disable=
     # suppress Unused argument 'batch_idx' (unused-argument) warnings.
     # I wish there were a way to do this just for arguments named `batch_idx`
     unused-argument,
+
+    # I trust myself not to overuse non-snake_case names
+    invalid-name,
+
+    # not sure how you build your own transformer without at least 5 arguments. Come on!
+    too-many-arguments,

@@ -1,10 +1,7 @@
 import torch
-from torch import nn
-
-from .utils import clones
 
 
-class Transformer(nn.Module):
+class Transformer(torch.nn.Module):
     def __init__(
         self,
         n_tokens,
@@ -18,26 +15,29 @@ class Transformer(nn.Module):
 
         super().__init__()
 
-        self.embed = nn.Embedding(
+        self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
 
-        self.pos = nn.Embedding(seq_length, d_model)
+        self.pos = torch.nn.Embedding(seq_length, d_model)
 
-        self.layers = clones(
-            DecoderLayer(d_model, n_heads=8, dropout=block_dropout), n_copies=n_blocks
-        )
+        blocks = [
+            DecoderLayer(d_model, n_heads=8, dropout=block_dropout)
+            for _ in range(n_blocks)
+        ]
+        self.layers = torch.nn.Sequential(*blocks)
 
-        self.norm = nn.LayerNorm(d_model)
-        self.to_scores = nn.Linear(d_model, n_classes)
+        self.norm = torch.nn.LayerNorm(d_model)
+        self.to_scores = torch.nn.Linear(d_model, n_classes)
         self.max_pool = max_pool
 
     def forward(self, x):
         tokens = self.embed(x)
-        b, t, e = tokens.size()
-        # find more elegant way to manage the device
-        positions = torch.arange(t, device=next(self.parameters()).device)
-        positions = self.pos(positions)[None, :, :].expand(b, t, e)
+        batch_size, seq_length, emb_dim = tokens.size()
+        positions = torch.arange(seq_length, device=next(self.parameters()).device)
+        positions = self.pos(positions)[None, :, :].expand(
+            batch_size, seq_length, emb_dim
+        )
 
         x = tokens + positions
 
@@ -49,25 +49,25 @@ class Transformer(nn.Module):
         return self.to_scores(x)
 
 
-class DecoderLayer(nn.Module):
+class DecoderLayer(torch.nn.Module):
     def __init__(self, size, n_heads, dropout):
 
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(size, n_heads)
-        self.norm1 = nn.LayerNorm(size)
-        self.norm2 = nn.LayerNorm(size)
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
+        self.self_attn = torch.nn.MultiheadAttention(size, n_heads)
+        self.norm1 = torch.nn.LayerNorm(size)
+        self.norm2 = torch.nn.LayerNorm(size)
+        self.dropout1 = torch.nn.Dropout(dropout)
+        self.dropout2 = torch.nn.Dropout(dropout)
 
-        self.ff = nn.Sequential(
-            nn.Linear(size, size * 4),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(size * 4, size),
+        self.ff = torch.nn.Sequential(
+            torch.nn.Linear(size, size * 4),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(dropout),
+            torch.nn.Linear(size * 4, size),
         )
 
     def forward(self, x):
-        attn, attn_weights = self.self_attn(x, x, x, need_weights=False)
+        attn = self.self_attn(x, x, x, need_weights=False)[0]
         x = x + self.dropout1(attn)
         x = self.norm1(x)
         fedfwd = self.ff(x)

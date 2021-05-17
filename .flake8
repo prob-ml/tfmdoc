@@ -65,3 +65,9 @@ ignore =
 
     # I am not worried about security issues associate with pickle
     S301, S403,
+
+    # I am not using random to do cryptography, lol
+    S311,
+
+    # just let me use my f strings
+    WPS237, WPS305,
