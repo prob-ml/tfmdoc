@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ehr import Trainer, Transformer
+from ehr import ClaimsDataset, Trainer, Transformer
 
 
 def test_dummy_data():
@@ -31,6 +31,14 @@ def test_dummy_data():
     trainer = Trainer(model=tf_model, batch_size=32, optimizer=adam)
     losses = trainer.train(training_data=(x_train, y_train), epochs=1)
     assert losses[-1] < 0.2
+
+
+def test_dataset():
+    data_set = ClaimsDataset(test=True)
+    # test the length method
+    assert len(data_set) > 100000
+    # test the get item method
+    assert len(data_set[12]) == 3
 
 
 # TEST UTILITIES
