@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ehr import ClaimsDataset, Trainer, Transformer
+from ehr import Trainer, Transformer
+from ehr.preprocess import claims_pipeline
 
 
 def test_dummy_data():
@@ -33,12 +34,12 @@ def test_dummy_data():
     assert losses[-1] < 0.2
 
 
-def test_dataset():
-    data_set = ClaimsDataset(test=True)
-    # test the length method
-    assert len(data_set) > 100000
-    # test the get item method
-    assert len(data_set[12]) == 3
+def test_pipeline():
+    patient_sequences = claims_pipeline(
+        data_dir="/nfs/turbo/lsa-regier/OPTUM2/test_data/"
+    )
+    assert len(patient_sequences) > 100000
+    assert len(patient_sequences.columns) == 3
 
 
 # TEST UTILITIES

@@ -70,10 +70,16 @@ ignore =
     S311,
 
     # just let me use my f strings and explicit string concatenations
-    WPS237, WPS305, WPS336
+    WPS237, WPS305, WPS336,
 
     #this conflicts with Black
     E203,
 
     # imports in an init.py file are good and useful
-    WPS412, WPS300, F401
+    WPS412, WPS300, F401,
+
+    # it's fine to have pass as a placeholder
+    WPS420,
+
+    # weird incompatibility with pandas
+    WPS429,
