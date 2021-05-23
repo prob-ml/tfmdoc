@@ -41,15 +41,15 @@ jobs:
 
     - name: Run pylint
       run: |
-        poetry run pylint ehr/ tests/
+        poetry run pylint tfmdoc/ tests/
 
-    # - name: Run flake8
-    #   run: |
-    #     poetry run flake8 ehr/ tests/
+    - name: Run flake8
+      run: |
+        poetry run flake8 tfmdoc/ tests/
 
     - name: Run black
       run: |
-        poetry run black --check ehr/ tests/
+        poetry run black --check tfmdoc/ tests/
 
     - name: Run Tests
       run: |

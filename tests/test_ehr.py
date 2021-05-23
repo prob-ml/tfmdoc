@@ -35,11 +35,10 @@ def test_dummy_data():
 
 
 def test_pipeline():
-    patient_sequences = claims_pipeline(
+    patient_group_cache = claims_pipeline(
         data_dir="/nfs/turbo/lsa-regier/OPTUM2/test_data/"
     )
-    assert len(patient_sequences) > 100000
-    assert len(patient_sequences.columns) == 3
+    assert len(patient_group_cache.keys()) == 10
 
 
 # TEST UTILITIES
