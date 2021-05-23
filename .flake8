@@ -83,3 +83,6 @@ ignore =
 
     # weird incompatibility with pandas
     WPS429,
+
+    # hard to get around referring to the same column repeatedly while cleaning in pandas
+    WPS204
