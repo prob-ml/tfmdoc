@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ehr import Trainer, Transformer
-from ehr.preprocess import claims_pipeline
+from tfmdoc import Trainer, Transformer
+from tfmdoc.preprocess import claims_pipeline
 
 
 def test_dummy_data():
