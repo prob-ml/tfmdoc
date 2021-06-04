@@ -74,3 +74,6 @@ ignore =
 
     #this conflicts with Black
     E203,
+
+    # It's fine to have an init file with logic to make imports less clunky
+    WPS300, F401, WPS412,

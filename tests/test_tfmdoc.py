@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ehr import Trainer, Transformer
+from tfmdoc import Trainer, Transformer
 
 
 def test_dummy_data():
