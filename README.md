@@ -3,8 +3,8 @@
 
 This project is about using deep learning for causal inference on medical insurance data.
 ========================================
-![tests](https://github.com/prob-ml/ehr/workflows/tests/badge.svg)
-[![codecov](https://codecov.io/gh/prob-ml/ehr/branch/main/graph/badge.svg?token=98AQPGC96W)](https://codecov.io/gh/prob-ml/ehr)
+![tests](https://github.com/prob-ml/tfmdoc/workflows/tests/badge.svg)
+[![codecov](https://codecov.io/gh/prob-ml/tfmdoc/branch/master/graph/badge.svg?token=MD2RYN1AMA)](https://codecov.io/gh/prob-ml/tfmdoc)
 
 ### Installation
 ```
