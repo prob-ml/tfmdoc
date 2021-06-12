@@ -35,10 +35,11 @@ def test_dummy_data():
 
 
 def test_pipeline():
-    patient_group_cache = claims_pipeline(
-        data_dir="/nfs/turbo/lsa-regier/OPTUM2/test_data/"
+    patient_offsets, code_lookup, records = claims_pipeline(
+        data_dir="/nfs/turbo/lsa-regier/OPTUM2/test_data/", write_preprocess_files=False
     )
-    assert len(patient_group_cache.keys()) == 10
+    assert patient_offsets.sum() == records.shape[0]
+    assert code_lookup.shape[0] == records[:, 1].max() + 1
 
 
 # TEST UTILITIES
