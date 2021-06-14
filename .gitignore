@@ -161,3 +161,6 @@ lightning_logs
 
 # data exploration
 data_explore/
+
+#outputs
+preprocessed_files/

@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 
 from tfmdoc import Trainer, Transformer
+from tfmdoc.preprocess import claims_pipeline
 
 
 def test_dummy_data():
@@ -34,6 +35,14 @@ def test_dummy_data():
 
 
 # TEST UTILITIES
+def test_pipeline():
+    claims_pipeline(data_dir="tests/test_data/")
+    preprocess_dir = "tests/test_data/preprocessed_files/"
+    patient_offsets = np.load(preprocess_dir + "patient_offsets.npy")
+    records = np.load(preprocess_dir + "diag_records.npy")
+    code_lookup = np.load(preprocess_dir + "diag_code_lookup.npy", allow_pickle=True)
+    assert patient_offsets.sum() == records.shape[0]
+    assert code_lookup.shape[0] == records[:, 1].max() + 1
 
 
 def random_icd():

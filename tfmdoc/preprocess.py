@@ -21,7 +21,7 @@ def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
     # store records (dates and diagnosis codes)
     records = []
     # concatenate
-    for group in patient_group_cache.items():
+    for group in patient_group_cache:
         combined_years = pd.concat(patient_group_cache[group])
         combined_years.sort_values(["patid", "date"], inplace=True)
         patient_offsets.append(combined_years.groupby("patid")["date"].count())
