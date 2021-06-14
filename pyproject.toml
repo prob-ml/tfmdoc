@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "ehr"
+name = "tfmdoc"
 version = "0.1.0"
 description = "Deep Learning and Causal Inference for Electronic Health Records"
-authors = ["Tianci Liu", "Jing Ouyang", "Jeffrey Regier"]
+authors = ["Prayag Chatha", "Jeffrey Regier"]
 license = "MIT"
 
 [tool.poetry.dependencies]
@@ -30,7 +30,7 @@ sas7bdat = "^2.2.3"
 jupyterlab = "^3.0.14"
 
 [tool.poetry.scripts]
-ehr = "ehr.main:main"
+tfmdoc = "tfmdoc.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
