@@ -28,14 +28,14 @@ def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
         records.append(combined_years[["date", "diag"]])
 
     output_dir = data_dir + output_dir
-    # we could save the index of patient_offsets if we wanted a
-    # patient id lookup table
-    patient_offsets = np.concatenate(patient_offsets)
+    patient_ids = np.concatenate([po.index for po in patient_offsets])
+    patient_offsets = np.cumsum(np.concatenate(patient_offsets))
     records = np.concatenate(records)
     patient_offsets, code_lookup, records = compile_preprocess_files(
         patient_offsets, records, output_dir
     )
     np.save(output_dir + "patient_offsets", patient_offsets)
+    np.save(output_dir + "patient_ids", patient_ids)
     np.save(output_dir + "diag_code_lookup", code_lookup)
     np.save(output_dir + "diag_records", records)
 
