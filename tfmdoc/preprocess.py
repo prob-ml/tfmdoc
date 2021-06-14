@@ -7,15 +7,9 @@ from fastparquet import ParquetFile
 # path to data: /nfs/turbo/lsa-regier/OPTUM2/
 
 
-def claims_pipeline(
-    data_dir, output_dir="preprocessed_files/", write_preprocess_files=False
-):
+def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
     all_files = os.listdir(data_dir)
-    diags = [
-        file
-        for file in all_files
-        if file.startswith("diag") and file.endswith(".parquet")
-    ]
+    diags = [f for f in all_files if is_parquet_file(f)]
     patient_group_cache = {}
     for diag in diags:
         parquet_file = ParquetFile(data_dir + diag)
@@ -34,17 +28,16 @@ def claims_pipeline(
         records.append(combined_years[["date", "diag"]])
 
     output_dir = data_dir + output_dir
+    # we could save the index of patient_offsets if we wanted a
+    # patient id lookup table
     patient_offsets = np.concatenate(patient_offsets)
     records = np.concatenate(records)
     patient_offsets, code_lookup, records = compile_preprocess_files(
         patient_offsets, records, output_dir
     )
-    if write_preprocess_files:
-        np.save(output_dir + "patient_offsets", patient_offsets)
-        np.save(output_dir + "diag_code_lookup", code_lookup)
-        np.save(output_dir + "diag_records", records)
-
-    return patient_offsets, code_lookup, records
+    np.save(output_dir + "patient_offsets", patient_offsets)
+    np.save(output_dir + "diag_code_lookup", code_lookup)
+    np.save(output_dir + "diag_records", records)
 
 
 def clean_diag_data(dataframe):
@@ -100,3 +93,7 @@ def split_icd_codes(code):
     3 digits (category) and the whole code (specific diagnosis).
     """
     return (code[:6], code)
+
+
+def is_parquet_file(file):
+    return file.startswith("diag") and file.endswith(".parquet")

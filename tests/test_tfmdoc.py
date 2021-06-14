@@ -6,7 +6,6 @@ import pandas as pd
 import torch
 
 from tfmdoc import Trainer, Transformer
-from tfmdoc.preprocess import claims_pipeline
 
 
 def test_dummy_data():
@@ -32,14 +31,6 @@ def test_dummy_data():
     trainer = Trainer(model=tf_model, batch_size=32, optimizer=adam)
     losses = trainer.train(training_data=(x_train, y_train), epochs=1)
     assert losses[-1] < 0.2
-
-
-def test_pipeline():
-    patient_offsets, code_lookup, records = claims_pipeline(
-        data_dir="/nfs/turbo/lsa-regier/OPTUM2/test_data/", write_preprocess_files=False
-    )
-    assert patient_offsets.sum() == records.shape[0]
-    assert code_lookup.shape[0] == records[:, 1].max() + 1
 
 
 # TEST UTILITIES
