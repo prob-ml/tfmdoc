@@ -6,6 +6,8 @@ import pandas as pd
 import torch
 
 from tfmdoc import Trainer, Transformer
+from tfmdoc.load_data import ClaimsDataset
+from tfmdoc.preprocess import claims_pipeline
 
 
 def test_dummy_data():
@@ -34,6 +36,12 @@ def test_dummy_data():
 
 
 # TEST UTILITIES
+def test_pipeline():
+    claims_pipeline(data_dir="tests/test_data/")
+    preprocess_dir = "tests/test_data/preprocessed_files/"
+    torch_dataset = ClaimsDataset(preprocess_dir)
+    assert torch_dataset.offsets[-1] == len(torch_dataset)
+    assert len(torch_dataset[7]) == torch_dataset.offsets[8] - torch_dataset.offsets[7]
 
 
 def random_icd():

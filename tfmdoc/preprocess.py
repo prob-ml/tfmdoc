@@ -21,21 +21,21 @@ def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
     # store records (dates and diagnosis codes)
     records = []
     # concatenate
-    for group in patient_group_cache.items():
+    for group in patient_group_cache:
         combined_years = pd.concat(patient_group_cache[group])
         combined_years.sort_values(["patid", "date"], inplace=True)
         patient_offsets.append(combined_years.groupby("patid")["date"].count())
         records.append(combined_years[["date", "diag"]])
 
     output_dir = data_dir + output_dir
-    # we could save the index of patient_offsets if we wanted a
-    # patient id lookup table
-    patient_offsets = np.concatenate(patient_offsets)
+    patient_ids = np.concatenate([po.index for po in patient_offsets])
+    patient_offsets = np.cumsum(np.concatenate(patient_offsets))
     records = np.concatenate(records)
     patient_offsets, code_lookup, records = compile_preprocess_files(
         patient_offsets, records, output_dir
     )
     np.save(output_dir + "patient_offsets", patient_offsets)
+    np.save(output_dir + "patient_ids", patient_ids)
     np.save(output_dir + "diag_code_lookup", code_lookup)
     np.save(output_dir + "diag_records", records)
 
