@@ -1,7 +1,8 @@
+import pytorch_lightning as pl
 import torch
 
 
-class Transformer(torch.nn.Module):
+class Transformer(pl.LightningModule):
     def __init__(
         self,
         n_tokens,
@@ -11,6 +12,7 @@ class Transformer(torch.nn.Module):
         block_dropout=0,
         n_classes=2,
         max_pool=False,
+        padding_ix=0,
     ):
 
         super().__init__()
@@ -29,7 +31,8 @@ class Transformer(torch.nn.Module):
 
         self.norm = torch.nn.LayerNorm(d_model)
         self.to_scores = torch.nn.Linear(d_model, n_classes)
-        self.max_pool = max_pool
+        self._max_pool = max_pool
+        self.loss_fn = torch.CrossEntropyLoss(ignore_index=padding_ix)
 
     def forward(self, x):
         tokens = self.embed(x)
@@ -45,8 +48,23 @@ class Transformer(torch.nn.Module):
             x = layer(x)
 
         x = self.norm(x)
-        x = x.max(dim=1)[0] if self.max_pool else x.mean(dim=1)
+        x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
         return self.to_scores(x)
+
+    def training_step(self, batch):
+        # unclear why the example wants a batch index
+        # still need to implement positional encoding
+        # which would make use of the first item in "batch"
+        _, x, y = batch
+        # lightning recommends keeping the training logic separate
+        # from the inference logic
+        y_hat = self(x)
+        loss = self.loss_fn(y_hat, y)
+        self.log("train_loss", loss)
+        return loss
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
 
 class DecoderLayer(torch.nn.Module):
