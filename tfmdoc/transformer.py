@@ -32,7 +32,7 @@ class Transformer(pl.LightningModule):
         self.norm = torch.nn.LayerNorm(d_model)
         self.to_scores = torch.nn.Linear(d_model, n_classes)
         self._max_pool = max_pool
-        self.loss_fn = torch.CrossEntropyLoss(ignore_index=padding_ix)
+        self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=padding_ix)
 
     def forward(self, x):
         tokens = self.embed(x)

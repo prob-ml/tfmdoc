@@ -42,9 +42,9 @@ def test_pipeline():
     torch_dataset = ClaimsDataset(preprocess_dir)
     assert torch_dataset.offsets[-1] == len(torch_dataset)
     t, x, y = torch_dataset[7]
-    assert t == np.sort(t)
+    assert torch.equal(t, torch.sort(t)[0])
     assert len(x) == torch_dataset.offsets[8] - torch_dataset.offsets[7]
-    assert y in {0, 1}
+    assert y.item() in {0, 1}
 
 
 def random_icd():
