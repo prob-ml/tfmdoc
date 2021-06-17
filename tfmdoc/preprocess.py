@@ -53,7 +53,7 @@ def clean_diag_data(dataframe):
     return dataframe
 
 
-def collate_patient_records(dataframe, cache, grouping_index=1):
+def collate_patient_records(dataframe, cache):
     dataframe["patient_group"] = dataframe["Patid"].apply(lambda x: x % 10)
     for group in range(10):
         patient_logs = dataframe[dataframe["patient_group"] == group]
