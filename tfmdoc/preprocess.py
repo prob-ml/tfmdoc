@@ -7,7 +7,9 @@ from fastparquet import ParquetFile
 # path to data: /nfs/turbo/lsa-regier/OPTUM2/
 
 
-def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
+def claims_pipeline(
+    data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
+):
     all_files = os.listdir(data_dir)
     diags = [f for f in all_files if is_parquet_file(f)]
     patient_group_cache = {}
@@ -16,16 +18,10 @@ def claims_pipeline(data_dir, output_dir="preprocessed_files/"):
         dataframe = parquet_file.to_pandas(["Patid", "Icd_Flag", "Diag", "Fst_Dt"])
         dataframe = clean_diag_data(dataframe)
         collate_patient_records(dataframe, patient_group_cache)
-    # store offsets to concatenate later
-    patient_offsets = []
-    # store records (dates and diagnosis codes)
-    records = []
-    # concatenate
-    for group in patient_group_cache:
-        combined_years = pd.concat(patient_group_cache[group])
-        combined_years.sort_values(["patid", "date"], inplace=True)
-        patient_offsets.append(combined_years.groupby("patid")["date"].count())
-        records.append(combined_years[["date", "diag"]])
+
+    records, patient_offsets = combine_years(
+        patient_group_cache, min_length, max_length
+    )
 
     output_dir = data_dir + output_dir
     patient_ids = np.concatenate([po.index for po in patient_offsets])
@@ -57,7 +53,7 @@ def clean_diag_data(dataframe):
     return dataframe
 
 
-def collate_patient_records(dataframe, cache, grouping_index=1):
+def collate_patient_records(dataframe, cache):
     dataframe["patient_group"] = dataframe["Patid"].apply(lambda x: x % 10)
     for group in range(10):
         patient_logs = dataframe[dataframe["patient_group"] == group]
@@ -69,6 +65,25 @@ def collate_patient_records(dataframe, cache, grouping_index=1):
             cache[group] = [patient_logs]
         else:
             cache[group].append(patient_logs)
+
+
+def combine_years(cache, min_length, max_length):
+    # store offsets to concatenate later
+    patient_offsets = []
+    # store records (dates and diagnosis codes)
+    records = []
+    # concatenate
+    for group in cache:
+        combined_years = pd.concat(cache[group])
+        combined_years.sort_values(["patid", "date"], inplace=True)
+        counts = combined_years.groupby("patid")["date"].count().rename("count")
+        # filter out sequences that are too long or short
+        valid_offsets = counts[(counts >= min_length) & (counts <= max_length)]
+        patient_offsets.append(valid_offsets)
+        valid_records = combined_years.join(valid_offsets, on="patid", how="right")
+        records.append(valid_records[["date", "diag"]])
+
+    return records, patient_offsets
 
 
 def compile_preprocess_files(patient_offsets, records, output_dir):
@@ -92,7 +107,7 @@ def split_icd_codes(code):
     For each record in a diagnoses file, split the ICD code into the first
     3 digits (category) and the whole code (specific diagnosis).
     """
-    return (code[:6], code)
+    return (code[:5], code[:6], code)
 
 
 def is_parquet_file(file):
