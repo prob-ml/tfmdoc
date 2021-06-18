@@ -37,4 +37,5 @@ def padded_collate(batch):
     ts, xs, ys = zip(*batch)
     ts = pad_sequence(ts, batch_first=True, padding_value=0)
     xs = pad_sequence(xs, batch_first=True, padding_value=0)
+    ys = torch.stack(ys)
     return ts, xs, ys
