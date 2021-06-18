@@ -107,7 +107,7 @@ def split_icd_codes(code):
     For each record in a diagnoses file, split the ICD code into the first
     3 digits (category) and the whole code (specific diagnosis).
     """
-    return (code[:6], code)
+    return (code[:5], code[:6], code)
 
 
 def is_parquet_file(file):

@@ -51,7 +51,7 @@ class Transformer(pl.LightningModule):
         x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
         return self.to_scores(x)
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         # unclear why the example wants a batch index
         # still need to implement positional encoding
         # which would make use of the first item in "batch"
