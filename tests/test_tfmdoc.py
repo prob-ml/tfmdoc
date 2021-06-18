@@ -10,7 +10,7 @@ from tfmdoc.preprocess import claims_pipeline
 
 
 def test_lightning():
-    if not os.listdir("tests/test_data/preprocessed_files/"):
+    if "preprocessed_files/" not in os.listdir("tests/test_data/"):
         # preprocess data if required
         claims_pipeline(data_dir="tests/test_data/")
     preprocess_dir = "tests/test_data/preprocessed_files/"
