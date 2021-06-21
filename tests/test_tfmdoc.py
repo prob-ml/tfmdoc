@@ -18,9 +18,7 @@ def test_lightning():
     train_loader = DataLoader(dataset, collate_fn=padded_collate, batch_size=4)
     mapping = dataset.code_lookup
 
-    transformer = Transformer(
-        n_tokens=mapping.shape[0], d_model=32, n_blocks=1, seq_length=512
-    )
+    transformer = Transformer(n_tokens=mapping.shape[0], d_model=32, n_blocks=1)
     trainer = pl.Trainer(fast_dev_run=True)
     trainer.fit(transformer, train_loader)
 

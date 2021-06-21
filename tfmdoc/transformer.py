@@ -1,3 +1,5 @@
+import math
+
 import pytorch_lightning as pl
 import torch
 
@@ -8,7 +10,7 @@ class Transformer(pl.LightningModule):
         n_tokens,
         d_model,
         n_blocks,
-        seq_length,
+        max_len=6000,
         block_dropout=0,
         n_classes=2,
         max_pool=False,
@@ -21,7 +23,7 @@ class Transformer(pl.LightningModule):
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
 
-        self.pos = torch.nn.Embedding(seq_length, d_model)
+        self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
 
         blocks = [
             DecoderLayer(d_model, n_heads=8, dropout=block_dropout)
@@ -34,15 +36,9 @@ class Transformer(pl.LightningModule):
         self._max_pool = max_pool
         self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=padding_ix)
 
-    def forward(self, x):
-        tokens = self.embed(x)
-        batch_size, seq_length, emb_dim = tokens.size()
-        positions = torch.arange(seq_length, device=next(self.parameters()).device)
-        positions = self.pos(positions)[None, :, :].expand(
-            batch_size, seq_length, emb_dim
-        )
-
-        x = tokens + positions
+    def forward(self, timestamps, codes):
+        tokens = self.embed(codes)
+        x = self.pos_encode(timestamps, tokens)
 
         for layer in self.layers:
             x = layer(x)
@@ -55,10 +51,10 @@ class Transformer(pl.LightningModule):
         # unclear why the example wants a batch index
         # still need to implement positional encoding
         # which would make use of the first item in "batch"
-        _, x, y = batch
+        t, x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic
-        y_hat = self(x)
+        y_hat = self(t, x)
         loss = self.loss_fn(y_hat, y)
         self.log("train_loss", loss)
         return loss
@@ -91,3 +87,21 @@ class DecoderLayer(torch.nn.Module):
         fedfwd = self.ff(x)
         x = x + self.dropout2(fedfwd)
         return self.norm2(x)
+
+
+class PositionalEncoding(torch.nn.Module):
+    def __init__(self, d_model, dropout=0.1, max_len=6000):
+        super().__init__()
+        self.dropout = torch.nn.Dropout(p=dropout)
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model),
+        )
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer("pe", pe)
+
+    def forward(self, t, x):
+        x = x + self.pe[t]
+        return self.dropout(x)
