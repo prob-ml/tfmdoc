@@ -94,6 +94,9 @@ def compile_preprocess_files(patient_offsets, records, output_dir):
     # assign each diag code a unique integer key
     codes = records[:, 1]
     code_lookup, indexed_codes = np.unique(codes, return_inverse=True)
+    # make sure that zero does not map to a code
+    code_lookup = np.insert(code_lookup, 0, "pad")
+    indexed_codes += 1
     records = np.column_stack((dates, indexed_codes))
     # write out
     if not os.path.exists(output_dir):

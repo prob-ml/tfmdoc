@@ -14,7 +14,6 @@ class Transformer(pl.LightningModule):
         block_dropout=0,
         n_classes=2,
         max_pool=False,
-        padding_ix=0,
     ):
 
         super().__init__()
@@ -34,7 +33,7 @@ class Transformer(pl.LightningModule):
         self.norm = torch.nn.LayerNorm(d_model)
         self.to_scores = torch.nn.Linear(d_model, n_classes)
         self._max_pool = max_pool
-        self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=padding_ix)
+        self.loss_fn = torch.nn.CrossEntropyLoss()
 
     def forward(self, timestamps, codes):
         tokens = self.embed(codes)
@@ -45,15 +44,15 @@ class Transformer(pl.LightningModule):
 
         x = self.norm(x)
         x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
+        # shape will be (n_batches, d_model)
+        # final linear layer projects this down to (n_batches, n_classes)
         return self.to_scores(x)
 
     def training_step(self, batch, batch_idx):
-        # unclear why the example wants a batch index
-        # still need to implement positional encoding
-        # which would make use of the first item in "batch"
+        # unclear why the lightning api wants a batch index var
         t, x, y = batch
         # lightning recommends keeping the training logic separate
-        # from the inference logic
+        # from the inference logic, though this works fine
         y_hat = self(t, x)
         loss = self.loss_fn(y_hat, y)
         self.log("train_loss", loss)
@@ -103,5 +102,10 @@ class PositionalEncoding(torch.nn.Module):
         self.register_buffer("pe", pe)
 
     def forward(self, t, x):
+        # t has shape (n_batches, seq_length)
+        # self.pe has shape (n_positions, d_model)
+        # resulting tensor has shape (n_batches, seq_length, d_model)
+        # through broadcasting magic, fetches the position embeddings for each
+        # sequence in the batch
         x = x + self.pe[t]
         return self.dropout(x)
