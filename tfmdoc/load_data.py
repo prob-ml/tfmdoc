@@ -27,15 +27,14 @@ class ClaimsDataset(Dataset):
         elif index == self.length:
             start, stop = self.offsets[index], self.length
         patient_records = self.records[start:stop]
-        # return array of times, array of diag codes, and patient label
-        return patient_records[:, 0], patient_records[:, 1], self.labels[index]
+        # return array of diag codes and patient labels
+        return patient_records[:, 1], self.labels[index]
 
 
 def padded_collate(batch):
-    # each element in a batch is a triplet (t, x, y)
+    # each element in a batch is a pair (x, y)
     # un zip batch
-    ts, xs, ys = zip(*batch)
-    ts = pad_sequence(ts, batch_first=True, padding_value=0)
+    xs, ys = zip(*batch)
     xs = pad_sequence(xs, batch_first=True, padding_value=0)
     ys = torch.stack(ys)
-    return ts, xs, ys
+    return xs, ys
