@@ -28,7 +28,7 @@ class ClaimsDataset(Dataset):
             start, stop = self.offsets[index], self.length
         patient_records = self.records[start:stop]
         # return array of diag codes and patient labels
-        return patient_records[:, 1], self.labels[index]
+        return patient_records, self.labels[index]
 
 
 def padded_collate(batch):
