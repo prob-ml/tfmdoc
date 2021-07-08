@@ -89,3 +89,12 @@ ignore =
 
     # disagrees with pylint
     WPS528,
+
+    # contradicts basic pandas syntax
+    E712,
+
+    # there should be a util.py module available!
+    WPS100,
+
+    # disagrees with our whitespace fixer
+    WPS355,
