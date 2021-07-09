@@ -6,7 +6,6 @@ import time
 import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
-from util import get_diags, get_labs, log_time
 
 
 def main():
@@ -16,6 +15,9 @@ def main():
     parser.add_argument("--skip_diags", action="store_true")
     args = parser.parse_args()
     data_dir = "/nfs/turbo/lsa-regier/OPTUM2/"
+
+    log_filename = "logs/build_features.log"
+    os.makedirs(os.path.dirname(log_filename), exist_ok=True)
     logging.basicConfig(
         filename="logs/build_features.log", encoding="utf-8", level=logging.INFO
     )
@@ -138,5 +140,23 @@ def get_diabetes_status(data_dir, features):
     return features
 
 
-if __name__ == "__main__":
-    main()
+def get_labs(all_files):
+    return tuple(
+        file
+        for file in all_files
+        if file.startswith("lab") and file.endswith(".parquet")
+    )
+
+
+def get_diags(all_files):
+    return tuple(
+        file
+        for file in all_files
+        if file.startswith("diag") and file.endswith(".parquet")
+    )
+
+
+def log_time(start_time):
+    end_time = time.time()
+    time_elapsed = (end_time - start_time) / 60
+    logging.info(f"{time_elapsed: .0f} m")
