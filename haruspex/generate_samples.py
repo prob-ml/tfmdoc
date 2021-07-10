@@ -1,4 +1,3 @@
-import time
 from math import floor
 
 import numpy as np
@@ -16,18 +15,12 @@ CONFOUNDER_CODES = ("F10", "305", "5715", "070", "B16", "B18")
 
 class SampleGenerator(OptumProcess):
     def __init__(self, data_dir, pat_file, skip_labs=False):
-        super().__init__(data_dir)
+        super().__init__(data_dir, pat_file)
         self._skip_labs = skip_labs
-        self.pat_file = pat_file
-        self.patient_info = None
         self.filtered_ids = None
 
     def run(self):
-        self.start_time = time.time()
-        self.patient_info = (
-            ParquetFile(self.data_dir + self.pat_file).to_pandas().drop_duplicates()
-        )
-        self.log_time("Read patient info")
+        self.read_patient_info()
         self.logger.info(f"{len(self.patient_info):,} patients in entire data set")
         n_obs, cohort2 = self._process_labs()
         self.log_time("Processed lab data")
