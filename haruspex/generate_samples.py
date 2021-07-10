@@ -1,174 +1,143 @@
-import argparse
-import logging
-import os
-import time
 from math import floor
 
 import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
-from util import get_diags, get_labs, log_time
 
-ALT_CODES = ("1742-6", "1743-4", "1744-2", "77144-4", "44785-4")
-AST_CODES = ("1920-8", "27344-1", "30239-8", "44786-2")
-PLT_CODES = ("778-1", "26515-7", "777-3")
+from haruspex.optum_process import OptumProcess
+
+ALT_CODE = "1742-6"
+AST_CODE = "1920-8"
+PLT_CODE = "777-3"
 CONFOUNDER_CODES = ("F10", "305", "5715", "070", "B16", "B18")
 # look out for hepatitis C
 
 
-def main():
-    logging.basicConfig(
-        filename="logs/generate_samples.log", encoding="utf-8", level=logging.INFO
-    )
-    parser = argparse.ArgumentParser(
-        "Generate samples for cases, control, and at-risk NAFL groups"
-    )
-    parser.add_argument("--test", action="store_true")
-    parser.add_argument("--skip_labs", action="store_true")
-    args = parser.parse_args()
-    if args.test:
-        data_dir = "/nfs/turbo/lsa-regier/OPTUM2/test_data/"
-        pat_file = "zip5_mbr_test.parquet"
-    else:
-        data_dir = "/nfs/turbo/lsa-regier/OPTUM2/"
-        pat_file = "zip5_mbr.parquet"
+class SampleGenerator(OptumProcess):
+    def __init__(self, data_dir, pat_file, skip_labs=False):
+        super().__init__(data_dir, pat_file)
+        self._skip_labs = skip_labs
+        self.filtered_ids = None
 
-    start_time = time.time()
-    if args.skip_labs:
-        cohort2 = np.load(data_dir + "cohort2_patids.npy")
-    else:
-        patient_info = ParquetFile(data_dir + pat_file)
-        patient_info = patient_info.to_pandas()
-        patient_info = patient_info.drop_duplicates()
-        log_time(start_time)
-        n_patients = len(patient_info)
-        logging.info(f"{n_patients:,} patients in entire data set")
+    def run(self):
+        self.read_patient_info()
+        self.logger.info(f"{len(self.patient_info):,} patients in entire data set")
+        n_obs, cohort2 = self._process_labs()
+        self.log_time("Processed lab data")
+        np.save(self.data_dir + "cohort2_patids", cohort2)
+        n_obs.to_csv(self.data_dir + "n_lab_obs.csv")
+        self.filtered_ids = pd.Series(cohort2, name="Patid")
+        cohort_ids = self._filter_diag_data()
+        self.log_time("Processed diag data")
+        output_names = ("nash_patids", "healthy_patids", "nafl_patids")
+        for name, cohort_array in zip(output_names, cohort_ids):
+            np.save(self.data_dir + name, cohort_array)
+        self.log_time("Completed sample generation.")
 
-        _, cohort2 = filter_lab_data(patient_info, data_dir, test=args.test)
-        np.save(data_dir + "cohort2_patids", cohort2)
+    def _process_labs(self):
 
-    filtered_ids = pd.Series(cohort2, name="Patid")
-    filter_diag_data(data_dir, filtered_ids, test=args.test)
-    logging.info("Total run time:")
-    log_time(start_time)
+        labs = self.get_optum_files("lab")
 
+        criterion1_group = []
+        lab_obs_counts = []
 
-def filter_lab_data(patient_info, data_dir, test=False):
-    # criterion 1:
-    # subset to adults with at least 1 observation of AST, ALT, platelets
-    # criterion 2: at least 3 observations of AST, ALT, & PLT, no more than 200
-    # AST/ALT values between 0-1000 u/l
-    labs = get_labs(os.listdir(data_dir))
-    if test:
-        labs = labs[:3]
+        for lab in labs:
+            # obtain subset of lab dataframe
+            # with observations of alt, ast, and plt on same date
+            filtered = self._filter_lab(lab)
+            criterion1_group.append(filtered["Patid"].unique())
+            # drop rows with excess AST
+            filtered = filtered[filtered["Rslt_Nbr_Ast"] <= 1000]
+            filtered.drop(columns=["Loinc_Cd_Ast", "Rslt_Nbr_Ast"], inplace=True)
+            # drop rows with excess ALT
+            filtered = filtered[filtered["Rslt_Nbr_Alt"] <= 1000]
+            filtered.drop(columns=["Loinc_Cd_Alt", "Rslt_Nbr_Alt"], inplace=True)
+            # get count of valid observations per year
+            lab_obs_counts.append(filtered.groupby("Patid")["Fst_Dt"].count())
+            self.log_time(f"Processed {lab}")
+        criterion1 = np.concatenate(criterion1_group)
+        criterion1_unique = np.unique(criterion1)
+        self.logger.info(f"{criterion1_unique.shape[0]} unique ids for criterion 1")
+        n_obs = pd.concat(lab_obs_counts)
+        n_obs = n_obs.groupby(level=0).sum()
+        n_obs = n_obs[n_obs.between(3, 200)]
+        criterion2_unique = n_obs.index
 
-    criterion1_group = []
-    lab_obs_counts = []
+        self.logger.info(f"{criterion2_unique.shape[0]} unique ids for criterion 2")
 
-    for lab in labs:
-        # obtain subset of lab dataframe
-        # with observations of alt, ast, and plt on same date
-        filtered = filter_lab(data_dir, lab, patient_info)
-        criterion1_group.append(filtered["Patid"].unique())
-        # drop rows with excess AST
-        filtered = filtered[filtered["Rslt_Nbr_Ast"] <= 1000]
-        filtered.drop(columns=["Loinc_Cd_Ast", "Rslt_Nbr_Ast"], inplace=True)
-        # drop rows with excess ALT
-        filtered = filtered[filtered["Rslt_Nbr_Alt"] <= 1000]
-        filtered.drop(columns=["Loinc_Cd_Alt", "Rslt_Nbr_Alt"], inplace=True)
+        return n_obs, criterion2_unique
 
-        # get count of valid observations per year
-        lab_obs_counts.append(filtered.groupby("Patid")["Fst_Dt"].count())
+    def _filter_lab(self, lab):
+        lab_pf = ParquetFile(self.data_dir + lab)
+        lab_df = lab_pf.to_pandas(["Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr"])
+        # join patient_info
+        lab_df = lab_df.merge(self.patient_info, on="Patid", how="inner")
+        # filter to just adults (18+)
+        year = floor(lab_df["Fst_Dt"][0] / 365.25 + 1960)
+        lab_df["Age"] = year - lab_df["Yrdob"]
+        lab_df.drop(columns="Yrdob", inplace=True)
+        # why is this slow?
+        lab_df = lab_df[lab_df["Age"] >= 18]
+        lab_df.drop(columns="Age", inplace=True)
+        lab_df["Loinc_Cd"] = lab_df["Loinc_Cd"].str.decode("UTF-8")
+        # lab codes for ALT, AST, platelet count
+        # are all three lab codes present on at least one date?
+        alt = lab_df[lab_df["Loinc_Cd"].str.startswith(ALT_CODE)]
+        ast = lab_df[lab_df["Loinc_Cd"].str.startswith(AST_CODE)]
+        plt = lab_df[lab_df["Loinc_Cd"].str.startswith(PLT_CODE)].drop(
+            columns=["Rslt_Nbr", "Loinc_Cd"]
+        )
+        filtered = alt.merge(ast, on=["Patid", "Fst_Dt"], suffixes=("_Ast", "_Alt"))
+        return filtered.merge(plt, on=["Patid", "Fst_Dt"])
 
-    criterion1_unique = np.unique(np.concatenate(criterion1_group))
-    logging.info(f"{criterion1_unique.shape[0]} unique ids for criterion 1")
+    def _filter_diag_data(self):
+        diags = self.get_optum_files("diag")
+        diag_dfs = []
+        for diag in diags:
+            pf = ParquetFile(self.data_dir + diag)
+            df = pf.to_pandas(["Patid", "Diag"])
+            df["Diag"] = df["Diag"].str.decode("UTF-8")
+            df = df.merge(self.filtered_ids, on="Patid", how="inner")
+            diag_dfs.append(df)
+        df_diag = pd.concat(diag_dfs)
 
-    n_obs = pd.concat(lab_obs_counts)
-    n_obs = n_obs.groupby(level=0).sum()
-    n_obs = n_obs[n_obs.between(3, 200)]
-    criterion2_unique = n_obs.index
-    n_obs.to_csv(data_dir + "n_lab_obs.csv")
+        # condition 1: NASH code and 1 NAFLD code
+        cohort1_ids = find_nash_ids(df_diag)
 
-    logging.info(f"{criterion2_unique.shape[0]} unique ids for criterion 2")
+        # condition 2: no NAFLD codes
+        cohort2_ids = find_healthy_ids(df_diag)
+        df_diag.drop(columns="is_nafld", inplace=True)
 
-    return criterion1_unique, criterion2_unique
+        # condition 3: has NAFL code, no NASH codes
+        cohort3_ids = find_nafl_ids(df_diag)
+        df_diag.drop(columns="is_nash", inplace=True)
 
+        self.logger.info(
+            f"""
+        Cohort size before removing confounders:\n
+        {len(cohort1_ids) :,} cases units\n
+        {len(cohort2_ids) :,} control units\n
+        {len(cohort3_ids) :,} at-risk units"""
+        )
 
-def filter_diag_data(data_dir, filtered_ids, test):
-    diags = get_diags(os.listdir(data_dir))
-    if test:
-        diags = diags[:3]
-    diag_dfs = []
-    for diag in diags:
-        pf = ParquetFile(data_dir + diag)
-        df = pf.to_pandas(["Patid", "Diag"])
-        df["Diag"] = df["Diag"].str.decode("UTF-8")
-        df = df.merge(filtered_ids, on="Patid", how="inner")
-        diag_dfs.append(df)
-    df_diag = pd.concat(diag_dfs)
+        df_diag["is_conf"] = df_diag["Diag"].str.startswith(CONFOUNDER_CODES)
+        not_confounded = ~df_diag.groupby("Patid")["is_conf"].any()
+        no_cf_ids = not_confounded.index
 
-    # condition 1: NASH code and 1 NAFLD code
-    group1_ids = find_nash_ids(df_diag)
+        # drop patient ids with confounding conditions
+        cohort1_ids = np.intersect1d(cohort1_ids, no_cf_ids, assume_unique=True)
+        cohort2_ids = np.intersect1d(cohort2_ids, no_cf_ids, assume_unique=True)
+        cohort3_ids = np.intersect1d(cohort3_ids, no_cf_ids, assume_unique=True)
 
-    # condition 2: no NAFLD codes
-    group2_ids = find_healthy_ids(df_diag)
-    df_diag.drop(columns="is_nafld", inplace=True)
+        self.logger.info(
+            f"""
+        Cohort size after removing confounders:\n
+        {len(cohort1_ids) :,} cases units\n
+        {len(cohort2_ids) :,} control units\n
+        {len(cohort3_ids) :,} at-risk units"""
+        )
 
-    # condition 3: has NAFL code, no NASH codes
-    group3_ids = find_nafl_ids(df_diag)
-    df_diag.drop(columns="is_nash", inplace=True)
-
-    logging.info(
-        f"""
-    Cohort size before removing confounders:\n
-    {len(group1_ids) :,} cases units\n
-    {len(group2_ids) :,} control units\n
-    {len(group3_ids) :,} at-risk units"""
-    )
-
-    df_diag["is_conf"] = df_diag["Diag"].str.startswith(CONFOUNDER_CODES)
-    not_confounded = ~df_diag.groupby("Patid")["is_conf"].any()
-    no_cf_ids = not_confounded.index
-
-    # drop patient ids with confounding conditions
-    group1_ids = np.intersect1d(group1_ids, no_cf_ids, assume_unique=True)
-    group2_ids = np.intersect1d(group2_ids, no_cf_ids, assume_unique=True)
-    group3_ids = np.intersect1d(group3_ids, no_cf_ids, assume_unique=True)
-
-    logging.info(
-        f"""
-    Cohort size after removing confounders:\n
-    {len(group1_ids) :,} cases units\n
-    {len(group2_ids) :,} control units\n
-    {len(group3_ids) :,} at-risk units"""
-    )
-
-    np.save(data_dir + "nash_patids", group1_ids)
-    np.save(data_dir + "healthy_patids", group2_ids)
-    np.save(data_dir + "nafl_patids", group3_ids)
-
-
-def filter_lab(data_dir, lab, patient_info):
-    lab_pf = ParquetFile(data_dir + lab)
-    lab_df = lab_pf.to_pandas(["Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr"])
-    # join patient_info
-    lab_df = lab_df.merge(patient_info, on="Patid", how="inner")
-    # filter to just adults (18+)
-    year = floor(lab_df["Fst_Dt"][0] / 365.25 + 1960)
-    lab_df["Age"] = year - lab_df["Yrdob"]
-    lab_df.drop(columns="Yrdob", inplace=True)
-    lab_df = lab_df[lab_df["Age"] >= 18]
-    lab_df.drop(columns="Age", inplace=True)
-    lab_df["Loinc_Cd"] = lab_df["Loinc_Cd"].str.decode("UTF-8")
-    # lab codes for ALT, AST, platelet count
-    # are all three lab codes present on at least one date?
-    alt = lab_df[lab_df["Loinc_Cd"].str.startswith(ALT_CODES)]
-    ast = lab_df[lab_df["Loinc_Cd"].str.startswith(AST_CODES)]
-    plt = lab_df[lab_df["Loinc_Cd"].str.startswith(PLT_CODES)].drop(
-        columns=["Rslt_Nbr", "Loinc_Cd"]
-    )
-    filtered = alt.merge(ast, on=["Patid", "Fst_Dt"], suffixes=("_Ast", "_Alt"))
-    return filtered.merge(plt, on=["Patid", "Fst_Dt"])
+        return cohort1_ids, cohort2_ids, cohort3_ids
 
 
 def find_nash_ids(df_diag):
@@ -192,7 +161,3 @@ def find_nafl_ids(df_diag):
     no_nash = ~df_diag.groupby("Patid")["is_nash"].any()
     no_nash = no_nash[no_nash == True]
     return np.intersect1d(contains_nafl, no_nash.index, assume_unique=True)
-
-
-if __name__ == "__main__":
-    main()
