@@ -11,10 +11,10 @@ class FeaturesBuilder(OptumProcess):
         self._skip_labs = skip_labs
         self.features = None
         self.code_lookup = {
-            "alt": "1742-6",
-            "ast": "1920-8",
-            "plt": "777-3",
-            "ratio": "1916-6",
+            "alt": "1742-6 ",
+            "ast": "1920-8 ",
+            "plt": "777-3  ",
+            "ratio": "1916-6 ",
         }
 
     def run(self):
@@ -91,8 +91,8 @@ class FeaturesBuilder(OptumProcess):
         df_lab = pd.concat(lab_dfs)
 
         # get aggregate statistics for each type of test
-        for test_type, codes in self.code_lookup.items():
-            test_subset = df_lab[df_lab["Loinc_Cd"].str.startswith(codes, na="")]
+        for test_type, code in self.code_lookup.items():
+            test_subset = df_lab[df_lab["Loinc_Cd"] == code]
             test_subset.sort_values(["Patid", "Fst_Dt"], inplace=True)
             test_info = test_subset.groupby("Patid")["Rslt_Nbr"].agg(
                 ["last", "max", "min", "mean"]
