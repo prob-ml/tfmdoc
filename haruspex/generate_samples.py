@@ -6,18 +6,21 @@ from fastparquet import ParquetFile
 
 from haruspex.optum_process import OptumProcess
 
-ALT_CODE = "1742-6"
-AST_CODE = "1920-8"
-PLT_CODE = "777-3"
-CONFOUNDER_CODES = ("F10", "305", "5715", "070", "B16", "B18")
-# look out for hepatitis C
+ALT_CODE = "1742-6 "
+AST_CODE = "1920-8 "
+PLT_CODE = "777-3  "
+
+NALD_CONFOUNDER_CODES = ("F10", "305", "5715", "070", "B16", "B18", "K70")
 
 
 class SampleGenerator(OptumProcess):
-    def __init__(self, data_dir, pat_file, skip_labs=False):
+    def __init__(self, data_dir, pat_file, skip_labs=False, disease="nald"):
         super().__init__(data_dir, pat_file)
         self._skip_labs = skip_labs
         self.filtered_ids = None
+        if disease not in {"ald", "nald"}:
+            raise ValueError("Unexpected disease name")
+        self.disease = disease
 
     def run(self):
         self.read_patient_info()
@@ -27,11 +30,10 @@ class SampleGenerator(OptumProcess):
         np.save(self.data_dir + "cohort2_patids", cohort2)
         n_obs.to_csv(self.data_dir + "n_lab_obs.csv")
         self.filtered_ids = pd.Series(cohort2, name="Patid")
-        cohort_ids = self._filter_diag_data()
+        cases, controls = self._filter_diag_data()
         self.log_time("Processed diag data")
-        output_names = ("nash_patids", "healthy_patids", "nafl_patids")
-        for name, cohort_array in zip(output_names, cohort_ids):
-            np.save(self.data_dir + name, cohort_array)
+        np.save(f"{self.data_dir}{self.disease}_case_patids", cases)
+        np.save(f"{self.data_dir}{self.disease}_control_patids", controls)
         self.log_time("Completed sample generation.")
 
     def _process_labs(self):
@@ -82,9 +84,9 @@ class SampleGenerator(OptumProcess):
         lab_df["Loinc_Cd"] = lab_df["Loinc_Cd"].str.decode("UTF-8")
         # lab codes for ALT, AST, platelet count
         # are all three lab codes present on at least one date?
-        alt = lab_df[lab_df["Loinc_Cd"].str.startswith(ALT_CODE)]
-        ast = lab_df[lab_df["Loinc_Cd"].str.startswith(AST_CODE)]
-        plt = lab_df[lab_df["Loinc_Cd"].str.startswith(PLT_CODE)].drop(
+        alt = lab_df[lab_df["Loinc_Cd"] == ALT_CODE]
+        ast = lab_df[lab_df["Loinc_Cd"] == AST_CODE]
+        plt = lab_df[lab_df["Loinc_Cd"] == PLT_CODE].drop(
             columns=["Rslt_Nbr", "Loinc_Cd"]
         )
         filtered = alt.merge(ast, on=["Patid", "Fst_Dt"], suffixes=("_Ast", "_Alt"))
@@ -101,63 +103,84 @@ class SampleGenerator(OptumProcess):
             diag_dfs.append(df)
         df_diag = pd.concat(diag_dfs)
 
-        # condition 1: NASH code and 1 NAFLD code
-        cohort1_ids = find_nash_ids(df_diag)
+        if self.disease == "ald":
+            cohort1_ids = find_ald_ids(df_diag, find_cases=True)
+            cohort2_ids = find_ald_ids(df_diag, find_cases=False)
+            df_diag.drop(columns="is_ald", inplace=True)
 
-        # condition 2: no NAFLD codes
-        cohort2_ids = find_healthy_ids(df_diag)
-        df_diag.drop(columns="is_nafld", inplace=True)
+        elif self.disease == "nald":
+            # condition 1: NASH code and 1 NAFLD code
+            cohort1_ids = find_nash_ids(df_diag)
 
-        # condition 3: has NAFL code, no NASH codes
-        cohort3_ids = find_nafl_ids(df_diag)
-        df_diag.drop(columns="is_nash", inplace=True)
+            # condition 2: no NAFLD codes
+            cohort2_ids = find_no_nafld_ids(df_diag)
+            df_diag.drop(columns="is_nafld", inplace=True)
 
         self.logger.info(
             f"""
         Cohort size before removing confounders:\n
         {len(cohort1_ids) :,} cases units\n
-        {len(cohort2_ids) :,} control units\n
-        {len(cohort3_ids) :,} at-risk units"""
+        {len(cohort2_ids) :,} control units"""
         )
 
-        df_diag["is_conf"] = df_diag["Diag"].str.startswith(CONFOUNDER_CODES)
-        not_confounded = ~df_diag.groupby("Patid")["is_conf"].any()
-        no_cf_ids = not_confounded.index
+        # this step will be a bit slow
+        if self.disease == "nald":
+            df_diag["is_conf"] = df_diag["Diag"].str.startswith(NALD_CONFOUNDER_CODES)
+            not_confounded = ~df_diag.groupby("Patid")["is_conf"].any()
+            no_cf_ids = not_confounded.index
 
-        # drop patient ids with confounding conditions
-        cohort1_ids = np.intersect1d(cohort1_ids, no_cf_ids, assume_unique=True)
-        cohort2_ids = np.intersect1d(cohort2_ids, no_cf_ids, assume_unique=True)
-        cohort3_ids = np.intersect1d(cohort3_ids, no_cf_ids, assume_unique=True)
+            # drop patient ids with confounding conditions
+            cohort1_ids = np.intersect1d(cohort1_ids, no_cf_ids, assume_unique=True)
+            cohort2_ids = np.intersect1d(cohort2_ids, no_cf_ids, assume_unique=True)
 
-        self.logger.info(
-            f"""
-        Cohort size after removing confounders:\n
-        {len(cohort1_ids) :,} cases units\n
-        {len(cohort2_ids) :,} control units\n
-        {len(cohort3_ids) :,} at-risk units"""
-        )
+            self.logger.info(
+                f"""
+            Cohort size after removing confounders:\n
+            {len(cohort1_ids) :,} cases units\n
+            {len(cohort2_ids) :,} control units"""
+            )
 
-        return cohort1_ids, cohort2_ids, cohort3_ids
+        return cohort1_ids, cohort2_ids
+
+
+# DIAGNOSIS SCANNER FUNCTIONS
+
+# NALD
 
 
 def find_nash_ids(df_diag):
     nafld_codes = {"5718   ", "5719   ", "K760   "}
-    contains_nash = df_diag[df_diag["Diag"].str.startswith("K7581")]["Patid"].unique()
+    contains_nash = df_diag[df_diag["Diag"] == "K7581  "]["Patid"].unique()
     contains_any_nafld = df_diag[df_diag["Diag"].isin(nafld_codes)]["Patid"].unique()
     return np.intersect1d(contains_nash, contains_any_nafld, assume_unique=True)
 
 
-def find_healthy_ids(df_diag):
+def find_no_nafld_ids(df_diag):
     all_nafld_codes = {"5718   ", "5719   ", "K760   ", "K7581  "}
     df_diag["is_nafld"] = df_diag["Diag"].isin(all_nafld_codes)
     no_nafld = ~df_diag.groupby("Patid")["is_nafld"].any()
     return no_nafld[no_nafld == True].index
 
 
-def find_nafl_ids(df_diag):
-    nash_codes = {"5718   ", "5719   ", "K7581  "}
-    df_diag["is_nash"] = df_diag["Diag"].isin(nash_codes)
-    contains_nafl = df_diag[df_diag["Diag"].str.startswith("K760")]["Patid"].unique()
-    no_nash = ~df_diag.groupby("Patid")["is_nash"].any()
-    no_nash = no_nash[no_nash == True]
-    return np.intersect1d(contains_nafl, no_nash.index, assume_unique=True)
+# ALD
+
+
+def find_ald_ids(df_diag, find_cases=True):
+    ald_codes = {
+        "5711   ",
+        "5712   ",
+        "5713   ",
+        "K7010  ",
+        "K7011  ",
+        "K7041  ",
+        "K7030  ",
+        "K702   ",
+        "K700   ",
+        "K709   ",
+        "K7031  ",
+        "K7040  ",
+    }
+    df_diag["is_ald"] = df_diag["Diag"].isin(ald_codes)
+    ald = df_diag.groupby("Patid")["is_ald"].any()
+    # if find_cases is false, returns healthy ids/control units
+    return ald[ald == find_cases].index
