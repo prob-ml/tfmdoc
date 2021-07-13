@@ -6,8 +6,8 @@ from haruspex.optum_process import OptumProcess
 
 
 class FeaturesBuilder(OptumProcess):
-    def __init__(self, data_dir, pat_file, skip_labs=False):
-        super().__init__(data_dir, pat_file)
+    def __init__(self, data_dir, skip_labs=False):
+        super().__init__(data_dir)
         self._skip_labs = skip_labs
         self.features = None
         self.code_lookup = {
