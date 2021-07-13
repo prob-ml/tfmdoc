@@ -23,12 +23,15 @@ class SampleGenerator(OptumProcess):
         self.disease = disease
 
     def run(self):
-        self.read_patient_info()
-        self.logger.info(f"{len(self.patient_info):,} patients in entire data set")
-        n_obs, cohort2 = self._process_labs()
-        self.log_time("Processed lab data")
-        np.save(self.data_dir + "cohort2_patids", cohort2)
-        n_obs.to_csv(self.data_dir + "n_lab_obs.csv")
+        if self._skip_labs:
+            cohort2 = np.load(self.data_dir + "cohort2_patids.npy")
+        else:
+            self.read_patient_info()
+            self.logger.info(f"{len(self.patient_info):,} patients in entire data set")
+            n_obs, cohort2 = self._process_labs()
+            self.log_time("Processed lab data")
+            np.save(self.data_dir + "cohort2_patids", cohort2)
+            n_obs.to_csv(self.data_dir + "n_lab_obs.csv")
         self.filtered_ids = pd.Series(cohort2, name="Patid")
         cases, controls = self._filter_diag_data()
         self.log_time("Processed diag data")
