@@ -6,10 +6,13 @@ from fastparquet import ParquetFile
 
 
 class OptumProcess:
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, disease):
         self.data_dir = data_dir
         self.start_time = None
         self.patient_info = None
+        if disease not in {"ald", "nald"}:
+            raise ValueError("Unexpected disease name")
+        self.disease = disease
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 

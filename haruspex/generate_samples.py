@@ -16,12 +16,9 @@ NALD_CONFOUNDER_CODES = ("F10", "305", "5715", "070", "B16", "B18", "K70")
 
 class SampleGenerator(OptumProcess):
     def __init__(self, data_dir, skip_labs=False, disease="nald"):
-        super().__init__(data_dir)
+        super().__init__(data_dir, disease)
         self._skip_labs = skip_labs
         self.filtered_ids = None
-        if disease not in {"ald", "nald"}:
-            raise ValueError("Unexpected disease name")
-        self.disease = disease
 
     def run(self):
         if self._skip_labs:
