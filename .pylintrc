@@ -54,3 +54,6 @@ disable=
 
     # this contradicts pandas syntax
     singleton-comparison,
+
+    # Suppressing this until I find a configuration approach that works
+    too-many-arguments,

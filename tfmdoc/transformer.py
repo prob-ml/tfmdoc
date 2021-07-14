@@ -10,10 +10,10 @@ class Transformer(pl.LightningModule):
         n_tokens,
         d_model,
         n_blocks,
-        max_len=6000,
-        block_dropout=0,
-        n_classes=2,
-        max_pool=False,
+        n_heads,
+        max_len,
+        block_dropout,
+        max_pool,
     ):
 
         super().__init__()
@@ -31,7 +31,8 @@ class Transformer(pl.LightningModule):
         self.layers = torch.nn.Sequential(*blocks)
 
         self.norm = torch.nn.LayerNorm(d_model)
-        self.to_scores = torch.nn.Linear(d_model, n_classes)
+        # binary classification
+        self.to_scores = torch.nn.Linear(d_model, 2)
         self._max_pool = max_pool
         self.loss_fn = torch.nn.CrossEntropyLoss()
 
