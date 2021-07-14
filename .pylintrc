@@ -49,5 +49,11 @@ disable=
     # I trust myself not to overuse non-snake_case names
     invalid-name,
 
-    # not sure how you build your own transformer without at least 5 arguments. Come on!
+    # impractical to build a neural network architecture without at least five args
     too-many-arguments,
+
+    # really doubt this is going to be a performance issue
+    logging-fstring-interpolation,
+
+    # this contradicts pandas syntax
+    singleton-comparison,

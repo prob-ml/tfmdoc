@@ -89,3 +89,12 @@ ignore =
 
     # disagrees with pylint
     WPS528,
+
+    # contradicts basic pandas syntax
+    E712,
+
+    # disagrees with our whitespace fixer
+    WPS355,
+
+    # OK to begin lines with a dot to break up long lines
+    WPS348
