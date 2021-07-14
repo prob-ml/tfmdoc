@@ -1,7 +1,6 @@
 import os
 
 import pytorch_lightning as pl
-import torch
 from torch.utils.data import DataLoader
 
 from tfmdoc import Transformer
@@ -29,7 +28,6 @@ def test_pipeline():
     preprocess_dir = "tests/test_data/preprocessed_files/"
     torch_dataset = ClaimsDataset(preprocess_dir)
     assert torch_dataset.offsets[-1] == len(torch_dataset)
-    t, x, y = torch_dataset[7]
-    assert torch.equal(t, torch.sort(t)[0])
+    x, y = torch_dataset[7]
     assert len(x) == torch_dataset.offsets[8] - torch_dataset.offsets[7]
     assert y.item() in {0, 1}

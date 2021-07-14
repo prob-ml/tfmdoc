@@ -10,10 +10,10 @@ class Transformer(pl.LightningModule):
         n_tokens,
         d_model,
         n_blocks,
-        max_len=6000,
         block_dropout=0,
         n_classes=2,
         max_pool=False,
+        encode_gaps=False,
     ):
 
         super().__init__()
@@ -22,7 +22,7 @@ class Transformer(pl.LightningModule):
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
 
-        self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
+        self.pos_encode = PositionalEncoding(d_model=d_model, encode_gaps=encode_gaps)
 
         blocks = [
             DecoderLayer(d_model, n_heads=8, dropout=block_dropout)
@@ -35,9 +35,12 @@ class Transformer(pl.LightningModule):
         self._max_pool = max_pool
         self.loss_fn = torch.nn.CrossEntropyLoss()
 
-    def forward(self, timestamps, codes):
-        tokens = self.embed(codes)
-        x = self.pos_encode(timestamps, tokens)
+    def forward(self, codes):
+        # embed codes into dimension of model
+        # for continuous representation
+        x = self.embed(codes)
+        # add sinusoidal position encodings
+        x = self.pos_encode(x)
 
         for layer in self.layers:
             x = layer(x)
@@ -50,10 +53,10 @@ class Transformer(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
-        t, x, y = batch
+        x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
-        y_hat = self(t, x)
+        y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log("train_loss", loss)
         return loss
@@ -89,9 +92,10 @@ class DecoderLayer(torch.nn.Module):
 
 
 class PositionalEncoding(torch.nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=6000):
+    def __init__(self, d_model, encode_gaps, dropout=0.1, max_len=5000):
         super().__init__()
         self.dropout = torch.nn.Dropout(p=dropout)
+        self._encode_gaps = encode_gaps
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
@@ -99,13 +103,13 @@ class PositionalEncoding(torch.nn.Module):
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
+        if not self._encode_gaps:
+            pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def forward(self, t, x):
-        # t has shape (n_batches, seq_length)
-        # self.pe has shape (n_positions, d_model)
-        # resulting tensor has shape (n_batches, seq_length, d_model)
-        # through broadcasting magic, fetches the position embeddings for each
-        # sequence in the batch
-        x = x + self.pe[t]
+    def forward(self, x):
+        # x has shape (n_batches, seq_length, d_model)
+        # add encodings for positions found in batched sequences
+        t = x.shape[1]
+        x = x + self.pe[:, :t, :]
         return self.dropout(x)
