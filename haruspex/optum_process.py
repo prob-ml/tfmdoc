@@ -6,11 +6,13 @@ from fastparquet import ParquetFile
 
 
 class OptumProcess:
-    def __init__(self, data_dir, pat_file):
+    def __init__(self, data_dir, disease):
         self.data_dir = data_dir
-        self.pat_file = pat_file
         self.start_time = None
         self.patient_info = None
+        if disease not in {"ald", "nald"}:
+            raise ValueError("Unexpected disease name")
+        self.disease = disease
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
@@ -22,7 +24,9 @@ class OptumProcess:
 
         self.start_time = time.time()
         self.patient_info = (
-            ParquetFile(self.data_dir + self.pat_file).to_pandas(cols).drop_duplicates()
+            ParquetFile(self.data_dir + "zip5_mbr.parquet")
+            .to_pandas(cols)
+            .drop_duplicates()
         )
         self.log_time("Read patient info")
 

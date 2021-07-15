@@ -49,11 +49,11 @@ disable=
     # I trust myself not to overuse non-snake_case names
     invalid-name,
 
-    # impractical to build a neural network architecture without at least five args
-    too-many-arguments,
-
     # really doubt this is going to be a performance issue
     logging-fstring-interpolation,
 
     # this contradicts pandas syntax
     singleton-comparison,
+
+    # Suppressing this until I find a configuration approach that works
+    too-many-arguments,

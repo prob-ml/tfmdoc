@@ -1,6 +1,5 @@
 repos:
   - repo: local
-    exclude: .parquet$
     hooks:
       - id: trailing-whitespace
         name: trailing-whitespace

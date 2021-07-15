@@ -6,9 +6,9 @@ from haruspex.optum_process import OptumProcess
 
 
 class FeaturesBuilder(OptumProcess):
-    def __init__(self, data_dir, pat_file, skip_labs=False):
-        super().__init__(data_dir, pat_file)
-        self._skip_labs = skip_labs
+    def __init__(self, data_dir, skip_diags=False, disease="nald"):
+        super().__init__(data_dir, disease)
+        self._skip_diags = skip_diags
         self.features = None
         self.code_lookup = {
             "alt": "1742-6 ",
@@ -18,36 +18,42 @@ class FeaturesBuilder(OptumProcess):
         }
 
     def run(self):
-        self.read_patient_info(gender_code=True)
-        self.features = self._load_cohorts()
-        self.features = self.patient_info.merge(self.features, on="Patid", how="right")
-        self.features = self._get_diabetes_status()
-        self.log_time("Processed diagnosis data")
+        if self._skip_diags:
+            self.features = pd.read_csv(
+                self.data_dir + f"{self.disease}_interm_diag_features.csv"
+            )
+        else:
+            self.read_patient_info(gender_code=True)
+            self.features = self._load_cohorts()
+            self.features = self.patient_info.merge(
+                self.features, on="Patid", how="right"
+            )
+            self.features = self._get_diabetes_status()
+            self.log_time("Processed diagnosis data")
         self.features = self._get_temporal_summaries()
         self.log_time("Processed lab data")
-        self.features.to_csv(self.data_dir + "nald_features.csv", index=False)
+        self.features.to_csv(
+            self.data_dir + f"{self.disease}_features.csv", index=False
+        )
 
     def _load_cohorts(self):
-        cohorts = ("nash", "healthy", "nafl")
+        cohorts = ("case", "control")
         cohort_ids = {}
         for cohort in cohorts:
-            filename = f"{cohort}_patids.npy"
+            filename = f"{self.disease}_{cohort}_patids.npy"
             id_array = np.load(self.data_dir + filename)
             cohort_ids[cohort] = pd.Series(id_array, name="Patid").to_frame()
 
         # random subsample of controls group
-        n_cases = len(cohort_ids["nash"])
-        cohort_ids["healthy"] = cohort_ids["healthy"].sample(
+        n_cases = len(cohort_ids["case"])
+        cohort_ids["control"] = cohort_ids["control"].sample(
             n=n_cases + 200, random_state=74
         )
 
-        cohort_ids["healthy"]["status"] = 0
-        cohort_ids["nash"]["status"] = 1
-        cohort_ids["nafl"]["status"] = 2
+        cohort_ids["control"]["status"] = 0
+        cohort_ids["case"]["status"] = 1
 
-        features = pd.concat(
-            (cohort_ids["healthy"], cohort_ids["nash"], cohort_ids["nafl"])
-        )
+        features = pd.concat((cohort_ids["control"], cohort_ids["case"]))
 
         assert features["Patid"].duplicated().sum() == 0
 
@@ -68,7 +74,9 @@ class FeaturesBuilder(OptumProcess):
         features = self.features.join(has_diabetes, on="Patid", how="left")
         features["Diabetes"].fillna(0, inplace=True)
 
-        features.to_csv(self.data_dir + "interm_diag_features.csv", index=False)
+        features.to_csv(
+            self.data_dir + f"{self.disease}_interm_diag_features.csv", index=False
+        )
 
         return features
 

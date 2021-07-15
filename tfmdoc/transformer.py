@@ -10,10 +10,10 @@ class Transformer(pl.LightningModule):
         n_tokens,
         d_model,
         n_blocks,
-        block_dropout=0,
-        n_classes=2,
-        max_pool=False,
-        encode_gaps=False,
+        n_heads,
+        max_len,
+        block_dropout,
+        max_pool,
     ):
 
         super().__init__()
@@ -22,16 +22,17 @@ class Transformer(pl.LightningModule):
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
 
-        self.pos_encode = PositionalEncoding(d_model=d_model, encode_gaps=encode_gaps)
+        self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
 
         blocks = [
-            DecoderLayer(d_model, n_heads=8, dropout=block_dropout)
+            DecoderLayer(d_model, n_heads=n_heads, dropout=block_dropout)
             for _ in range(n_blocks)
         ]
         self.layers = torch.nn.Sequential(*blocks)
 
         self.norm = torch.nn.LayerNorm(d_model)
-        self.to_scores = torch.nn.Linear(d_model, n_classes)
+        # binary classification
+        self.to_scores = torch.nn.Linear(d_model, 2)
         self._max_pool = max_pool
         self.loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -92,10 +93,9 @@ class DecoderLayer(torch.nn.Module):
 
 
 class PositionalEncoding(torch.nn.Module):
-    def __init__(self, d_model, encode_gaps, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
         super().__init__()
         self.dropout = torch.nn.Dropout(p=dropout)
-        self._encode_gaps = encode_gaps
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
@@ -103,8 +103,7 @@ class PositionalEncoding(torch.nn.Module):
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        if not self._encode_gaps:
-            pe = pe.unsqueeze(0)
+        pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
     def forward(self, x):

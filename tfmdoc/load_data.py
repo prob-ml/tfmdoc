@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir):
+    def __init__(self, preprocess_dir, test=False):
         self.offsets = np.load(preprocess_dir + "patient_offsets.npy")
         self.records = torch.from_numpy(np.load(preprocess_dir + "diag_records.npy"))
         self.code_lookup = np.load(
@@ -13,9 +13,12 @@ class ClaimsDataset(Dataset):
         )
         self.ids = np.load(preprocess_dir + "patient_ids.npy", allow_pickle=True)
         self.length = self.records.shape[0]
-        # there should be labels/a dependent variable for each patient, right?
-        # this is a placeholder
-        self.labels = torch.from_numpy(np.random.randint(2, size=self.length))
+        if test:
+            self.labels = torch.from_numpy(np.random.randint(2, size=self.length))
+        else:
+            self.labels = torch.from_numpy(
+                np.load(preprocess_dir + "patient_labels.npy")
+            )
 
     def __len__(self):
         # sufficient to return the number of patients
