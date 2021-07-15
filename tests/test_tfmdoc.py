@@ -14,7 +14,7 @@ def test_lightning():
         # preprocess data if required
         claims_pipeline(data_dir="tests/test_data/")
     preprocess_dir = "tests/test_data/preprocessed_files/"
-    dataset = ClaimsDataset(preprocess_dir)
+    dataset = ClaimsDataset(preprocess_dir, test=True)
     train_loader = DataLoader(dataset, collate_fn=padded_collate, batch_size=4)
     mapping = dataset.code_lookup
     with initialize(config_path="../conf"):

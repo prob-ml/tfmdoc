@@ -7,6 +7,22 @@ from fastparquet import ParquetFile
 # path to data: /nfs/turbo/lsa-regier/OPTUM2/
 
 
+ALD_CODES = (
+    "5711   ",
+    "5712   ",
+    "5713   ",
+    "K7010  ",
+    "K7011  ",
+    "K7041  ",
+    "K7030  ",
+    "K702   ",
+    "K700   ",
+    "K709   ",
+    "K7031  ",
+    "K7040  ",
+)
+
+
 def claims_pipeline(
     data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
 ):
@@ -19,19 +35,20 @@ def claims_pipeline(
         dataframe = clean_diag_data(dataframe)
         collate_patient_records(dataframe, patient_group_cache)
 
-    records, patient_offsets = combine_years(
+    records, patient_offsets, labels = combine_years(
         patient_group_cache, min_length, max_length
     )
 
     output_dir = data_dir + output_dir
 
-    compile_output_files(patient_offsets, records, output_dir)
+    compile_output_files(patient_offsets, records, labels, output_dir)
 
 
-def compile_output_files(patient_offsets, records, output_dir):
+def compile_output_files(patient_offsets, records, labels, output_dir):
     patient_ids = np.concatenate([po.index for po in patient_offsets])
     patient_offsets = np.cumsum(np.concatenate(patient_offsets))
     records = np.concatenate(records)
+    patient_labels = np.concatenate(labels)
     # assign each diag code a unique integer key
     code_lookup, indexed_records = np.unique(records, return_inverse=True)
     # make sure that zero does not map to a code
@@ -46,11 +63,14 @@ def compile_output_files(patient_offsets, records, output_dir):
     np.save(output_dir + "patient_ids", patient_ids)
     np.save(output_dir + "diag_code_lookup", code_lookup)
     np.save(output_dir + "diag_records", indexed_records)
+    np.save(output_dir + "patient_labels", patient_labels)
 
 
 def clean_diag_data(dataframe):
     dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.decode("UTF-8")
     dataframe["Diag"] = dataframe["Diag"].str.decode("UTF-8")
+    # apply labels
+    dataframe["is_case"] = dataframe["Diag"].isin(ALD_CODES)
     # make icd flag more readable
     dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.replace("9 ", "09")
     # drop records without a diagnostic code
@@ -80,15 +100,17 @@ def collate_patient_records(dataframe, cache):
 
 
 def combine_years(cache, min_length, max_length):
-    # store offsets to concatenate later
     patient_offsets = []
-    # store records (dates and diagnosis codes)
     records = []
-    # concatenate
+    labels = []
     for group in cache:
         combined_years = pd.concat(cache[group])
         combined_years.sort_values(["patid", "date"], inplace=True)
         combined_years.drop(columns="date", inplace=True)
+        # if a patient has any code associated with the disease, flag as a positive
+        labels.append(combined_years.groupby("patid")["is_case"].any().astype(int))
+        # drop rows with the disease's diag code to prevent leakage
+        combined_years = combined_years[combined_years["is_case"] == False]
         counts = combined_years.groupby("patid")["diag"].count().rename("count")
         # filter out sequences that are too long or short
         valid_offsets = counts[(counts >= min_length) & (counts <= max_length)]
@@ -96,7 +118,7 @@ def combine_years(cache, min_length, max_length):
         valid_records = combined_years.join(valid_offsets, on="patid", how="right")
         records.append(valid_records[["diag"]])
 
-    return records, patient_offsets
+    return records, patient_offsets, labels
 
 
 def split_icd_codes(code):
