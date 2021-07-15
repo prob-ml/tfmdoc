@@ -24,16 +24,28 @@ def claims_pipeline(
     )
 
     output_dir = data_dir + output_dir
+
+    compile_output_files(patient_offsets, records, output_dir)
+
+
+def compile_output_files(patient_offsets, records, output_dir):
     patient_ids = np.concatenate([po.index for po in patient_offsets])
     patient_offsets = np.cumsum(np.concatenate(patient_offsets))
     records = np.concatenate(records)
-    patient_offsets, code_lookup, records = compile_preprocess_files(
-        patient_offsets, records, output_dir
-    )
+    # assign each diag code a unique integer key
+    code_lookup, indexed_records = np.unique(records, return_inverse=True)
+    # make sure that zero does not map to a code
+    code_lookup = np.insert(code_lookup, 0, "pad")
+    indexed_records += 1
+
+    # write out
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     np.save(output_dir + "patient_offsets", patient_offsets)
     np.save(output_dir + "patient_ids", patient_ids)
     np.save(output_dir + "diag_code_lookup", code_lookup)
-    np.save(output_dir + "diag_records", records)
+    np.save(output_dir + "diag_records", indexed_records)
 
 
 def clean_diag_data(dataframe):
@@ -76,33 +88,15 @@ def combine_years(cache, min_length, max_length):
     for group in cache:
         combined_years = pd.concat(cache[group])
         combined_years.sort_values(["patid", "date"], inplace=True)
-        counts = combined_years.groupby("patid")["date"].count().rename("count")
+        combined_years.drop(columns="date", inplace=True)
+        counts = combined_years.groupby("patid")["diag"].count().rename("count")
         # filter out sequences that are too long or short
         valid_offsets = counts[(counts >= min_length) & (counts <= max_length)]
         patient_offsets.append(valid_offsets)
         valid_records = combined_years.join(valid_offsets, on="patid", how="right")
-        records.append(valid_records[["date", "diag"]])
+        records.append(valid_records[["diag"]])
 
     return records, patient_offsets
-
-
-def compile_preprocess_files(patient_offsets, records, output_dir):
-    dates = records[:, 0].astype(int)
-    # might be more efficient to hardcode in the offset
-    # presumably, Jan 1st 2002 is the earliest date in the dataset
-    dates = dates - dates.min()
-    # assign each diag code a unique integer key
-    codes = records[:, 1]
-    code_lookup, indexed_codes = np.unique(codes, return_inverse=True)
-    # make sure that zero does not map to a code
-    code_lookup = np.insert(code_lookup, 0, "pad")
-    indexed_codes += 1
-    records = np.column_stack((dates, indexed_codes))
-    # write out
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    return patient_offsets, code_lookup, records
 
 
 def split_icd_codes(code):
