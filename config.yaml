@@ -8,3 +8,18 @@ transformer:
   max_pool: True
 
 data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
+
+disease_codes:
+  ald:
+    - "5711   "
+    - "5712   "
+    - "5713   "
+    - "K7010  "
+    - "K7011  "
+    - "K7041  "
+    - "K7030  "
+    - "K702   "
+    - "K700   "
+    - "K709   "
+    - "K7031  "
+    - "K7040  "

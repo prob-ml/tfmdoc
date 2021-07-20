@@ -5,52 +5,24 @@ import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
 
-# path to data: /nfs/turbo/lsa-regier/OPTUM2/
-
-ALD_CODES = (
-    "5711   ",
-    "5712   ",
-    "5713   ",
-    "K7010  ",
-    "K7011  ",
-    "K7041  ",
-    "K7030  ",
-    "K702   ",
-    "K700   ",
-    "K709   ",
-    "K7031  ",
-    "K7040  ",
-)
-
 log = logging.getLogger(__name__)
 
 
-ALD_CODES = (
-    "5711   ",
-    "5712   ",
-    "5713   ",
-    "K7010  ",
-    "K7011  ",
-    "K7041  ",
-    "K7030  ",
-    "K702   ",
-    "K700   ",
-    "K709   ",
-    "K7031  ",
-    "K7040  ",
-)
-
-
 def claims_pipeline(
-    data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
+    data_dir,
+    disease_codes,
+    output_dir="preprocessed_files/",
+    min_length=16,
+    max_length=512,
 ):
+    log.info("Began pipeline")
     all_files = os.listdir(data_dir)
     diags = [f for f in all_files if is_parquet_file(f)]
     frames = []
     for diag in diags:
         parquet_file = ParquetFile(data_dir + diag)
         dataframe = parquet_file.to_pandas(["Patid", "Icd_Flag", "Diag", "Fst_Dt"])
-        frames.append(clean_diag_data(dataframe))
+        frames.append(clean_diag_data(dataframe, disease_codes))
         log.info(f"Read {diag}")
     dataframe = pd.concat(frames)
     records, offsets, labels = get_patient_info(dataframe, min_length, max_length)
@@ -85,11 +57,13 @@ def compile_output_files(patient_offsets, records, labels, output_dir):
     np.save(output_dir + "patient_labels", patient_labels)
 
 
-def clean_diag_data(dataframe):
+def clean_diag_data(dataframe, disease_codes):
     dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.decode("UTF-8")
     dataframe["Diag"] = dataframe["Diag"].str.decode("UTF-8")
+    log.info("Decoded byte fields")
     # apply labels
-    dataframe["is_case"] = dataframe["Diag"].isin(ALD_CODES)
+    dataframe["is_case"] = dataframe["Diag"].isin(disease_codes)
+    log.info("identified ALD patients")
     # make icd flag more readable
     dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.replace("9 ", "09")
     # drop records without a diagnostic code
@@ -98,8 +72,10 @@ def clean_diag_data(dataframe):
     dataframe["DiagId"] = dataframe["Icd_Flag"] + ":" + dataframe["Diag"]
     dataframe.drop(columns=["Icd_Flag", "Diag"], inplace=True)
     dataframe["DiagId"] = dataframe["DiagId"].str.strip()
+    log.info("Combined ICD flag and diag code")
     # split code into general category and specific condition
     dataframe["DiagId"] = dataframe["DiagId"].apply(split_icd_codes)
+    log.info("Split up ICD codes")
     dataframe["Patid"] = dataframe["Patid"].astype(int)
     return dataframe
 
@@ -129,7 +105,7 @@ def split_icd_codes(code):
     For each record in a diagnoses file, split the ICD code into the first
     3 digits (category) and the whole code (specific diagnosis).
     """
-    return (code[:5], code[:6], code)
+    return (code[:2], code[:3], code)
 
 
 def is_parquet_file(file):
