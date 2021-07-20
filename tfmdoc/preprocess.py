@@ -25,6 +25,22 @@ ALD_CODES = (
 log = logging.getLogger(__name__)
 
 
+ALD_CODES = (
+    "5711   ",
+    "5712   ",
+    "5713   ",
+    "K7010  ",
+    "K7011  ",
+    "K7041  ",
+    "K7030  ",
+    "K702   ",
+    "K700   ",
+    "K709   ",
+    "K7031  ",
+    "K7040  ",
+)
+
+
 def claims_pipeline(
     data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
 ):
