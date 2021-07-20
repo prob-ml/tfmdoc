@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -5,7 +6,6 @@ import pandas as pd
 from fastparquet import ParquetFile
 
 # path to data: /nfs/turbo/lsa-regier/OPTUM2/
-
 
 ALD_CODES = (
     "5711   ",
@@ -22,33 +22,36 @@ ALD_CODES = (
     "K7040  ",
 )
 
+log = logging.getLogger(__name__)
+
 
 def claims_pipeline(
     data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
 ):
     all_files = os.listdir(data_dir)
     diags = [f for f in all_files if is_parquet_file(f)]
-    patient_group_cache = {}
+    frames = []
     for diag in diags:
         parquet_file = ParquetFile(data_dir + diag)
         dataframe = parquet_file.to_pandas(["Patid", "Icd_Flag", "Diag", "Fst_Dt"])
-        dataframe = clean_diag_data(dataframe)
-        collate_patient_records(dataframe, patient_group_cache)
-
-    records, patient_offsets, labels = combine_years(
-        patient_group_cache, min_length, max_length
-    )
+        frames.append(clean_diag_data(dataframe))
+        log.info(f"Read {diag}")
+    dataframe = pd.concat(frames)
+    records, offsets, labels = get_patient_info(dataframe, min_length, max_length)
+    log.info("Obtained patient info")
 
     output_dir = data_dir + output_dir
 
-    compile_output_files(patient_offsets, records, labels, output_dir)
+    compile_output_files(offsets, records, labels, output_dir)
+
+    log.info("Completed pipeline")
 
 
 def compile_output_files(patient_offsets, records, labels, output_dir):
-    patient_ids = np.concatenate([po.index for po in patient_offsets])
-    patient_offsets = np.cumsum(np.concatenate(patient_offsets))
-    records = np.concatenate(records)
-    patient_labels = np.concatenate(labels)
+    patient_ids = patient_offsets.index.to_numpy()
+    patient_offsets = np.cumsum(patient_offsets)
+    records = records.to_numpy()
+    patient_labels = labels.to_numpy()
     # assign each diag code a unique integer key
     code_lookup, indexed_records = np.unique(records, return_inverse=True)
     # make sure that zero does not map to a code
@@ -85,40 +88,24 @@ def clean_diag_data(dataframe):
     return dataframe
 
 
-def collate_patient_records(dataframe, cache):
-    dataframe["patient_group"] = dataframe["Patid"].apply(lambda x: x % 10)
-    for group in range(10):
-        patient_logs = dataframe[dataframe["patient_group"] == group]
-        # this is probably the coolest pandas method ever
-        patient_logs = patient_logs.explode("DiagId")
-        column_map = {"Patid": "patid", "Fst_Dt": "date", "DiagId": "diag"}
-        patient_logs.rename(columns=column_map, inplace=True)
-        if cache.get(group) is None:
-            cache[group] = [patient_logs]
-        else:
-            cache[group].append(patient_logs)
+def get_patient_info(dataframe, min_length, max_length):
+    # we could read in the data sequentially by patient id
+    column_map = {"Patid": "patid", "Fst_Dt": "date", "DiagId": "diag"}
+    dataframe.rename(columns=column_map, inplace=True)
+    dataframe = dataframe.explode("diag")
+    dataframe.sort_values(["patid", "date"], inplace=True)
+    dataframe.drop(columns="date", inplace=True)
+    # if a patient has any code associated with the disease, flag as a positive
+    labels = dataframe.groupby("patid")["is_case"].any().astype(int)
+    # drop rows with the disease's diag code to prevent leakage
+    dataframe = dataframe[dataframe["is_case"] == False]
+    counts = dataframe.groupby("patid")["diag"].count().rename("count")
+    # filter out sequences that are too long or short
+    offsets = counts[(counts >= min_length) & (counts <= max_length)]
+    valid_records = dataframe.join(offsets, on="patid", how="right")
+    records = valid_records["diag"]
 
-
-def combine_years(cache, min_length, max_length):
-    patient_offsets = []
-    records = []
-    labels = []
-    for group in cache:
-        combined_years = pd.concat(cache[group])
-        combined_years.sort_values(["patid", "date"], inplace=True)
-        combined_years.drop(columns="date", inplace=True)
-        # if a patient has any code associated with the disease, flag as a positive
-        labels.append(combined_years.groupby("patid")["is_case"].any().astype(int))
-        # drop rows with the disease's diag code to prevent leakage
-        combined_years = combined_years[combined_years["is_case"] == False]
-        counts = combined_years.groupby("patid")["diag"].count().rename("count")
-        # filter out sequences that are too long or short
-        valid_offsets = counts[(counts >= min_length) & (counts <= max_length)]
-        patient_offsets.append(valid_offsets)
-        valid_records = combined_years.join(valid_offsets, on="patid", how="right")
-        records.append(valid_records[["diag"]])
-
-    return records, patient_offsets, labels
+    return records, offsets, labels
 
 
 def split_icd_codes(code):

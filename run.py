@@ -1,16 +1,11 @@
-import argparse
+import hydra
 
 from tfmdoc.preprocess import claims_pipeline
 
 
-def main():
-    parser = argparse.ArgumentParser("Run the tfm-doc model")
-    parser.add_argument(
-        "--data_dir", type=str, default="/nfs/turbo/lsa-regier/OPTUM2/test_data/"
-    )
-
-    args = parser.parse_args()
-    claims_pipeline(data_dir=args.data_dir, min_length=16, max_length=512)
+@hydra.main(config_path=".", config_name="config.yaml")
+def main(cfg=None):
+    claims_pipeline(data_dir=cfg.data_dir, min_length=16, max_length=512)
 
 
 if __name__ == "__main__":

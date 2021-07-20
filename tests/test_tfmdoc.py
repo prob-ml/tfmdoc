@@ -17,9 +17,9 @@ def test_lightning():
     dataset = ClaimsDataset(preprocess_dir, test=True)
     train_loader = DataLoader(dataset, collate_fn=padded_collate, batch_size=4)
     mapping = dataset.code_lookup
-    with initialize(config_path="../conf"):
+    with initialize(config_path=".."):
         cfg = compose(
-            config_name="transformer",
+            config_name="config",
             overrides=["transformer.d_model=32", "transformer.n_blocks=1"],
         )
         assert cfg["transformer"]["n_blocks"] == 1

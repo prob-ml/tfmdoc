@@ -6,3 +6,5 @@ transformer:
   max_len: 6000
   block_dropout: 0
   max_pool: True
+
+data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
