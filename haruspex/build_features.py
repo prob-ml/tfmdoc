@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
@@ -13,6 +15,7 @@ class FeaturesBuilder(OptumProcess):
         self.code_lookup = {"alt": "1742-6 ", "ast": "1920-8 ", "plt": "777-3  "}
 
     def run(self):
+        self.start_time = time.time()
         if self._skip_diags:
             self.features = pd.read_csv(
                 self.data_dir + f"{self.disease}_interm_diag_features.csv"
@@ -91,6 +94,7 @@ class FeaturesBuilder(OptumProcess):
             # slower iterations, but an easier concatenation
             df = df.merge(features["Patid"], on="Patid", how="inner")
             lab_dfs.append(df)
+            self.log_time(f"Read in {lab}")
         df_lab = pd.concat(lab_dfs)
 
         # get aggregate statistics for each type of test
@@ -110,7 +114,7 @@ class FeaturesBuilder(OptumProcess):
             on=["Patid", "Fst_Dt"],
             suffixes=("_ast", "_alt"),
         )
-        test_subset["ratio"] = test_subset["Loinc_Cd_ast"] / test_subset["Loinc_Cd_alt"]
+        test_subset["ratio"] = test_subset["Rslt_Nbr_ast"] / test_subset["Rslt_Nbr_alt"]
         test_info = (
             test_subset.groupby("Patid")["ratio"]
             .agg(["last", "max", "min", "mean"])
