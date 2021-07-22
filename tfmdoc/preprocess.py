@@ -14,20 +14,22 @@ def claims_pipeline(
     output_dir="preprocessed_files/",
     min_length=16,
     max_length=512,
+    test=False,
 ):
     log.info("Began pipeline")
-    diags = [f"diag_{yyyy}.parquet" for yyyy in range(2002, 2019)]
+    if test:
+        diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
+    else:
+        diags = [f"diag_{yyyy}.parquet" for yyyy in range(2002, 2019)]
     frames = []
     disease_codes = [code.encode("utf-8") for code in disease_codes]
     for diag in diags:
         parquet_file = ParquetFile(data_dir + diag)
         dataframe = parquet_file.to_pandas(["Patid", "Icd_Flag", "Diag", "Fst_Dt"])
-        dataframe = clean_diag_data(dataframe)
-        # apply labels
+        log.info(f"Read {diag}")
         dataframe["is_case"] = dataframe["Diag"].isin(disease_codes)
         log.info("identified ALD patients")
-        log.info(f"Read {diag}")
-        frames.append(dataframe)
+        frames.append(clean_diag_data(dataframe))
     dataframe = pd.concat(frames)
     records, offsets, labels = get_patient_info(dataframe, min_length, max_length)
     log.info("Obtained patient info")
