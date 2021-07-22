@@ -7,7 +7,7 @@ from tfmdoc.preprocess import claims_pipeline
 def main(cfg=None):
     claims_pipeline(
         data_dir=cfg.data_dir,
-        disease_codes=cfg.disease.ald,
+        disease_codes=cfg.disease_codes.ald,
         min_length=16,
         max_length=512,
     )
