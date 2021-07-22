@@ -1,3 +1,4 @@
+import time
 from math import floor
 
 import numpy as np
@@ -21,6 +22,7 @@ class SampleGenerator(OptumProcess):
         self.filtered_ids = None
 
     def run(self):
+        self.start_time = time.time()
         if self._skip_labs:
             cohort2 = np.load(self.data_dir + "cohort2_patids.npy")
         else:
