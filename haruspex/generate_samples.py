@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
 
-from diseases import find_ald_ids, find_nash_ids, find_no_nafld_ids
+from haruspex.diseases import find_ald_ids, find_nash_ids, find_no_nafld_ids
 from haruspex.optum_process import OptumProcess
 
 ALT_CODE = "1742-6 "
