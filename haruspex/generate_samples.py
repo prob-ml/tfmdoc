@@ -60,13 +60,13 @@ class SampleGenerator(OptumProcess):
             self.log_time(f"Processed {lab}")
         criterion1 = np.concatenate(criterion1_group)
         criterion1_unique = np.unique(criterion1)
-        self.logger.info(f"{criterion1_unique.shape[0]} unique ids for criterion 1")
+        self.logger.info(f"{criterion1_unique.shape[0]:,} unique ids for criterion 1")
         n_obs = pd.concat(lab_obs_counts)
         n_obs = n_obs.groupby(level=0).sum()
         n_obs = n_obs[n_obs.between(3, 200)]
         criterion2_unique = n_obs.index
 
-        self.logger.info(f"{criterion2_unique.shape[0]} unique ids for criterion 2")
+        self.logger.info(f"{criterion2_unique.shape[0]:,} unique ids for criterion 2")
 
         return n_obs, criterion2_unique
 
@@ -127,8 +127,8 @@ class SampleGenerator(OptumProcess):
         # this step will be a bit slow
         if self.disease == "nald":
             df_diag["is_conf"] = df_diag["Diag"].str.startswith(NALD_CONFOUNDER_CODES)
-            not_confounded = ~df_diag.groupby("Patid")["is_conf"].any()
-            no_cf_ids = not_confounded.index
+            confounded = df_diag.groupby("Patid")["is_conf"].any()
+            no_cf_ids = confounded[confounded == False].index
 
             # drop patient ids with confounding conditions
             cohort1_ids = np.intersect1d(cohort1_ids, no_cf_ids, assume_unique=True)
