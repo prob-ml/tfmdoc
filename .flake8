@@ -97,4 +97,7 @@ ignore =
     WPS355,
 
     # OK to begin lines with a dot to break up long lines
-    WPS348
+    WPS348,
+
+    # Per PEP 8, it's better to have a line break before a binary operator than not
+    W503
