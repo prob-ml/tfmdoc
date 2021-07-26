@@ -1,5 +1,4 @@
 import logging
-import time
 
 import numpy as np
 import pandas as pd
@@ -16,7 +15,9 @@ def chunks_of_patients(files, columns):
     is_eof = np.zeros(len(files), dtype="bool")
 
     while not np.all(is_eof):
-        iter_start = time.time()
+
+        n_incomplete = np.sum(is_eof)
+        log.info(f"{n_incomplete} queues complete")
 
         last_patid = np.asarray([c.Patid.max() for c in chunks])
         last_patid += is_eof * 1e20
@@ -36,11 +37,13 @@ def chunks_of_patients(files, columns):
         except StopIteration:
             is_eof[slowest_queue] = True
 
-        newly_completed = completed_patients.Patid.unique().shape[0]
+        try:
+            newly_completed = completed_patients.Patid.unique().shape[0]
+        except AttributeError:
+            newly_completed = completed_patients.patid.unique().shape[0]
         total_completed += newly_completed
         log.info(
-            f"{newly_completed} patids newly complete; {total_completed} in total"
-            + f"[{time.time() - iter_start:.0f} seconds]"
+            f"{newly_completed:,} patids newly complete; {total_completed:,} in total"
         )
 
     yield pd.concat(chunks)
