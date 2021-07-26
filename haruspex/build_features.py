@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
@@ -10,14 +12,10 @@ class FeaturesBuilder(OptumProcess):
         super().__init__(data_dir, disease)
         self._skip_diags = skip_diags
         self.features = None
-        self.code_lookup = {
-            "alt": "1742-6 ",
-            "ast": "1920-8 ",
-            "plt": "777-3  ",
-            "ratio": "1916-6 ",
-        }
+        self.code_lookup = {"alt": "1742-6 ", "ast": "1920-8 ", "plt": "777-3  "}
 
     def run(self):
+        self.start_time = time.time()
         if self._skip_diags:
             self.features = pd.read_csv(
                 self.data_dir + f"{self.disease}_interm_diag_features.csv"
@@ -96,6 +94,7 @@ class FeaturesBuilder(OptumProcess):
             # slower iterations, but an easier concatenation
             df = df.merge(features["Patid"], on="Patid", how="inner")
             lab_dfs.append(df)
+            self.log_time(f"Read in {lab}")
         df_lab = pd.concat(lab_dfs)
 
         # get aggregate statistics for each type of test
@@ -107,6 +106,22 @@ class FeaturesBuilder(OptumProcess):
             )
             test_info = test_info.add_prefix(f"{test_type}_")
             features = features.join(test_info, on="Patid", how="left")
+
+        # have to do ratio separately
+        test_subset = df_lab[df_lab["Loinc_Cd"] == "1920-8 "].merge(
+            df_lab[df_lab["Loinc_Cd"] == "1742-6 "],
+            how="inner",
+            on=["Patid", "Fst_Dt"],
+            suffixes=("_ast", "_alt"),
+        )
+        test_subset["ratio"] = test_subset["Rslt_Nbr_ast"] / test_subset["Rslt_Nbr_alt"]
+        test_info = (
+            test_subset.groupby("Patid")["ratio"]
+            .agg(["last", "max", "min", "mean"])
+            .add_prefix("ratio_")
+        )
+        features = features.join(test_info, on="Patid", how="left")
+
         # get age in most recent lab, long. history
         bookends = df_lab.groupby("Patid")["Fst_Dt"].agg(["min", "max"])
         # convert back to years
