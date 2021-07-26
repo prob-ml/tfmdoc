@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from fastparquet import ParquetFile
 
 from tfmdoc.chunk_iterator import chunks_of_patients
 
@@ -22,13 +23,16 @@ def claims_pipeline(
         diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
     else:
         diags = [f"diag_{yyyy}.parquet" for yyyy in range(2002, 2019)]
-    diags = [data_dir + f for f in diags]
+    diags = [ParquetFile(data_dir + f) for f in diags]
     disease_codes = [code.encode("utf-8") for code in disease_codes]
     records = []
     labels = []
     offsets = []
 
     for chunk in chunks_of_patients(diags, ("Patid", "Icd_Flag", "Diag", "Fst_Dt")):
+        # break out of loop if there's an empty chunk
+        if not chunk:
+            break
         chunk = transform_patients_chunk(chunk, disease_codes)
         log.info("Cleaned, labeled, and transformed patient chunk")
         # if a patient has any code associated with the disease, flag as a positive
@@ -37,9 +41,15 @@ def claims_pipeline(
         chunk = chunk[chunk["is_case"] == False]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
+        # a relatively small number of patients might comprise a
+        # huge portion of the dataset due to extra-long (1k+) diag sequences
+        n_patients = counts.shape[0]
         counts = counts[counts.between(min_length, max_length)]
+        log.info(
+            f"{n_patients - counts.shape[0]:,} patients dropped out of {n_patients:,}"
+        )
         offsets.append(counts)
-        chunk = chunk.join(offsets, on="patid", how="right")
+        chunk = chunk.join(counts, on="patid", how="right")
         records.append(chunk["diag"])
         log.info("Extracted patient labels, offsets and records")
 
@@ -86,6 +96,7 @@ def transform_patients_chunk(chunk, disease_codes):
     chunk.drop(columns=["Icd_Flag", "Diag"], inplace=True)
     # split up codes
     chunk["DiagId"] = chunk["DiagId"].apply(lambda x: (x[:5], x[:6], x))
+    # be careful as this will change the column naming within the generator!
     chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
     # data go boom!
     return chunk.explode("diag")
