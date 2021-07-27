@@ -17,7 +17,7 @@ def test_lightning():
                 "transformer.d_model=32",
                 "transformer.n_blocks=1",
                 "disease_codes.ald=['7231   ']",
-                "data_dir=tests/test_data/",
+                "preprocess.data_dir=tests/test_data/",
             ],
         )
 
@@ -25,7 +25,7 @@ def test_lightning():
 
         if "preprocessed_files" not in os.listdir("tests/test_data/"):
             # preprocess data if required
-            claims_pipeline(cfg.data_dir, cfg.disease_codes.ald, test=True)
+            claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
 
         preprocess_dir = "tests/test_data/preprocessed_files/"
         dataset = ClaimsDataset(preprocess_dir, test=True)
@@ -41,9 +41,12 @@ def test_pipeline():
     with initialize(config_path=".."):
         cfg = compose(
             config_name="config",
-            overrides=["disease_codes.ald=['7231   ']", "data_dir=tests/test_data/"],
+            overrides=[
+                "disease_codes.ald=['7231   ']",
+                "preprocess.data_dir=tests/test_data/",
+            ],
         )
-        claims_pipeline(cfg.data_dir, cfg.disease_codes.ald, test=True)
+        claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
         preprocess_dir = "tests/test_data/preprocessed_files/"
         torch_dataset = ClaimsDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == len(torch_dataset)

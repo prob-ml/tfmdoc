@@ -15,12 +15,13 @@ OUTPUT_DIR = "preprocessed_files/"
 def claims_pipeline(
     data_dir,
     disease_codes,
-    length_range,
-    year_range,
+    length_range=(16, 512),
+    year_range=(2002, 2018),
     n_processed=None,
     test=False,
 ):
     log.info("Began pipeline")
+    owd = os.getcwd()
     os.chdir(data_dir)
     if test:
         diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
@@ -35,6 +36,7 @@ def claims_pipeline(
     )
 
     save_output_files(offsets, records, labels)
+    os.chdir(owd)
 
     log.info("Completed pipeline")
 

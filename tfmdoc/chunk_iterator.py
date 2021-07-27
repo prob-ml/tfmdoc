@@ -16,7 +16,7 @@ def chunks_of_patients(files, columns):
 
     while not np.all(is_eof):
 
-        last_patid = np.asarray([c.Patid.max() for c in chunks])
+        last_patid = np.asarray([c.Patid.max().astype(float) for c in chunks])
         last_patid += is_eof * 1e20
         slowest_queue = last_patid.argmin()
 
