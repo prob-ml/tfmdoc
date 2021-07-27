@@ -16,9 +16,6 @@ def chunks_of_patients(files, columns):
 
     while not np.all(is_eof):
 
-        n_incomplete = np.sum(is_eof)
-        log.info(f"{n_incomplete} queues complete")
-
         last_patid = np.asarray([c.Patid.max() for c in chunks])
         last_patid += is_eof * 1e20
         slowest_queue = last_patid.argmin()
@@ -36,6 +33,8 @@ def chunks_of_patients(files, columns):
             )
         except StopIteration:
             is_eof[slowest_queue] = True
+            n_incomplete = np.sum(is_eof)
+            log.info(f"{n_incomplete} queues complete")
 
         try:
             newly_completed = completed_patients.Patid.unique().shape[0]

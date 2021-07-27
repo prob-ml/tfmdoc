@@ -7,19 +7,29 @@ transformer:
   block_dropout: 0
   max_pool: True
 
-data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
+preprocess:
+  data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
+  min_length: 16
+  max_length: 512
+  min_year: 2002
+  max_year: 2014
+  n_processed: 100000
+
 
 disease_codes:
   ald:
-    - "5711   "
-    - "5712   "
-    - "5713   "
-    - "K7010  "
-    - "K7011  "
-    - "K7041  "
-    - "K7030  "
-    - "K702   "
-    - "K700   "
-    - "K709   "
-    - "K7031  "
-    - "K7040  "
+    - "5711"
+    - "5712"
+    - "5713"
+    - "5715"
+    - "K7010"
+    - "K7011"
+    - "K7041"
+    - "K7030"
+    - "K702"
+    - "K700"
+    - "K709"
+    - "K7031"
+    - "K7040"
+    - "K7460"
+    - "K7469"
