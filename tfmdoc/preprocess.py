@@ -1,133 +1,121 @@
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 from fastparquet import ParquetFile
 
-# path to data: /nfs/turbo/lsa-regier/OPTUM2/
+from tfmdoc.chunk_iterator import chunks_of_patients
 
+log = logging.getLogger(__name__)
 
-ALD_CODES = (
-    "5711   ",
-    "5712   ",
-    "5713   ",
-    "K7010  ",
-    "K7011  ",
-    "K7041  ",
-    "K7030  ",
-    "K702   ",
-    "K700   ",
-    "K709   ",
-    "K7031  ",
-    "K7040  ",
-)
+OUTPUT_DIR = "preprocessed_files/"
 
 
 def claims_pipeline(
-    data_dir, output_dir="preprocessed_files/", min_length=16, max_length=512
+    data_dir,
+    disease_codes,
+    length_range=(16, 512),
+    year_range=(2002, 2018),
+    n_processed=None,
+    test=False,
 ):
-    all_files = os.listdir(data_dir)
-    diags = [f for f in all_files if is_parquet_file(f)]
-    patient_group_cache = {}
-    for diag in diags:
-        parquet_file = ParquetFile(data_dir + diag)
-        dataframe = parquet_file.to_pandas(["Patid", "Icd_Flag", "Diag", "Fst_Dt"])
-        dataframe = clean_diag_data(dataframe)
-        collate_patient_records(dataframe, patient_group_cache)
+    log.info("Began pipeline")
+    owd = os.getcwd()
+    os.chdir(data_dir)
+    if test:
+        diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
+    else:
+        diags = [f"diag_{yyyy}.parquet" for yyyy in range(*year_range)]
+    diags = [ParquetFile(f) for f in diags]
 
-    records, patient_offsets, labels = combine_years(
-        patient_group_cache, min_length, max_length
+    disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
+
+    offsets, records, labels = extract_patient_info(
+        diags, disease_codes, length_range, n_processed
     )
 
-    output_dir = data_dir + output_dir
+    save_output_files(offsets, records, labels)
+    os.chdir(owd)
 
-    compile_output_files(patient_offsets, records, labels, output_dir)
+    log.info("Completed pipeline")
 
 
-def compile_output_files(patient_offsets, records, labels, output_dir):
-    patient_ids = np.concatenate([po.index for po in patient_offsets])
-    patient_offsets = np.cumsum(np.concatenate(patient_offsets))
-    records = np.concatenate(records)
-    patient_labels = np.concatenate(labels)
+def save_output_files(offsets, records, labels):
+    offsets = pd.concat(offsets)
+    patient_ids = offsets.index.to_numpy()
+    offsets = np.cumsum(offsets.to_numpy())
+    records = pd.concat(records).to_numpy()
+    patient_labels = pd.concat(labels).to_numpy()
     # assign each diag code a unique integer key
+    # this might be computationally taxing
     code_lookup, indexed_records = np.unique(records, return_inverse=True)
     # make sure that zero does not map to a code
     code_lookup = np.insert(code_lookup, 0, "pad")
     indexed_records += 1
 
     # write out
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    if not os.path.exists(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
 
-    np.save(output_dir + "patient_offsets", patient_offsets)
-    np.save(output_dir + "patient_ids", patient_ids)
-    np.save(output_dir + "diag_code_lookup", code_lookup)
-    np.save(output_dir + "diag_records", indexed_records)
-    np.save(output_dir + "patient_labels", patient_labels)
-
-
-def clean_diag_data(dataframe):
-    dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.decode("UTF-8")
-    dataframe["Diag"] = dataframe["Diag"].str.decode("UTF-8")
-    # apply labels
-    dataframe["is_case"] = dataframe["Diag"].isin(ALD_CODES)
-    # make icd flag more readable
-    dataframe["Icd_Flag"] = dataframe["Icd_Flag"].str.replace("9 ", "09")
-    # drop records without a diagnostic code
-    dataframe = dataframe.dropna(subset=["Diag"])
-    # combine ICD format with the code into one field; strip whitespace
-    dataframe["DiagId"] = dataframe["Icd_Flag"] + ":" + dataframe["Diag"]
-    dataframe.drop(columns=["Icd_Flag", "Diag"], inplace=True)
-    dataframe["DiagId"] = dataframe["DiagId"].str.strip()
-    # split code into general category and specific condition
-    dataframe["DiagId"] = dataframe["DiagId"].apply(split_icd_codes)
-    dataframe["Patid"] = dataframe["Patid"].astype(int)
-    return dataframe
+    np.save(OUTPUT_DIR + "patient_offsets", offsets)
+    np.save(OUTPUT_DIR + "patient_ids", patient_ids)
+    np.save(OUTPUT_DIR + "diag_code_lookup", code_lookup)
+    np.save(OUTPUT_DIR + "diag_records", indexed_records)
+    np.save(OUTPUT_DIR + "patient_labels", patient_labels)
 
 
-def collate_patient_records(dataframe, cache):
-    dataframe["patient_group"] = dataframe["Patid"].apply(lambda x: x % 10)
-    for group in range(10):
-        patient_logs = dataframe[dataframe["patient_group"] == group]
-        # this is probably the coolest pandas method ever
-        patient_logs = patient_logs.explode("DiagId")
-        column_map = {"Patid": "patid", "Fst_Dt": "date", "DiagId": "diag"}
-        patient_logs.rename(columns=column_map, inplace=True)
-        if cache.get(group) is None:
-            cache[group] = [patient_logs]
-        else:
-            cache[group].append(patient_logs)
+def transform_patients_chunk(chunk, disease_codes):
+    # clean data
+    chunk.drop_duplicates(inplace=True)
+    chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
+    chunk.drop(columns="Fst_Dt", inplace=True)
+    # identify positive diagnoses
+    chunk["is_case"] = chunk["Diag"].isin(disease_codes)
+    # incorporate icd codes into diag codes
+    chunk["DiagId"] = chunk["Icd_Flag"] + b":" + chunk["Diag"]
+    chunk.drop(columns=["Icd_Flag", "Diag"], inplace=True)
+    # split up codes
+    chunk["DiagId"] = chunk["DiagId"].apply(lambda x: (x[:5], x[:6], x))
+    # be careful as this will change the column naming within the generator!
+    chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
+    # data go boom!
+    return chunk.explode("diag")
 
 
-def combine_years(cache, min_length, max_length):
-    patient_offsets = []
+def extract_patient_info(diags, disease_codes, length_range, n_processed):
     records = []
     labels = []
-    for group in cache:
-        combined_years = pd.concat(cache[group])
-        combined_years.sort_values(["patid", "date"], inplace=True)
-        combined_years.drop(columns="date", inplace=True)
+    offsets = []
+
+    n_patients = 0
+    n_records = 0
+
+    for chunk in chunks_of_patients(diags, ("Patid", "Icd_Flag", "Diag", "Fst_Dt")):
+        # break out of loop if there's an empty chunk
+        if chunk.empty:
+            log.warning("Empty chunk returned!")
+            continue
+        chunk = transform_patients_chunk(chunk, disease_codes)
         # if a patient has any code associated with the disease, flag as a positive
-        labels.append(combined_years.groupby("patid")["is_case"].any().astype(int))
+        labeled_ids = chunk.groupby("patid")["is_case"].any().astype(int)
         # drop rows with the disease's diag code to prevent leakage
-        combined_years = combined_years[combined_years["is_case"] == False]
-        counts = combined_years.groupby("patid")["diag"].count().rename("count")
-        # filter out sequences that are too long or short
-        valid_offsets = counts[(counts >= min_length) & (counts <= max_length)]
-        patient_offsets.append(valid_offsets)
-        valid_records = combined_years.join(valid_offsets, on="patid", how="right")
-        records.append(valid_records[["diag"]])
+        chunk = chunk[chunk["is_case"] == False]
+        counts = chunk.groupby("patid")["diag"].count().rename("count")
+        # drop patients with too few or too many records
+        # a relatively small number of patients might comprise a
+        # huge portion of the dataset due to extra-long (1k+) diag sequences
+        counts = counts[counts.between(*length_range)]
+        offsets.append(counts)
+        chunk = chunk.join(counts, on="patid", how="right")
+        records.append(chunk["diag"])
+        labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")
+        labels.append(labeled_ids["is_case"])
+        n_patients += len(counts)
+        n_records += len(chunk)
+        log.info(f"{n_patients :,} patient ids, {n_records :,} records processed")
+        if n_processed is not None and n_patients > n_processed:
+            # stop processing chunks if enough patient ids have been processed
+            break
 
-    return records, patient_offsets, labels
-
-
-def split_icd_codes(code):
-    """
-    For each record in a diagnoses file, split the ICD code into the first
-    3 digits (category) and the whole code (specific diagnosis).
-    """
-    return (code[:5], code[:6], code)
-
-
-def is_parquet_file(file):
-    return file.startswith("diag") and file.endswith(".parquet")
+    return offsets, records, labels

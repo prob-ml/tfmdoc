@@ -1,8 +1,0 @@
-transformer:
-  _target_: tfmdoc.Transformer
-  d_model: 256
-  n_blocks: 6
-  n_heads: 8
-  max_len: 6000
-  block_dropout: 0
-  max_pool: True

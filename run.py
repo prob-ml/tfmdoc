@@ -1,16 +1,17 @@
-import argparse
+import hydra
 
 from tfmdoc.preprocess import claims_pipeline
 
 
-def main():
-    parser = argparse.ArgumentParser("Run the tfm-doc model")
-    parser.add_argument(
-        "--data_dir", type=str, default="/nfs/turbo/lsa-regier/OPTUM2/test_data/"
+@hydra.main(config_path=".", config_name="config.yaml")
+def main(cfg=None):
+    claims_pipeline(
+        data_dir=cfg.preprocess.data_dir,
+        disease_codes=cfg.disease_codes.ald,
+        length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
+        year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
+        n_processed=cfg.preprocess.n_processed,
     )
-
-    args = parser.parse_args()
-    claims_pipeline(data_dir=args.data_dir, min_length=16, max_length=512)
 
 
 if __name__ == "__main__":
