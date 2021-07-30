@@ -14,6 +14,7 @@ preprocess:
   min_year: 2002
   max_year: 2014
   n_processed: 100000
+  do: True
 
 
 disease_codes:
