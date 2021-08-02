@@ -16,6 +16,9 @@ preprocess:
   n_processed: 100000
   do: True
 
+train:
+  train_frac: 0.8
+
 
 disease_codes:
   ald:

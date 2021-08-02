@@ -12,7 +12,7 @@ class ClaimsDataset(Dataset):
             preprocess_dir + "diag_code_lookup.npy", allow_pickle=True
         )
         self.ids = np.load(preprocess_dir + "patient_ids.npy", allow_pickle=True)
-        self.length = self.records.shape[0]
+        self.length = self.ids.shape[0]
         if test:
             self.labels = torch.from_numpy(np.random.randint(2, size=self.length))
         else:

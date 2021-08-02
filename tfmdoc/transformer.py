@@ -34,7 +34,7 @@ class Transformer(pl.LightningModule):
         # binary classification
         self.to_scores = torch.nn.Linear(d_model, 2)
         self._max_pool = max_pool
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
 
     def forward(self, codes):
         # embed codes into dimension of model
@@ -58,8 +58,16 @@ class Transformer(pl.LightningModule):
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
         y_hat = self(x)
+        return self.loss_fn(y_hat, y)
+
+    def validation_step(self, batch, batch_idx):
+        # unclear why the lightning api wants a batch index var
+        x, y = batch
+        # lightning recommends keeping the training logic separate
+        # from the inference logic, though this works fine
+        y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
-        self.log("train_loss", loss)
+        self.log("val_loss", loss)
         return loss
 
     def configure_optimizers(self):
