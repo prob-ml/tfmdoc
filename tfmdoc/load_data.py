@@ -27,8 +27,10 @@ class ClaimsDataset(Dataset):
     def __getitem__(self, index):
         if index + 1 < self.length:
             start, stop = self.offsets[index], self.offsets[index + 1]
-        elif index == self.length:
+        elif index + 1 == self.length:
             start, stop = self.offsets[index], self.length
+        else:
+            raise IndexError(f"Index {index:,} may be out of range ({self.length:,})")
         patient_records = self.records[start:stop]
         # return array of diag codes and patient labels
         return patient_records, self.labels[index]

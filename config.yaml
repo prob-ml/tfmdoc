@@ -18,6 +18,7 @@ preprocess:
 
 train:
   train_frac: 0.8
+  gpus: 4
 
 
 disease_codes:

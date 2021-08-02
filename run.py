@@ -26,7 +26,7 @@ def main(cfg=None):
     val_loader = DataLoader(val_dataset, collate_fn=padded_collate, batch_size=8)
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(gpus=cfg.train.gpus, max_epochs=1)
     trainer.fit(transformer, train_loader, val_loader)
 
 
