@@ -13,12 +13,14 @@ preprocess:
   max_length: 512
   min_year: 2002
   max_year: 2014
-  n_processed: 100000
-  do: True
+  n_processed: 1000000
+  do: False
 
 train:
   train_frac: 0.8
-  gpus: 4
+  gpus:
+    - 4
+  batch_size: 16
 
 
 disease_codes:

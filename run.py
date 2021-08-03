@@ -22,11 +22,15 @@ def main(cfg=None):
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, (train_size, val_size))
-    train_loader = DataLoader(train_dataset, collate_fn=padded_collate, batch_size=8)
-    val_loader = DataLoader(val_dataset, collate_fn=padded_collate, batch_size=8)
+    train_loader = DataLoader(
+        train_dataset, collate_fn=padded_collate, batch_size=cfg.train.batch_size
+    )
+    val_loader = DataLoader(
+        val_dataset, collate_fn=padded_collate, batch_size=cfg.train.batch_size
+    )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
-    trainer = pl.Trainer(gpus=cfg.train.gpus, max_epochs=1)
+    trainer = pl.Trainer(gpus=cfg.train.gpus, max_epochs=3)
     trainer.fit(transformer, train_loader, val_loader)
 
 
