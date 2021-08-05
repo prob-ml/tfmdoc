@@ -17,6 +17,7 @@ fastparquet = "^0.5.0"
 matplotlib = "^3.4.2"
 Hydra = "^2.5"
 torch-tb-profiler = "^0.2.1"
+h5py = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"

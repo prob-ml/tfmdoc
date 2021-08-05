@@ -13,8 +13,8 @@ preprocess:
   max_length: 512
   min_year: 2002
   max_year: 2014
-  n_processed: 1000000
-  do: False
+  n_processed: 100000
+  do: True
 
 train:
   train_frac: 0.8
