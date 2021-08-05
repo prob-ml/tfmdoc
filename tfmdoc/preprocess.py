@@ -31,9 +31,7 @@ def claims_pipeline(
 
     disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
 
-    os.chdir(OUTPUT_DIR)
-
-    with h5py.File("preprocessed.hdf5", "a") as f:
+    with h5py.File(OUTPUT_DIR + "preprocessed.hdf5", "w") as f:
         names = (
             "patient_offsets",
             "diag_records",
@@ -41,7 +39,11 @@ def claims_pipeline(
             "patient_ids",
         )
         for name in names:
-            f.create_dataset(name, maxshape=(None,))
+            if name == "diag_records":
+                dtype = h5py.special_dtype(vlen=str)
+            else:
+                dtype = np.dtype("uint8")
+            f.create_dataset(name, (100,), dtype=dtype, maxshape=(None,))
 
         process_chunks(diags, disease_codes, length_range, n_processed, f)
 
@@ -89,7 +91,7 @@ def pull_patient_info(chunk, length_range):
     # huge portion of the dataset due to extra-long (1k+) diag sequences
     chunk_info["patient_offsets"] = counts[counts.between(*length_range)].to_numpy()
     chunk = chunk.join(counts, on="patid", how="right")
-    chunk_info["diag_records"] = chunk["diag"].to_numpy()
+    chunk_info["diag_records"] = chunk["diag"].to_numpy().astype(bytes)
     labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")
     chunk_info["patient_labels"] = labeled_ids["is_case"]
     chunk_info["patient_ids"] = labeled_ids.index
@@ -115,7 +117,7 @@ def process_chunks(diags, disease_codes, length_range, n_processed, file):
         for name, arr in chunk_info.items():
             file[name].resize(len(file[name]) + len(arr), axis=0)
             file[name][-len(arr) :] = arr
-            log.info(f"Patient info written for chunk {n_chunks}")
+        log.info(f"Patient info written for chunk {n_chunks}")
 
         n_chunks += 1
         if n_processed is not None and n_patients >= n_processed:
