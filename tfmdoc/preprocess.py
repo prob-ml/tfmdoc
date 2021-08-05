@@ -43,7 +43,7 @@ def claims_pipeline(
                 dtype = h5py.special_dtype(vlen=str)
             else:
                 dtype = np.dtype("uint8")
-            f.create_dataset(name, (100,), dtype=dtype, maxshape=(None,))
+            f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
         process_chunks(diags, disease_codes, length_range, n_processed, f)
 
@@ -89,12 +89,13 @@ def pull_patient_info(chunk, length_range):
     # drop patients with too few or too many records
     # a relatively small number of patients might comprise a
     # huge portion of the dataset due to extra-long (1k+) diag sequences
-    chunk_info["patient_offsets"] = counts[counts.between(*length_range)].to_numpy()
+    counts = counts[counts.between(*length_range)]
+    chunk_info["patient_offsets"] = counts.to_numpy()
     chunk = chunk.join(counts, on="patid", how="right")
     chunk_info["diag_records"] = chunk["diag"].to_numpy().astype(bytes)
     labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")
     chunk_info["patient_labels"] = labeled_ids["is_case"]
-    chunk_info["patient_ids"] = labeled_ids.index
+    chunk_info["patient_ids"] = counts.index
 
     return chunk_info
 
@@ -112,7 +113,7 @@ def process_chunks(diags, disease_codes, length_range, n_processed, file):
         chunk = transform_patients_chunk(chunk, disease_codes)
         chunk_info = pull_patient_info(chunk, length_range)
         n_patients += len(chunk_info["patient_offsets"])
-        n_records += len(chunk)
+        n_records += len(chunk_info["diag_records"])
         log.info(f"Processed {n_patients :,} patient ids, {n_records :,} records")
         for name, arr in chunk_info.items():
             file[name].resize(len(file[name]) + len(arr), axis=0)
