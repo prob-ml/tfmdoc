@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -6,31 +7,28 @@ from torch.utils.data import Dataset
 
 class ClaimsDataset(Dataset):
     def __init__(self, preprocess_dir, test=False):
-        self.offsets = np.load(preprocess_dir + "patient_offsets.npy")
-        self.records = torch.from_numpy(np.load(preprocess_dir + "diag_records.npy"))
-        self.code_lookup = np.load(
-            preprocess_dir + "diag_code_lookup.npy", allow_pickle=True
-        )
-        self.ids = np.load(preprocess_dir + "patient_ids.npy", allow_pickle=True)
-        self.length = self.ids.shape[0]
+        self.file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
+        self.offsets = np.cumsum(np.array(self.file["patient_offsets"]))
+        self.records = torch.from_numpy(np.array(self.file["patient_tokens"]))
+        self.code_lookup = np.array(self.file["diag_code_lookup"])
+        self.ids = np.array(self.file["patient_ids"])
+        self._length = self.ids.shape[0]
         if test:
-            self.labels = torch.from_numpy(np.random.randint(2, size=self.length))
+            self.labels = torch.from_numpy(np.random.randint(2, size=self._length))
         else:
-            self.labels = torch.from_numpy(
-                np.load(preprocess_dir + "patient_labels.npy")
-            )
+            self.labels = torch.from_numpy(np.array(self.file["patient_labels"]))
 
     def __len__(self):
         # sufficient to return the number of patients
-        return self.length
+        return self._length
 
     def __getitem__(self, index):
-        if index + 1 < self.length:
+        if index + 1 < self._length:
             start, stop = self.offsets[index], self.offsets[index + 1]
-        elif index + 1 == self.length:
-            start, stop = self.offsets[index], self.length
+        elif index + 1 == self._length:
+            start, stop = self.offsets[index], self._length
         else:
-            raise IndexError(f"Index {index:,} may be out of range ({self.length:,})")
+            raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
         # return array of diag codes and patient labels
         return patient_records, self.labels[index]

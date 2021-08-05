@@ -49,7 +49,7 @@ def test_pipeline():
         claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
         preprocess_dir = "tests/test_data/preprocessed_files/"
         torch_dataset = ClaimsDataset(preprocess_dir)
-        assert torch_dataset.offsets[-1] == len(torch_dataset)
+        assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
         x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[8] - torch_dataset.offsets[7]
         assert y.item() in {0, 1}
