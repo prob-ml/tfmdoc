@@ -41,8 +41,5 @@ def chunks_of_patients(files, columns):
         except AttributeError:
             newly_completed = completed_patients.patid.unique().shape[0]
         total_completed += newly_completed
-        log.info(
-            f"{newly_completed:,} patids newly complete; {total_completed:,} in total"
-        )
 
     yield pd.concat(chunks)
