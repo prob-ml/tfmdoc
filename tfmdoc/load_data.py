@@ -6,17 +6,14 @@ from torch.utils.data import Dataset
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir, test=False):
+    def __init__(self, preprocess_dir):
         self.file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
         self.offsets = np.cumsum(np.array(self.file["patient_offsets"]))
         self.records = torch.from_numpy(np.array(self.file["patient_tokens"]))
         self.code_lookup = np.array(self.file["diag_code_lookup"])
         self.ids = np.array(self.file["patient_ids"])
         self._length = self.ids.shape[0]
-        if test:
-            self.labels = torch.from_numpy(np.random.randint(2, size=self._length))
-        else:
-            self.labels = torch.from_numpy(np.array(self.file["patient_labels"]))
+        self.labels = torch.from_numpy(np.array(self.file["patient_labels"])).long()
 
     def __len__(self):
         # sufficient to return the number of patients

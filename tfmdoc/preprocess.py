@@ -32,17 +32,13 @@ def claims_pipeline(
     disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
 
     with h5py.File(OUTPUT_DIR + "preprocessed.hdf5", "w") as f:
-        names = (
-            "patient_offsets",
-            "diag_records",
-            "patient_labels",
-            "patient_ids",
+        datasets = (
+            ("patient_offsets", np.dtype("uint16")),
+            ("diag_records", h5py.special_dtype(vlen=str)),
+            ("patient_labels", np.dtype("uint8")),
+            ("patient_ids", np.dtype("float64")),
         )
-        for name in names:
-            if name == "diag_records":
-                dtype = h5py.special_dtype(vlen=str)
-            else:
-                dtype = np.dtype("uint8")
+        for name, dtype in datasets:
             f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
         process_chunks(diags, disease_codes, length_range, n_processed, f)
@@ -84,7 +80,7 @@ def pull_patient_info(chunk, length_range):
     # if a patient has any code associated with the disease, flag as a positive
     labeled_ids = chunk.groupby("patid")["is_case"].any().astype(int)
     # drop rows with the disease's diag code to prevent leakage
-    chunk = chunk[chunk["is_case"] == False]
+    chunk = chunk[chunk["is_case"] == False | ~chunk[["patid", "is_case"]].duplicated()]
     counts = chunk.groupby("patid")["diag"].count().rename("count")
     # drop patients with too few or too many records
     # a relatively small number of patients might comprise a
