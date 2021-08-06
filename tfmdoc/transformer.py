@@ -34,7 +34,7 @@ class Transformer(pl.LightningModule):
         # binary classification
         self.to_scores = torch.nn.Linear(d_model, 2)
         self._max_pool = max_pool
-        self.loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor([0.01, 0.99]))
+        self.loss_fn = torch.nn.CrossEntropyLoss()
 
     def forward(self, codes):
         # embed codes into dimension of model
