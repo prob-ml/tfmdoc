@@ -16,7 +16,7 @@ def test_lightning():
             overrides=[
                 "transformer.d_model=32",
                 "transformer.n_blocks=1",
-                "disease_codes.ald=['7231   ']",
+                "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
             ],
         )
@@ -28,7 +28,7 @@ def test_lightning():
             claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
 
         preprocess_dir = "tests/test_data/preprocessed_files/"
-        dataset = ClaimsDataset(preprocess_dir, test=True)
+        dataset = ClaimsDataset(preprocess_dir)
         train_loader = DataLoader(dataset, collate_fn=padded_collate, batch_size=4)
         mapping = dataset.code_lookup
         transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
@@ -42,14 +42,14 @@ def test_pipeline():
         cfg = compose(
             config_name="config",
             overrides=[
-                "disease_codes.ald=['7231   ']",
+                "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
             ],
         )
         claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
         preprocess_dir = "tests/test_data/preprocessed_files/"
         torch_dataset = ClaimsDataset(preprocess_dir)
-        assert torch_dataset.offsets[-1] == len(torch_dataset)
+        assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
         x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[8] - torch_dataset.offsets[7]
         assert y.item() in {0, 1}

@@ -665,6 +665,17 @@ six = ">=1.5.2"
 protobuf = ["grpcio-tools (>=1.38.0)"]
 
 [[package]]
+name = "h5py"
+version = "3.3.0"
+description = "Read and write HDF5 files from Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+numpy = {version = ">=1.17.5", markers = "python_version == \"3.8\""}
+
+[[package]]
 name = "hydra"
 version = "2.5"
 description = "A high performance persistent bloom filter"
@@ -2063,6 +2074,23 @@ type = "url"
 url = "https://download.pytorch.org/whl/cu111/torch-1.8.1%2Bcu111-cp38-cp38-linux_x86_64.whl"
 
 [[package]]
+name = "torch-tb-profiler"
+version = "0.2.1"
+description = "PyTorch Profiler TensorBoard Plugin"
+category = "main"
+optional = false
+python-versions = ">=3.6.2"
+
+[package.dependencies]
+pandas = ">=1.0.0"
+tensorboard = ">=1.15,<2.1.0 || >2.1.0"
+
+[package.extras]
+blob = ["azure-storage-blob"]
+gs = ["google-cloud-storage"]
+s3 = ["boto3"]
+
+[[package]]
 name = "torchmetrics"
 version = "0.3.2"
 description = "PyTorch native Metrics"
@@ -2266,7 +2294,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "7240c48632678e4214e541a5d3586e4bd0f56214d93022eb57b932b78a904919"
+content-hash = "1baa1449fe928606c8f5f711fb21bb082aeedd5f7b430017ad74f3b31d53f5eb"
 
 [metadata.files]
 absl-py = [
@@ -2686,6 +2714,18 @@ grpcio = [
     {file = "grpcio-1.38.0-cp39-cp39-win32.whl", hash = "sha256:752593a275e26ef250dc4d93a6f7917dd9986396b41eabcc114b0e0315ec1bf6"},
     {file = "grpcio-1.38.0-cp39-cp39-win_amd64.whl", hash = "sha256:6824567e2372dde1bd70214427d23b709d09f1a02a552133d1e0f504b616c84e"},
     {file = "grpcio-1.38.0.tar.gz", hash = "sha256:abbf9c8c3df4d5233d5888c6cfa85c1bb68a6923749bd4dd1abc6e1e93986f17"},
+]
+h5py = [
+    {file = "h5py-3.3.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:f3bba8ffddd1fd2bf06127c5ff7b73f022cc1c8b7164355ddc760dc3f8570136"},
+    {file = "h5py-3.3.0-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:baef1a2cdef287a83e7f95ce9e0f4d762a9852fe7117b471063442c78b973695"},
+    {file = "h5py-3.3.0-cp37-cp37m-win_amd64.whl", hash = "sha256:8e09b682e4059c8cd259ddcc34bee35d639b9170105efeeae6ad195e7c1cea7a"},
+    {file = "h5py-3.3.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:89d7e10409b62fed81c571e35798763cb8375442b98f8ebfc52ba41ac019e081"},
+    {file = "h5py-3.3.0-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:7ca7d23ebbdd59a4be9b4820de52fe67adc74e6a44d5084881305461765aac47"},
+    {file = "h5py-3.3.0-cp38-cp38-win_amd64.whl", hash = "sha256:e0ea3330bf136f8213e43db67448994046ce501585dddc7ea4e8ceef0ef1600c"},
+    {file = "h5py-3.3.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:13355234c004ff8bd819f7d3420188aa1936b17d7f8470d622974a373421b7a5"},
+    {file = "h5py-3.3.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:09e78cefdef0b7566ab66366c5c7d9984c7b23142245bd51b82b744ad1eebf65"},
+    {file = "h5py-3.3.0-cp39-cp39-win_amd64.whl", hash = "sha256:5e2f22e66a3fb1815405cfe5711670450c973b8552507c535a546a23a468af3d"},
+    {file = "h5py-3.3.0.tar.gz", hash = "sha256:e0dac887d779929778b3cfd13309a939359cc9e74756fc09af7c527a82797186"},
 ]
 hydra = [
     {file = "Hydra-2.5.tar.gz", hash = "sha256:247091b9c279c77686ea995f0f07070a28870c1942959b1474ad57076074384a"},
@@ -3596,6 +3636,10 @@ toml = [
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
 ]
 torch = []
+torch-tb-profiler = [
+    {file = "torch_tb_profiler-0.2.1-py3-none-any.whl", hash = "sha256:747bff07237dca715ccb0e49779fd7228167b4610e90da6296c7dd4cb5c96398"},
+    {file = "torch_tb_profiler-0.2.1.tar.gz", hash = "sha256:5db81716203d6a3cad3fff199fd01ddab2365339ff912381640bacbe90ed9259"},
+]
 torchmetrics = [
     {file = "torchmetrics-0.3.2-py3-none-any.whl", hash = "sha256:04bfbfdf4fb12f7191fa86b4e42efb7205d4cb95e833b6add60f55fdba9ae5fb"},
     {file = "torchmetrics-0.3.2.tar.gz", hash = "sha256:351391e79f20458fa3a2876b2e559ebb69536d8c38b47b085b66ac5acfb7269d"},

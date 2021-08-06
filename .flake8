@@ -100,4 +100,10 @@ ignore =
     WPS348,
 
     # Per PEP 8, it's better to have a line break before a binary operator than not
-    W503
+    W503,
+
+    # can't really get around cognitive complexity in the ETL...
+    WPS231,
+
+    # Need subscript slice assignment for chunked writing out to work
+    WPS362,
