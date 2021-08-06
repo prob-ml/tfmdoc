@@ -1,5 +1,3 @@
-import os
-
 import pytorch_lightning as pl
 from hydra import compose, initialize
 from hydra.utils import instantiate
@@ -23,9 +21,7 @@ def test_lightning():
 
         assert cfg["transformer"]["n_blocks"] == 1
 
-        if "preprocessed.hdf5" not in os.listdir("tests/test_data/preprocessed_files/"):
-            # preprocess data if required
-            claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
+        claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
 
         preprocess_dir = "tests/test_data/preprocessed_files/"
         dataset = ClaimsDataset(preprocess_dir)
