@@ -23,7 +23,7 @@ def test_lightning():
 
         assert cfg["transformer"]["n_blocks"] == 1
 
-        if "preprocessed_files" not in os.listdir("tests/test_data/"):
+        if "preprocessed.hdf5" not in os.listdir("tests/test_data/preprocessed_files/"):
             # preprocess data if required
             claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
 
