@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 
 import h5py
 import numpy as np
@@ -30,7 +31,7 @@ def claims_pipeline(
     diags = [ParquetFile(f) for f in diags]
 
     disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
-
+    pathlib.Path(OUTPUT_DIR).mkdir(exist_ok=True)
     with h5py.File(OUTPUT_DIR + "preprocessed.hdf5", "w") as f:
         datasets = (
             ("patient_offsets", np.dtype("uint16")),
