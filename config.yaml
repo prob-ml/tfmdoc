@@ -15,6 +15,7 @@ preprocess:
   max_year: 2014
   n_processed: 100000
   do: True
+  split_codes: True
 
 train:
   train_frac: 0.8

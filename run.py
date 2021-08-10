@@ -6,19 +6,21 @@ from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 
 from tfmdoc.load_data import ClaimsDataset, padded_collate
-from tfmdoc.preprocess import claims_pipeline
+from tfmdoc.preprocess import ClaimsPipeline
 
 
 @hydra.main(config_path=".", config_name="config.yaml")
 def main(cfg=None):
     if cfg.preprocess.do:
-        claims_pipeline(
+        cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
             disease_codes=cfg.disease_codes.ald,
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
             n_processed=cfg.preprocess.n_processed,
+            split_codes=cfg.preprocess.split_codes,
         )
+        cpl.run()
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     dataset = ClaimsDataset(preprocess_dir)
     train_size = int(cfg.train.train_frac * len(dataset))
