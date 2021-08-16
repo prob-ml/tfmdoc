@@ -84,6 +84,8 @@ class ClaimsPipeline:
                 continue
             chunk = self.transform_patients_chunk(chunk)
             chunk_info = self.pull_patient_info(chunk)
+            if not chunk_info["patient_offsets"].size:
+                continue
             n_patients += len(chunk_info["patient_offsets"])
             n_records += len(chunk_info["diag_records"])
             log.info(
@@ -137,8 +139,10 @@ class ClaimsPipeline:
 def sample_chunk_info(labeled_ids, counts, chunk):
     cases = labeled_ids[labeled_ids == 1]
     controls = labeled_ids[labeled_ids == 0]
-    controls = controls.sample(19 * len(cases))
-
+    try:
+        controls = controls.sample(19 * len(cases))
+    except ValueError:
+        pass
     labeled_ids = pd.concat([controls, cases])
     counts = counts.loc[labeled_ids.index]
     chunk = chunk[chunk["patid"].isin(labeled_ids.index)]

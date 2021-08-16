@@ -21,7 +21,7 @@ def main(cfg=None):
             split_codes=cfg.preprocess.split_codes,
         )
         cpl.run()
-        if cfg.etl_only:
+        if cfg.preprocess.etl_only:
             return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     dataset = ClaimsDataset(preprocess_dir)
