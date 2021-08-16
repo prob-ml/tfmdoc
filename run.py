@@ -17,10 +17,12 @@ def main(cfg=None):
             disease_codes=cfg.disease_codes.ald,
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
-            n_processed=cfg.preprocess.n_processed,
+            n=cfg.preprocess.n,
             split_codes=cfg.preprocess.split_codes,
         )
         cpl.run()
+        if cfg.etl_only:
+            return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     dataset = ClaimsDataset(preprocess_dir)
     train_size = int(cfg.train.train_frac * len(dataset))
@@ -42,7 +44,7 @@ def main(cfg=None):
     )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
-    trainer = pl.Trainer(gpus=cfg.train.gpus, limit_train_batches=0.05)
+    trainer = pl.Trainer(gpus=cfg.train.gpus)
     trainer.fit(transformer, train_loader, val_loader)
 
 

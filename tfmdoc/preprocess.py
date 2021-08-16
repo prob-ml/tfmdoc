@@ -4,6 +4,7 @@ import pathlib
 
 import h5py
 import numpy as np
+import pandas as pd
 from fastparquet import ParquetFile
 
 from tfmdoc.chunk_iterator import chunks_of_patients
@@ -20,7 +21,7 @@ class ClaimsPipeline:
         disease_codes,
         length_range=(16, 512),
         year_range=(2002, 2018),
-        n_processed=None,
+        n=None,
         test=False,
         split_codes=True,
     ):
@@ -28,7 +29,7 @@ class ClaimsPipeline:
         self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
         self.length_range = length_range
         self.year_range = year_range
-        self.n_processed = n_processed
+        self.n = n
         self.test = test
         if split_codes:
             self._splitter = lambda x: (x[:5], x[:6], x.rstrip())
@@ -85,14 +86,16 @@ class ClaimsPipeline:
             chunk_info = self.pull_patient_info(chunk)
             n_patients += len(chunk_info["patient_offsets"])
             n_records += len(chunk_info["diag_records"])
-            log.info(f"Processed {n_patients :,} patient ids, {n_records :,} records")
+            log.info(
+                f"Wrote data for {n_patients :,} patient ids, {n_records :,} records"
+            )
             for name, arr in chunk_info.items():
                 file[name].resize(len(file[name]) + len(arr), axis=0)
                 file[name][-len(arr) :] = arr
             log.info(f"Patient info written for chunk {n_chunks}")
 
             n_chunks += 1
-            if self.n_processed is not None and n_patients >= self.n_processed:
+            if self.n is not None and n_patients >= self.n:
                 # stop processing chunks if enough patient ids have been processed
                 break
 
@@ -114,23 +117,37 @@ class ClaimsPipeline:
         return chunk.explode("diag")
 
     def pull_patient_info(self, chunk):
-        chunk_info = {}
         # if a patient has any code associated with the disease, flag as a positive
         labeled_ids = chunk.groupby("patid")["is_case"].any().astype(int)
-        # drop rows with the disease's diag code to prevent leakage
+        # drop patient records after first positive diagnosis
         chunk = chunk[
             chunk["is_case"] == False | ~chunk[["patid", "is_case"]].duplicated()
         ]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
-        # a relatively small number of patients might comprise a
-        # huge portion of the dataset due to extra-long (1k+) diag sequences
         counts = counts[counts.between(*self.length_range)]
-        chunk_info["patient_offsets"] = counts.to_numpy()
         chunk = chunk.join(counts, on="patid", how="right")
-        chunk_info["diag_records"] = chunk["diag"].to_numpy().astype(bytes)
-        labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")
-        chunk_info["patient_labels"] = labeled_ids["is_case"]
-        chunk_info["patient_ids"] = counts.index
+        labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[
+            "is_case"
+        ]
 
-        return chunk_info
+        return sample_chunk_info(labeled_ids, counts, chunk)
+
+
+def sample_chunk_info(labeled_ids, counts, chunk):
+    cases = labeled_ids[labeled_ids == 1]
+    controls = labeled_ids[labeled_ids == 0]
+    controls = controls.sample(19 * len(cases))
+
+    labeled_ids = pd.concat([controls, cases])
+    counts = counts.loc[labeled_ids.index]
+    chunk = chunk[chunk["patid"].isin(labeled_ids.index)]
+
+    chunk_info = {}
+
+    chunk_info["patient_offsets"] = counts.to_numpy()
+    chunk_info["diag_records"] = chunk["diag"].to_numpy().astype(bytes)
+    chunk_info["patient_labels"] = labeled_ids.to_numpy()
+    chunk_info["patient_ids"] = counts.index
+
+    return chunk_info
