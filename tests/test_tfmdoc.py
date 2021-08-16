@@ -1,10 +1,12 @@
+import os
+
 import pytorch_lightning as pl
 from hydra import compose, initialize
 from hydra.utils import instantiate
 from torch.utils.data import DataLoader
 
 from tfmdoc.load_data import ClaimsDataset, padded_collate
-from tfmdoc.preprocess import claims_pipeline
+from tfmdoc.preprocess import ClaimsPipeline
 
 
 def test_lightning():
@@ -21,7 +23,12 @@ def test_lightning():
 
         assert cfg["transformer"]["n_blocks"] == 1
 
-        claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
+        if "preprocessed_files" not in os.listdir("tests/test_data/"):
+            # preprocess data if required
+            cpl = ClaimsPipeline(
+                cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True
+            )
+            cpl.run()
 
         preprocess_dir = "tests/test_data/preprocessed_files/"
         dataset = ClaimsDataset(preprocess_dir)
@@ -42,7 +49,8 @@ def test_pipeline():
                 "preprocess.data_dir=tests/test_data/",
             ],
         )
-        claims_pipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
+        cpl = ClaimsPipeline(cfg.preprocess.data_dir, cfg.disease_codes.ald, test=True)
+        cpl.run()
         preprocess_dir = "tests/test_data/preprocessed_files/"
         torch_dataset = ClaimsDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]

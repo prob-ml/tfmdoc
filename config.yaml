@@ -1,10 +1,10 @@
 transformer:
   _target_: tfmdoc.Transformer
-  d_model: 256
-  n_blocks: 6
+  d_model: 64
+  n_blocks: 2
   n_heads: 8
   max_len: 6000
-  block_dropout: .2
+  block_dropout: 0.5
   max_pool: True
 
 preprocess:
@@ -13,8 +13,10 @@ preprocess:
   max_length: 512
   min_year: 2002
   max_year: 2014
-  n_processed: 100000
+  n: 200000
   do: True
+  split_codes: True
+  etl_only: False
 
 train:
   train_frac: 0.8

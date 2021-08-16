@@ -2,6 +2,7 @@ import math
 
 import pytorch_lightning as pl
 import torch
+import torchmetrics
 
 
 class Transformer(pl.LightningModule):
@@ -34,7 +35,8 @@ class Transformer(pl.LightningModule):
         # binary classification
         self.to_scores = torch.nn.Linear(d_model, 2)
         self._max_pool = max_pool
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self._loss_fn = torch.nn.CrossEntropyLoss()
+        self._accuracy = torchmetrics.Accuracy()
 
     def forward(self, codes):
         # embed codes into dimension of model
@@ -58,8 +60,10 @@ class Transformer(pl.LightningModule):
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
         y_hat = self(x)
-        loss = self.loss_fn(y_hat, y)
+        loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
+        acc = self._accuracy((y_hat[:, 1] > 0), y)
+        self.log("train_accuracy", acc)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -68,8 +72,10 @@ class Transformer(pl.LightningModule):
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
         y_hat = self(x)
-        loss = self.loss_fn(y_hat, y)
+        loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
+        acc = self._accuracy((y_hat[:, 1] > 0), y)
+        self.log("val_accuracy", acc)
         return loss
 
     def configure_optimizers(self):

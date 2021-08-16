@@ -6,37 +6,45 @@ from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 
 from tfmdoc.load_data import ClaimsDataset, padded_collate
-from tfmdoc.preprocess import claims_pipeline
+from tfmdoc.preprocess import ClaimsPipeline
 
 
 @hydra.main(config_path=".", config_name="config.yaml")
 def main(cfg=None):
     if cfg.preprocess.do:
-        claims_pipeline(
+        cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
             disease_codes=cfg.disease_codes.ald,
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
-            n_processed=cfg.preprocess.n_processed,
+            n=cfg.preprocess.n,
+            split_codes=cfg.preprocess.split_codes,
         )
+        cpl.run()
+        if cfg.etl_only:
+            return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     dataset = ClaimsDataset(preprocess_dir)
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, (train_size, val_size))
-    sampler = balanced_sampler(train_dataset.indices, dataset.labels)
+    train_sampler = balanced_sampler(train_dataset.indices, dataset.labels)
     train_loader = DataLoader(
         train_dataset,
         collate_fn=padded_collate,
         batch_size=cfg.train.batch_size,
-        sampler=sampler,
+        sampler=train_sampler,
     )
+    val_sampler = balanced_sampler(val_dataset.indices, dataset.labels)
     val_loader = DataLoader(
-        val_dataset, collate_fn=padded_collate, batch_size=cfg.train.batch_size
+        val_dataset,
+        collate_fn=padded_collate,
+        batch_size=cfg.train.batch_size,
+        sampler=val_sampler,
     )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
-    trainer = pl.Trainer(gpus=cfg.train.gpus, max_epochs=3)
+    trainer = pl.Trainer(gpus=cfg.train.gpus)
     trainer.fit(transformer, train_loader, val_loader)
 
 
