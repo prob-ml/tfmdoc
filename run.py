@@ -14,6 +14,7 @@ def main(cfg=None):
     if cfg.preprocess.do:
         cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
+            output_dir=cfg.preprocess.output_dir,
             disease_codes=cfg.disease_codes.ald,
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),

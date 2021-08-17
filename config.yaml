@@ -9,10 +9,11 @@ transformer:
 
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
-  min_length: 16
+  output_dir: "/nfs/turbo/lsa-regier/OPTUM2/preprocessed_files/"
+  min_length: 32
   max_length: 512
   min_year: 2002
-  max_year: 2014
+  max_year: 2019
   n: 200000
   do: True
   split_codes: True
