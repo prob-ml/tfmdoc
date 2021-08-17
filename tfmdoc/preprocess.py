@@ -1,5 +1,4 @@
 import logging
-import os
 import pathlib
 
 import h5py
@@ -11,13 +10,12 @@ from tfmdoc.chunk_iterator import chunks_of_patients
 
 log = logging.getLogger(__name__)
 
-OUTPUT_DIR = "preprocessed_files/"
-
 
 class ClaimsPipeline:
     def __init__(
         self,
         data_dir,
+        output_dir,
         disease_codes,
         length_range=(16, 512),
         year_range=(2002, 2018),
@@ -30,24 +28,23 @@ class ClaimsPipeline:
         self.length_range = length_range
         self.year_range = year_range
         self.n = n
-        self.test = test
+        self._test = test
         if split_codes:
             self._splitter = lambda x: (x[:5], x[:6], x.rstrip())
         else:
             self._splitter = lambda x: x
+        self.output_dir = output_dir
 
     def run(self):
         log.info("Began pipeline")
-        owd = os.getcwd()
-        os.chdir(self.data_dir)
-        if self.test:
+        if self._test:
             diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
         else:
             diags = [f"diag_{yyyy}.parquet" for yyyy in range(*self.year_range)]
-        diags = [ParquetFile(f) for f in diags]
+        diags = [ParquetFile(self.data_dir + f) for f in diags]
 
-        pathlib.Path(OUTPUT_DIR).mkdir(exist_ok=True)
-        with h5py.File(OUTPUT_DIR + "preprocessed.hdf5", "w") as f:
+        pathlib.Path(self.output_dir).mkdir(exist_ok=True)
+        with h5py.File(self.output_dir + "preprocessed.hdf5", "w") as f:
             datasets = (
                 ("patient_offsets", np.dtype("uint16")),
                 ("diag_records", h5py.special_dtype(vlen=str)),
@@ -67,8 +64,6 @@ class ClaimsPipeline:
             indexed_records += 1
             f.create_dataset("patient_tokens", data=indexed_records)
             f.create_dataset("diag_code_lookup", data=code_lookup)
-
-        os.chdir(owd)
 
         log.info("Completed pipeline")
 
