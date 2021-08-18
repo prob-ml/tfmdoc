@@ -1,6 +1,7 @@
 import os
 
 import pytorch_lightning as pl
+import torch
 from hydra import compose, initialize
 from hydra.utils import instantiate
 from torch.utils.data import DataLoader
@@ -43,7 +44,19 @@ def test_lightning():
         os.rmdir(preprocess_dir)
 
 
-# TEST UTILITIES
+def test_transformer():
+    with initialize(config_path=".."):
+        cfg = compose(config_name="config")
+        transformer = instantiate(cfg.transformer, n_tokens=6)
+        x = torch.randint(high=6, size=(4, 32))
+        y = torch.randint(high=2, size=(4,))
+        assert transformer.configure_optimizers().defaults
+        assert transformer.training_step((x, y), 0) > 0
+        assert transformer.validation_step((x, y), 0) > 0
+        encoding = transformer.pos_encode
+        assert encoding.pe.shape[1] == 6000
+
+
 def test_pipeline():
     with initialize(config_path=".."):
         cfg = compose(

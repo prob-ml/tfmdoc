@@ -13,8 +13,8 @@ preprocess:
   min_length: 32
   max_length: 512
   min_year: 2002
-  max_year: 2019
-  n: 200000
+  max_year: 2018
+  n: 600000
   do: True
   split_codes: True
   etl_only: False
