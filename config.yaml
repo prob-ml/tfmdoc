@@ -13,7 +13,7 @@ preprocess:
   min_length: 32
   max_length: 512
   min_year: 2002
-  max_year: 2005
+  max_year: 2018
   n: 600000
   include_labs: True
   do: False
@@ -24,7 +24,7 @@ train:
   train_frac: 0.8
   gpus:
     - 4
-  batch_size: 16
+  batch_size: 32
   max_epochs: 5
 
 disease_codes:
