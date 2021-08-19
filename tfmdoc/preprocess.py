@@ -22,67 +22,77 @@ class ClaimsPipeline:
         n=None,
         test=False,
         split_codes=True,
+        include_labs=True,
     ):
         self.data_dir = data_dir
         self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
         self.length_range = length_range
-        self.year_range = year_range
         self.n = n
-        self._test = test
+        self.include_labs = include_labs
         if split_codes:
-            self._splitter = lambda x: (x[:5], x[:6], x.rstrip())
+            self._splitter = (
+                lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
+            )
         else:
             self._splitter = lambda x: x
         self.output_dir = output_dir
+        if test:
+            self._parquets = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
+        else:
+            self._parquets = [f"diag_{yyyy}.parquet" for yyyy in range(*year_range)]
+        self._parq_cols = [
+            ("Patid", "Fst_Dt", "Icd_Flag", "Diag") for _ in range(*year_range)
+        ]
+        if self.include_labs:
+            self._parquets += [f"lab_{yyyy}.parquet" for yyyy in range(*year_range)]
+            self._parq_cols += [
+                ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
+                for _ in range(*year_range)
+            ]
 
     def run(self):
         log.info("Began pipeline")
-        if self._test:
-            diags = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
-        else:
-            diags = [f"diag_{yyyy}.parquet" for yyyy in range(*self.year_range)]
-        diags = [ParquetFile(self.data_dir + f) for f in diags]
+        self._parquets = [ParquetFile(self.data_dir + f) for f in self._parquets]
 
         pathlib.Path(self.output_dir).mkdir(exist_ok=True)
         with h5py.File(self.output_dir + "preprocessed.hdf5", "w") as f:
             datasets = (
-                ("patient_offsets", np.dtype("uint16")),
-                ("diag_records", h5py.special_dtype(vlen=str)),
-                ("patient_labels", np.dtype("uint8")),
-                ("patient_ids", np.dtype("float64")),
+                ("offsets", np.dtype("uint16")),
+                ("records", h5py.special_dtype(vlen=str)),
+                ("labels", np.dtype("uint8")),
+                ("ids", np.dtype("float64")),
             )
             for name, dtype in datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
-            self.process_chunks(diags, f)
+            self.process_chunks(f)
 
-            records = f["diag_records"]
+            records = f["records"]
             # assign each diag code a unique integer key
             code_lookup, indexed_records = np.unique(records, return_inverse=True)
             # make sure that zero does not map to a code
             code_lookup = np.insert(code_lookup, 0, "pad")
             indexed_records += 1
-            f.create_dataset("patient_tokens", data=indexed_records)
+            f.create_dataset("tokens", data=indexed_records)
             f.create_dataset("diag_code_lookup", data=code_lookup)
 
         log.info("Completed pipeline")
 
-    def process_chunks(self, diags, file):
+    def process_chunks(self, file):
         n_patients = 0
         n_records = 0
         n_chunks = 0
-
-        for chunk in chunks_of_patients(diags, ("Patid", "Icd_Flag", "Diag", "Fst_Dt")):
+        for chunk in chunks_of_patients(self._parquets, self._parq_cols):
             # break out of loop if there's an empty chunk
             if chunk.empty:
                 log.warning("Empty chunk returned!")
                 continue
             chunk = self.transform_patients_chunk(chunk)
             chunk_info = self.pull_patient_info(chunk)
-            if not chunk_info["patient_offsets"].size:
+            if not chunk_info["offsets"].size:
                 continue
-            n_patients += len(chunk_info["patient_offsets"])
-            n_records += len(chunk_info["diag_records"])
+            n_patients += len(chunk_info["offsets"])
+            n_records += len(chunk_info["records"])
             log.info(
                 f"Wrote data for {n_patients :,} patient ids, {n_records :,} records"
             )
@@ -101,6 +111,8 @@ class ClaimsPipeline:
         chunk.drop_duplicates(inplace=True)
         chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
         chunk.drop(columns="Fst_Dt", inplace=True)
+        if self.include_labs:
+            chunk = discretize_labs(chunk)
         # identify positive diagnoses
         chunk["is_case"] = chunk["Diag"].isin(self.disease_codes)
         # incorporate icd codes into diag codes
@@ -111,7 +123,10 @@ class ClaimsPipeline:
         # be careful as this will change the column naming within the generator!
         chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
         # data go boom!
-        return chunk.explode("diag")
+        chunk = chunk.explode("diag")
+        chunk["diag"].fillna(chunk["lab_code"], inplace=True)
+        chunk.drop(columns="lab_code", inplace=True)
+        return chunk
 
     def pull_patient_info(self, chunk):
         # if a patient has any code associated with the disease, flag as a positive
@@ -144,9 +159,23 @@ def sample_chunk_info(labeled_ids, counts, chunk):
 
     chunk_info = {}
 
-    chunk_info["patient_offsets"] = counts.to_numpy()
-    chunk_info["diag_records"] = chunk["diag"].to_numpy().astype(bytes)
-    chunk_info["patient_labels"] = labeled_ids.to_numpy()
-    chunk_info["patient_ids"] = counts.index
+    chunk_info["offsets"] = counts.to_numpy()
+    chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
+    chunk_info["labels"] = labeled_ids.to_numpy()
+    chunk_info["ids"] = counts.index
 
     return chunk_info
+
+
+def discretize_labs(chunk):
+    chunk["Loinc_Cd"].replace(b"       ", b"unknown_lab", inplace=True)
+    chunk["lab_status"] = chunk["Loinc_Cd"].mask(chunk["Loinc_Cd"].notna(), b"_normal")
+    chunk["lab_status"] = chunk["lab_status"].mask(
+        (chunk["Rslt_Nbr"] > chunk["Hi_Nrml"])
+        | (chunk["Rslt_Nbr"] < chunk["Low_Nrml"]),
+        b"_abnormal",
+    )
+    chunk["lab_code"] = chunk["Loinc_Cd"] + chunk["lab_status"]
+    return chunk.drop(
+        columns=["Loinc_Cd", "Rslt_Nbr", "lab_status", "Hi_Nrml", "Low_Nrml"]
+    )
