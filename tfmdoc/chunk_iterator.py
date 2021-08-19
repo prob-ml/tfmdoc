@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 
 def chunks_of_patients(files, columns):
-    queues = [ParquetFile.iter_row_groups(f, columns=columns) for f in files]
+    queues = [ParquetFile.iter_row_groups(f, columns=c) for f, c in zip(files, columns)]
     chunks = [next(q, None) for q in queues]
 
     total_completed = 0

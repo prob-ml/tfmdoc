@@ -15,7 +15,8 @@ preprocess:
   min_year: 2002
   max_year: 2018
   n: 600000
-  do: True
+  include_labs: True
+  do: False
   split_codes: True
   etl_only: False
 
@@ -23,7 +24,8 @@ train:
   train_frac: 0.8
   gpus:
     - 4
-  batch_size: 16
+  batch_size: 32
+  max_epochs: 5
 
 disease_codes:
   ald:
