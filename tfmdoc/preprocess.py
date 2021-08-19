@@ -22,7 +22,7 @@ class ClaimsPipeline:
         n=None,
         test=False,
         split_codes=True,
-        include_labs=True,
+        include_labs=False,
     ):
         self.data_dir = data_dir
         self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
@@ -124,8 +124,9 @@ class ClaimsPipeline:
         chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
         # data go boom!
         chunk = chunk.explode("diag")
-        chunk["diag"].fillna(chunk["lab_code"], inplace=True)
-        chunk.drop(columns="lab_code", inplace=True)
+        if self.include_labs:
+            chunk["diag"].fillna(chunk["lab_code"], inplace=True)
+            chunk.drop(columns="lab_code", inplace=True)
         return chunk
 
     def pull_patient_info(self, chunk):

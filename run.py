@@ -20,6 +20,7 @@ def main(cfg=None):
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
             n=cfg.preprocess.n,
             split_codes=cfg.preprocess.split_codes,
+            include_labs=cfg.preprocess.include_labs,
         )
         cpl.run()
         if cfg.preprocess.etl_only:
