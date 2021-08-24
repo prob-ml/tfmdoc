@@ -28,7 +28,8 @@ class ClaimsPipeline:
         self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
         self.length_range = length_range
         self.n = n
-        self.include_labs = include_labs
+        self._include_labs = include_labs
+        self.patient_data = None
         if split_codes:
             self._splitter = (
                 lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
@@ -43,7 +44,7 @@ class ClaimsPipeline:
         self._parq_cols = [
             ("Patid", "Fst_Dt", "Icd_Flag", "Diag") for _ in range(*year_range)
         ]
-        if self.include_labs:
+        if self._include_labs:
             self._parquets += [f"lab_{yyyy}.parquet" for yyyy in range(*year_range)]
             self._parq_cols += [
                 ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
@@ -51,7 +52,13 @@ class ClaimsPipeline:
             ]
 
     def run(self):
-        log.info("Began pipeline")
+        log.info("Began pipeline. Reading patient data...")
+        self.patient_data = (
+            ParquetFile(self.data_dir + "zip5_mbr.parquet")
+            .to_pandas(["Patid", "Gdr_Cd", "Yrdob"])
+            .drop_duplicates()
+        )
+        log.info("Read patient data")
         self._parquets = [ParquetFile(self.data_dir + f) for f in self._parquets]
 
         pathlib.Path(self.output_dir).mkdir(exist_ok=True)
@@ -61,6 +68,7 @@ class ClaimsPipeline:
                 ("records", h5py.special_dtype(vlen=str)),
                 ("labels", np.dtype("uint8")),
                 ("ids", np.dtype("float64")),
+                ("demo", np.dtype("float64")),
             )
             for name, dtype in datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
@@ -110,8 +118,7 @@ class ClaimsPipeline:
         # clean data
         chunk.drop_duplicates(inplace=True)
         chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
-        chunk.drop(columns="Fst_Dt", inplace=True)
-        if self.include_labs:
+        if self._include_labs:
             chunk = discretize_labs(chunk)
         # identify positive diagnoses
         chunk["is_case"] = chunk["Diag"].isin(self.disease_codes)
@@ -124,7 +131,7 @@ class ClaimsPipeline:
         chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
         # data go boom!
         chunk = chunk.explode("diag")
-        if self.include_labs:
+        if self._include_labs:
             chunk["diag"].fillna(chunk["lab_code"], inplace=True)
             chunk.drop(columns="lab_code", inplace=True)
         return chunk
@@ -144,10 +151,10 @@ class ClaimsPipeline:
             "is_case"
         ]
 
-        return sample_chunk_info(labeled_ids, counts, chunk)
+        return sample_chunk_info(labeled_ids, counts, chunk, self.patient_data)
 
 
-def sample_chunk_info(labeled_ids, counts, chunk):
+def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
     cases = labeled_ids[labeled_ids == 1]
     controls = labeled_ids[labeled_ids == 0]
     try:
@@ -156,7 +163,19 @@ def sample_chunk_info(labeled_ids, counts, chunk):
         pass
     labeled_ids = pd.concat([controls, cases])
     counts = counts.loc[labeled_ids.index]
-    chunk = chunk[chunk["patid"].isin(labeled_ids.index)]
+    chunk = chunk.set_index("patid").loc[labeled_ids.index]
+    patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+    last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
+    last_date.name = "last_date"
+    patient_data = patient_data.join(last_date, on="Patid")
+    patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
+    # standard normalize
+    patient_data["latest_age"] = (
+        patient_data["latest_age"] - patient_data["latest_age"].mean()
+    ) / patient_data["latest_age"].std()
+    patient_data = patient_data.set_index("Patid").loc[labeled_ids.index]
+    patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
+    patient_data.drop(columns=["Yrdob", "last_date", "Gdr_Cd", "is_case"], inplace=True)
 
     chunk_info = {}
 
@@ -164,6 +183,7 @@ def sample_chunk_info(labeled_ids, counts, chunk):
     chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
     chunk_info["labels"] = labeled_ids.to_numpy()
     chunk_info["ids"] = counts.index
+    chunk_info["demo"] = patient_data.to_numpy()
 
     return chunk_info
 
