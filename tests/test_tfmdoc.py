@@ -48,11 +48,13 @@ def test_transformer():
     with initialize(config_path=".."):
         cfg = compose(config_name="config")
         transformer = instantiate(cfg.transformer, n_tokens=6)
+        w = torch.randn(size=(4, 2))
+        w[:, 1] = (w[:, 1] > 0)
         x = torch.randint(high=6, size=(4, 32))
         y = torch.randint(high=2, size=(4,))
         assert transformer.configure_optimizers().defaults
-        assert transformer.training_step((x, y), 0) > 0
-        assert transformer.validation_step((x, y), 0) > 0
+        assert transformer.training_step((w, x, y), 0) > 0
+        assert transformer.validation_step((w, x, y), 0) > 0
         encoding = transformer.pos_encode
         assert encoding.pe.shape[1] == 6000
 
@@ -77,8 +79,9 @@ def test_pipeline():
         preprocess_dir = "tests/test_data/test_pipeline/"
         torch_dataset = ClaimsDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
-        x, y = torch_dataset[7]
+        w, x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
         assert y.item() in {0, 1}
+        assert w.shape[0] == 2
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
