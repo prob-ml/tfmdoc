@@ -49,7 +49,9 @@ def test_transformer():
         cfg = compose(config_name="config")
         transformer = instantiate(cfg.transformer, n_tokens=6)
         w = torch.randn(size=(4, 2))
-        w[:, 1] = (w[:, 1] > 0)
+        # fmt: off
+        w[:, 1] = (w[:, 1] >= 0)
+        # fmt: on
         x = torch.randint(high=6, size=(4, 32))
         y = torch.randint(high=2, size=(4,))
         assert transformer.configure_optimizers().defaults

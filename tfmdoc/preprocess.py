@@ -112,10 +112,9 @@ class ClaimsPipeline:
                     file[name].resize((len(file[name]) + len(arr), 2))
                 else:
                     file[name].resize(len(file[name]) + len(arr), axis=0)
-                # alas, black formatting is having a problem
-                file[name][
-                    -len(arr) :,
-                ] = arr
+                # fmt: off
+                file[name][-len(arr) :, ] = arr
+                # fmt: on
             log.info(f"Patient info written for chunk {n_chunks}")
 
             n_chunks += 1
