@@ -68,10 +68,16 @@ class ClaimsPipeline:
                 ("records", h5py.special_dtype(vlen=str)),
                 ("labels", np.dtype("uint8")),
                 ("ids", np.dtype("float64")),
-                ("demo", np.dtype("float64")),
             )
             for name, dtype in datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
+
+            f.create_dataset(
+                "demo",
+                (0, 2),
+                dtype=np.dtype("float64"),
+                maxshape=(None, 2),
+            )
 
             self.process_chunks(f)
 
@@ -105,8 +111,14 @@ class ClaimsPipeline:
                 f"Wrote data for {n_patients :,} patient ids, {n_records :,} records"
             )
             for name, arr in chunk_info.items():
-                file[name].resize(len(file[name]) + len(arr), axis=0)
-                file[name][-len(arr) :] = arr
+                if name == "demo":
+                    file[name].resize((len(file[name]) + len(arr), 2))
+                else:
+                    file[name].resize(len(file[name]) + len(arr), axis=0)
+                # alas, flake8 is having a problem here
+                file[name][
+                    -len(arr) :,
+                ] = arr
             log.info(f"Patient info written for chunk {n_chunks}")
 
             n_chunks += 1
