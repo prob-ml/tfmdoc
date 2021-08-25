@@ -73,10 +73,7 @@ class ClaimsPipeline:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
             f.create_dataset(
-                "demo",
-                (0, 2),
-                dtype=np.dtype("float64"),
-                maxshape=(None, 2),
+                "demo", (0, 2), dtype=np.dtype("float64"), maxshape=(None, 2)
             )
 
             self.process_chunks(f)
@@ -115,7 +112,7 @@ class ClaimsPipeline:
                     file[name].resize((len(file[name]) + len(arr), 2))
                 else:
                     file[name].resize(len(file[name]) + len(arr), axis=0)
-                # alas, flake8 is having a problem here
+                # alas, black formatting is having a problem
                 file[name][
                     -len(arr) :,
                 ] = arr
