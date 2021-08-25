@@ -107,3 +107,6 @@ ignore =
 
     # Need subscript slice assignment for chunked writing out to work
     WPS362,
+
+    # Some issues with how it parses tuple arguments...
+    WPS317,

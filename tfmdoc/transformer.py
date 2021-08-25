@@ -10,6 +10,7 @@ class Transformer(pl.LightningModule):
         self,
         n_tokens,
         d_model,
+        d_demo,
         n_blocks,
         n_heads,
         max_len,
@@ -33,12 +34,12 @@ class Transformer(pl.LightningModule):
 
         self.norm = torch.nn.LayerNorm(d_model)
         # binary classification
-        self.to_scores = torch.nn.Linear(d_model, 2)
+        self.to_scores = torch.nn.Linear(d_model + d_demo, 2)
         self._max_pool = max_pool
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
 
-    def forward(self, codes):
+    def forward(self, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         x = self.embed(codes)
@@ -51,15 +52,16 @@ class Transformer(pl.LightningModule):
         x = self.norm(x)
         x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
         # shape will be (n_batches, d_model)
+        x = torch.cat((x, demo), axis=1)
         # final linear layer projects this down to (n_batches, n_classes)
         return self.to_scores(x)
 
     def training_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
-        x, y = batch
+        w, x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
-        y_hat = self(x)
+        y_hat = self(w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
         acc = self._accuracy((y_hat[:, 1] > 0), y)
@@ -68,10 +70,10 @@ class Transformer(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
-        x, y = batch
+        w, x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
-        y_hat = self(x)
+        y_hat = self(w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
         acc = self._accuracy((y_hat[:, 1] > 0), y)

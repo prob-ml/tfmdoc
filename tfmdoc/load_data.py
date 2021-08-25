@@ -14,6 +14,7 @@ class ClaimsDataset(Dataset):
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
         self.labels = torch.from_numpy(np.array(file["labels"])).long()
+        self.demo = torch.from_numpy(np.array(file["demo"])).float()
 
     def __len__(self):
         # sufficient to return the number of patients
@@ -28,13 +29,14 @@ class ClaimsDataset(Dataset):
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
         # return array of diag codes and patient labels
-        return patient_records, self.labels[index]
+        return self.demo[index], patient_records, self.labels[index]
 
 
 def padded_collate(batch):
     # each element in a batch is a pair (x, y)
     # un zip batch
-    xs, ys = zip(*batch)
+    ws, xs, ys = zip(*batch)
+    ws = torch.stack(ws)
     xs = pad_sequence(xs, batch_first=True, padding_value=0)
     ys = torch.stack(ys)
-    return xs, ys
+    return ws, xs, ys
