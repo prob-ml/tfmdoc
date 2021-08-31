@@ -147,10 +147,14 @@ class ClaimsPipeline:
     def pull_patient_info(self, chunk):
         # if a patient has any code associated with the disease, flag as a positive
         labeled_ids = chunk.groupby("patid")["is_case"].any().astype(int)
-        # drop patient records after first positive diagnosis
-        chunk = chunk[
-            chunk["is_case"] == False | ~chunk[["patid", "is_case"]].duplicated()
-        ]
+        diagnosis_dates = (
+            chunk[chunk["is_case"] == True].groupby("patid")["Fst_Dt"].first()
+        )
+        diagnosis_dates.name = "first_diag"
+        chunk = chunk.join(diagnosis_dates, on="patid", how="left")
+        chunk["first_diag"] = chunk["first_diag"].fillna(50000)
+        # drop patient records after first diagnosis (and up to 1 month before)
+        chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - 30]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
         counts = counts[counts.between(*self.length_range)]
