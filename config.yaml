@@ -27,6 +27,7 @@ train:
     - 4
   batch_size: 32
   max_epochs: 5
+  limit_train_batches: 0.5
 
 disease_codes:
   ald:

@@ -38,6 +38,7 @@ class Transformer(pl.LightningModule):
         self._max_pool = max_pool
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
+        self._d_demo = d_demo
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -52,7 +53,8 @@ class Transformer(pl.LightningModule):
         x = self.norm(x)
         x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
         # shape will be (n_batches, d_model)
-        x = torch.cat((x, demo), axis=1)
+        if self._d_demo != 0:
+            x = torch.cat((x, demo), axis=1)
         # final linear layer projects this down to (n_batches, n_classes)
         return self.to_scores(x)
 

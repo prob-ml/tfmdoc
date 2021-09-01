@@ -14,7 +14,9 @@ class ClaimsDataset(Dataset):
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
         self.labels = torch.from_numpy(np.array(file["labels"])).long()
-        self.demo = torch.from_numpy(np.array(file["demo"])).float()
+        demog = np.array(file["demo"])
+        demog[:, 0] = np.nan_to_num(demog[:, 0])
+        self.demo = torch.from_numpy(demog).float()
 
     def __len__(self):
         # sufficient to return the number of patients

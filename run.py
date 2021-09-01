@@ -46,7 +46,11 @@ def main(cfg=None):
     )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
-    trainer = pl.Trainer(gpus=cfg.train.gpus, max_epochs=cfg.train.max_epochs)
+    trainer = pl.Trainer(
+        gpus=cfg.train.gpus,
+        max_epochs=cfg.train.max_epochs,
+        limit_train_batches=cfg.train.limit_train_batches,
+    )
     trainer.fit(transformer, train_loader, val_loader)
 
 
