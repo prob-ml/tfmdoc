@@ -1,12 +1,13 @@
 transformer:
   _target_: tfmdoc.Transformer
-  d_model: 64
+  d_model: 32
   d_demo: 2
   n_blocks: 2
   n_heads: 8
   max_len: 6000
   block_dropout: 0.5
   max_pool: True
+  d_ff: 8
 
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
