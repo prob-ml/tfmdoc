@@ -3,6 +3,7 @@ import math
 import pytorch_lightning as pl
 import torch
 import torchmetrics
+from torch.nn.functional import softmax
 
 
 class Transformer(pl.LightningModule):
@@ -39,6 +40,7 @@ class Transformer(pl.LightningModule):
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._d_demo = d_demo
+        self._auroc = torchmetrics.AUROC(pos_label=1)
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -66,7 +68,8 @@ class Transformer(pl.LightningModule):
         y_hat = self(w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
-        acc = self._accuracy((y_hat[:, 1] > 0), y)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        acc = self._accuracy((probas > 0.5), y)
         self.log("train_accuracy", acc)
         return loss
 
@@ -78,8 +81,11 @@ class Transformer(pl.LightningModule):
         y_hat = self(w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
-        acc = self._accuracy((y_hat[:, 1] > 0), y)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        acc = self._accuracy((probas > 0.5), y)
         self.log("val_accuracy", acc)
+        auroc = self._auroc(probas, y)
+        self.log("val_auroc", auroc)
         return loss
 
     def configure_optimizers(self):
