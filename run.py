@@ -3,9 +3,8 @@ import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
 from torch.utils.data import DataLoader, random_split
-from torch.utils.data.sampler import WeightedRandomSampler
 
-from tfmdoc.load_data import ClaimsDataset, padded_collate
+from tfmdoc.load_data import ClaimsDataset, balanced_sampler, padded_collate
 from tfmdoc.preprocess import ClaimsPipeline
 
 
@@ -29,21 +28,18 @@ def main(cfg=None):
     dataset = ClaimsDataset(preprocess_dir)
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(dataset, (train_size, val_size))
-    train_sampler = balanced_sampler(train_dataset.indices, dataset.labels)
-    train_loader = DataLoader(
-        train_dataset,
-        collate_fn=padded_collate,
-        batch_size=cfg.train.batch_size,
-        sampler=train_sampler,
+    keys = ("train", "val")
+    subsets = random_split(
+        dataset, (train_size, val_size), torch.Generator().manual_seed(42)
     )
-    val_sampler = balanced_sampler(val_dataset.indices, dataset.labels)
-    val_loader = DataLoader(
-        val_dataset,
-        collate_fn=padded_collate,
-        batch_size=cfg.train.batch_size,
-        sampler=val_sampler,
-    )
+    loaders = {}
+    for key, subset in zip(keys, subsets):
+        loaders[key] = DataLoader(
+            subset,
+            collate_fn=padded_collate,
+            batch_size=cfg.train.batch_size,
+            sampler=balanced_sampler(subset.indices, subset.labels),
+        )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
     trainer = pl.Trainer(
@@ -51,16 +47,7 @@ def main(cfg=None):
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
     )
-    trainer.fit(transformer, train_loader, val_loader)
-
-
-def balanced_sampler(train_ix, labels):
-    p = labels[train_ix].sum() / len(train_ix)
-    weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
-    sample_weights = weights[labels[train_ix]]
-    return WeightedRandomSampler(
-        weights=sample_weights, num_samples=len(sample_weights), replacement=True
-    )
+    trainer.fit(transformer, loaders["train"], loaders["val"])
 
 
 if __name__ == "__main__":

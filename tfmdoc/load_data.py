@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
+from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
@@ -34,6 +35,9 @@ class ClaimsDataset(Dataset):
         return self.demo[index], patient_records, self.labels[index]
 
 
+# HELPERS
+
+
 def padded_collate(batch):
     # each element in a batch is a pair (x, y)
     # un zip batch
@@ -42,3 +46,12 @@ def padded_collate(batch):
     xs = pad_sequence(xs, batch_first=True, padding_value=0)
     ys = torch.stack(ys)
     return ws, xs, ys
+
+
+def balanced_sampler(ix, labels):
+    p = labels[ix].sum() / len(ix)
+    weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
+    sample_weights = weights[labels[ix]]
+    return WeightedRandomSampler(
+        weights=sample_weights, num_samples=len(sample_weights), replacement=True
+    )
