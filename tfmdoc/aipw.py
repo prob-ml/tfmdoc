@@ -20,6 +20,8 @@ def aipw_estimator(y, t, pi_x, ey_x):
     ipw = ((t * y) / pi_x) - (((1 - t) * y) / (1 - pi_x))
     # calculate regression adjustment
     # a weighted average of the two regression estimators
-    regr = (t - pi_x) / pi_x * (1 - pi_x) * (1 - pi_x) * ey_x[:, 1] + pi_x * ey_x[:, 0]
+    regr = (
+        (t - pi_x) / (pi_x * (1 - pi_x)) * ((1 - pi_x) * ey_x[:, 1] + pi_x * ey_x[:, 0])
+    )
 
     return torch.mean(ipw - regr)

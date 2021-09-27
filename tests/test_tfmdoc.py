@@ -6,6 +6,7 @@ from hydra import compose, initialize
 from hydra.utils import instantiate
 from torch.utils.data import DataLoader
 
+from tfmdoc.aipw import aipw_estimator
 from tfmdoc.load_data import ClaimsDataset, padded_collate
 from tfmdoc.preprocess import ClaimsPipeline
 
@@ -87,3 +88,44 @@ def test_pipeline():
         assert w.shape[0] == 2
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
+
+
+def test_aipw():
+    torch.manual_seed(35)
+    y, t, pi_x, ey_x = simulate_causality(1000, 40, 32, 22, 4)
+    est_ate = aipw_estimator(y, t, pi_x, ey_x)
+
+    simulated_ates = torch.empty(100)
+    for i in range(100):
+        simulated_ates[i] = (
+            torch.bernoulli(ey_x[:, 1]).mean() - torch.bernoulli(ey_x[:, 0]).mean()
+        )
+    assert abs(est_ate - simulated_ates.mean()) < 0.05
+
+
+# helpers
+
+
+def simulate_causality(n, n_codes, seq_length, treatment_event, outcome_event):
+    x = torch.randint(n_codes, (n, seq_length))
+    t_mask = (x == treatment_event).any(1)
+    prop_score = torch.empty((n,)).fill_(0.8)
+    prop_score = prop_score.masked_fill_(t_mask, 0.2)
+    treatment = torch.bernoulli(prop_score)
+    outcome_mask = (x == outcome_event).any(1)
+    outcome_probs = torch.empty((n,)).fill_(0.8)
+    outcome_probs.masked_fill_(torch.logical_and(outcome_mask, treatment), 0.2)
+    outcome = torch.bernoulli(outcome_probs)
+
+    ey_x0 = torch.empty((n,)).fill_(0.8)
+    ey_x1 = torch.empty((n,)).fill_(0.8)
+    ey_x0.masked_fill_(
+        torch.logical_and(outcome_mask, torch.empty((n,)).fill_(False)), 0.2
+    )
+    ey_x1.masked_fill_(
+        torch.logical_and(outcome_mask, torch.empty((n,)).fill_(True)), 0.2
+    )
+
+    estimated_outcomes = torch.cat([ey_x0.unsqueeze(1), ey_x1.unsqueeze(1)], dim=1)
+
+    return outcome, treatment, prop_score, estimated_outcomes
