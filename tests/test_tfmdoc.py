@@ -92,14 +92,14 @@ def test_pipeline():
 
 def test_aipw():
     torch.manual_seed(35)
+    # ey_x contains both treatment and control estimates
     y, t, pi_x, ey_x = simulate_causality(1000, 40, 32, 22, 4)
     est_ate = aipw_estimator(y, t, pi_x, ey_x)
 
-    simulated_ates = torch.empty(100)
-    for i in range(100):
-        simulated_ates[i] = (
-            torch.bernoulli(ey_x[:, 1]).mean() - torch.bernoulli(ey_x[:, 0]).mean()
-        )
+    # simulate true ATE empirically over 100 trials
+    assigned_treatment = torch.bernoulli(ey_x[:, 1].repeat(100, 1)).mean(1)
+    assigned_control = torch.bernoulli(ey_x[:, 0].repeat(100, 1)).mean(1)
+    simulated_ates = assigned_treatment - assigned_control
     assert abs(est_ate - simulated_ates.mean()) < 0.05
 
 
