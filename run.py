@@ -41,13 +41,13 @@ def main(cfg=None):
             sampler=balanced_sampler(subset.indices, dataset.labels),
         )
     mapping = dataset.code_lookup
-    transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
+    tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
     trainer = pl.Trainer(
         gpus=cfg.train.gpus,
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
     )
-    trainer.fit(transformer, loaders["train"], loaders["val"])
+    trainer.fit(tfmd, loaders["train"], loaders["val"])
 
 
 if __name__ == "__main__":

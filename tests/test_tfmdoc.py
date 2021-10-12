@@ -16,15 +16,15 @@ def test_lightning():
         cfg = compose(
             config_name="config",
             overrides=[
-                "transformer.d_model=32",
-                "transformer.n_blocks=1",
+                "model.d_model=32",
+                "model.n_blocks=1",
                 "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
                 "preprocess.output_dir=tests/test_data/test_lightning/",
             ],
         )
 
-        assert cfg["transformer"]["n_blocks"] == 1
+        assert cfg["model"]["n_blocks"] == 1
 
         cpl = ClaimsPipeline(
             cfg.preprocess.data_dir,
@@ -38,27 +38,27 @@ def test_lightning():
         dataset = ClaimsDataset(preprocess_dir)
         train_loader = DataLoader(dataset, collate_fn=padded_collate, batch_size=4)
         mapping = dataset.code_lookup
-        transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
+        tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
         trainer = pl.Trainer(fast_dev_run=True)
-        trainer.fit(transformer, train_loader)
+        trainer.fit(tfmd, train_loader)
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
 
 
-def test_transformer():
+def test_model():
     with initialize(config_path=".."):
         cfg = compose(config_name="config")
-        transformer = instantiate(cfg.transformer, n_tokens=6)
+        model = instantiate(cfg.model, n_tokens=6)
         w = torch.randn(size=(4, 2))
         # fmt: off
         w[:, 1] = (w[:, 1] >= 0)
         # fmt: on
         x = torch.randint(high=6, size=(4, 32))
         y = torch.randint(high=2, size=(4,))
-        assert transformer.configure_optimizers().defaults
-        assert transformer.training_step((w, x, y), 0) > 0
-        assert transformer.validation_step((w, x, y), 0) > 0
-        encoding = transformer.pos_encode
+        assert model.configure_optimizers().defaults
+        assert model.training_step((w, x, y), 0) > 0
+        assert model.validation_step((w, x, y), 0) > 0
+        encoding = model.pos_encode
         assert encoding.pe.shape[1] == 6000
 
 

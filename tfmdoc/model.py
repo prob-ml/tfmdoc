@@ -6,7 +6,7 @@ import torchmetrics
 from torch.nn.functional import relu, softmax
 
 
-class Transformer(pl.LightningModule):
+class Tfmd(pl.LightningModule):
     def __init__(
         self,
         n_tokens,
@@ -25,6 +25,7 @@ class Transformer(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
+        # if a transformer dimension is supplied, build transformer model
         if d_model:
             self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
