@@ -38,7 +38,7 @@ def main(cfg=None):
             subset,
             collate_fn=padded_collate,
             batch_size=cfg.train.batch_size,
-            sampler=balanced_sampler(subset.indices, subset.labels),
+            sampler=balanced_sampler(subset.indices, dataset.labels),
         )
     mapping = dataset.code_lookup
     transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
