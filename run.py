@@ -25,7 +25,7 @@ def main(cfg=None):
         if cfg.preprocess.etl_only:
             return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
-    dataset = ClaimsDataset(preprocess_dir)
+    dataset = ClaimsDataset(preprocess_dir, bag_of_words=(not cfg.model.transformer))
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = len(dataset) - train_size
     keys = ("train", "val")
@@ -33,21 +33,24 @@ def main(cfg=None):
         dataset, (train_size, val_size), torch.Generator().manual_seed(42)
     )
     loaders = {}
+
+    collate_fn = lambda x: padded_collate(x, pad=cfg.model.transformer)
+
     for key, subset in zip(keys, subsets):
         loaders[key] = DataLoader(
             subset,
-            collate_fn=padded_collate,
+            collate_fn=collate_fn,
             batch_size=cfg.train.batch_size,
             sampler=balanced_sampler(subset.indices, dataset.labels),
         )
     mapping = dataset.code_lookup
-    transformer = instantiate(cfg.transformer, n_tokens=mapping.shape[0])
+    tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
     trainer = pl.Trainer(
         gpus=cfg.train.gpus,
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
     )
-    trainer.fit(transformer, loaders["train"], loaders["val"])
+    trainer.fit(tfmd, loaders["train"], loaders["val"])
 
 
 if __name__ == "__main__":
