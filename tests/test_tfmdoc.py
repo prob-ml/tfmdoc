@@ -54,7 +54,7 @@ def test_model():
         w[:, 1] = (w[:, 1] >= 0)
         # fmt: on
         x = torch.randint(high=6, size=(4, 32))
-        y = torch.randint(high=2, size=(4,))
+        y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
         assert model.training_step((w, x, y), 0) > 0
         assert model.validation_step((w, x, y), 0) > 0
@@ -74,7 +74,7 @@ def test_bow():
         w[:, 1] = (w[:, 1] >= 0)
         # fmt: on
         x = torch.randint(high=4, size=(4, 60)).float()
-        y = torch.randint(high=2, size=(4,))
+        y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
         assert model.training_step((w, x, y), 0) > 0
         assert model.validation_step((w, x, y), 0) > 0
