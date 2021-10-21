@@ -8,6 +8,9 @@ model:
   block_dropout: 0.5
   max_pool: True
   d_ff: 8
+  transformer: False
+  d_bow: 128
+  lr: 0.001
 
 
 preprocess:

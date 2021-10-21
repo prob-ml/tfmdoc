@@ -3,6 +3,7 @@ import math
 import pytorch_lightning as pl
 import torch
 import torchmetrics
+from torch.nn import Linear, ReLU
 from torch.nn.functional import relu, softmax
 
 
@@ -18,6 +19,9 @@ class Tfmd(pl.LightningModule):
         block_dropout,
         max_pool,
         d_ff,
+        transformer,
+        d_bow,
+        lr,
     ):
 
         super().__init__()
@@ -25,52 +29,48 @@ class Tfmd(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
-        # if a transformer dimension is supplied, build transformer model
-        if d_model:
-            self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
+        if transformer:
+            self._pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=block_dropout)
                 for _ in range(n_blocks)
             ]
-            self.norm = torch.nn.LayerNorm(d_model)
-            self.layers = torch.nn.Sequential(*blocks)
-
+            self._norm = torch.nn.LayerNorm(d_model)
+            self._layers = torch.nn.Sequential(*blocks)
+        else:
+            self.feedfwd = torch.nn.Sequential(
+                Linear(n_tokens, d_bow), ReLU(), Linear(d_bow, d_model)
+            )
         self._d_demo = d_demo
         self._d_model = d_model
-        self._d_ff = d_ff
-        if d_ff:
-            self.final = torch.nn.Linear(d_model + d_demo, d_ff)
-            self.to_scores = torch.nn.Linear(d_ff, 2)
-        else:
-            self.final = None
-            self.to_scores = torch.nn.Linear(d_demo + d_model, 2)
+        self.final = Linear(d_model + d_demo, d_ff)
+        self.to_scores = Linear(d_ff, 2)
         # binary classification
         self._max_pool = max_pool
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
+        self._transformer = transformer
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
-        if self._d_model:
+        if self._transformer:
             x = self.embed(codes)
             # add sinusoidal position encodings
-            x = self.pos_encode(x)
+            x = self._pos_encode(x)
 
-            for layer in self.layers:
+            for layer in self._layers:
                 x = layer(x)
 
-            x = self.norm(x)
+            x = self._norm(x)
             x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
             # shape will be (n_batches, d_model)
-            if self._d_demo:
-                x = torch.cat((x, demo), axis=1)
             # final linear layer projects this down to (n_batches, n_classes)
         else:
-            x = demo
-        if self._d_ff:
-            x = relu(self.final(x))
+            x = self.feedfwd(codes)
+        x = torch.cat((x, demo), axis=1)
+        x = relu(self.final(x))
         return self.to_scores(x)
 
     def training_step(self, batch, batch_idx):

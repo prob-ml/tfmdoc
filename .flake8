@@ -110,3 +110,6 @@ ignore =
 
     # Some issues with how it parses tuple arguments...
     WPS317,
+
+    # Actually, lambda expressions are sick
+    E731,

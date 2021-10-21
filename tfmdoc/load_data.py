@@ -7,10 +7,12 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir):
+    def __init__(self, preprocess_dir, bag_of_words=False):
         file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
         self.offsets = np.cumsum(np.array(file["offsets"]))
-        self.records = torch.from_numpy(np.array(file["tokens"]))
+        self.records = np.array(file["tokens"])
+        if not bag_of_words:
+            self.records = torch.from_numpy(self.records)
         self.code_lookup = np.array(file["diag_code_lookup"])
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
@@ -18,6 +20,7 @@ class ClaimsDataset(Dataset):
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
         self.demo = torch.from_numpy(demog).float()
+        self._bow = bag_of_words
 
     def __len__(self):
         # sufficient to return the number of patients
@@ -31,6 +34,13 @@ class ClaimsDataset(Dataset):
         else:
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
+        if self._bow:
+            # get counts of each code
+            patient_records = np.bincount(patient_records)
+            # pad each vector to length T, all possible codes
+            padded = np.zeros(self.code_lookup.shape)
+            padded[: len(patient_records)] = patient_records
+            patient_records = torch.from_numpy(padded).float()
         # return array of diag codes and patient labels
         return self.demo[index], patient_records, self.labels[index]
 
@@ -38,14 +48,21 @@ class ClaimsDataset(Dataset):
 # HELPERS
 
 
-def padded_collate(batch):
+def padded_collate(batch, pad=True):
     # each element in a batch is a pair (x, y)
     # un zip batch
     ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
-    xs = pad_sequence(xs, batch_first=True, padding_value=0)
+    if pad:
+        xs = pad_sequence(xs, batch_first=True, padding_value=0)
+    else:
+        xs = torch.stack(xs)
     ys = torch.stack(ys)
     return ws, xs, ys
+
+
+def bag_of_words_collate(batch, lookup):
+    pass
 
 
 def balanced_sampler(ix, labels):
