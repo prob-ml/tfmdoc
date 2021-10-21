@@ -62,6 +62,24 @@ def test_model():
         assert encoding.pe.shape[1] == 6000
 
 
+def test_bow():
+    with initialize(config_path=".."):
+        cfg = compose(
+            config_name="config",
+            overrides=["model.transformer=False", "model.d_bow=40"],
+        )
+        model = instantiate(cfg.model, n_tokens=60)
+        w = torch.randn(size=(4, 2))
+        # fmt: off
+        w[:, 1] = (w[:, 1] >= 0)
+        # fmt: on
+        x = torch.randint(high=4, size=(4, 60)).float()
+        y = torch.randint(high=2, size=(4,))
+        assert model.configure_optimizers().defaults
+        assert model.training_step((w, x, y), 0) > 0
+        assert model.validation_step((w, x, y), 0) > 0
+
+
 def test_pipeline():
     with initialize(config_path=".."):
         cfg = compose(

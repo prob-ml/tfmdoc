@@ -30,7 +30,7 @@ class Tfmd(pl.LightningModule):
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
         if transformer:
-            self._pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
+            self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=block_dropout)
                 for _ in range(n_blocks)
@@ -51,6 +51,7 @@ class Tfmd(pl.LightningModule):
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
         self._transformer = transformer
+        self._lr = lr
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -58,7 +59,7 @@ class Tfmd(pl.LightningModule):
         if self._transformer:
             x = self.embed(codes)
             # add sinusoidal position encodings
-            x = self._pos_encode(x)
+            x = self.pos_encode(x)
 
             for layer in self._layers:
                 x = layer(x)
@@ -102,7 +103,7 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3, weight_decay=1e-4)
+        return torch.optim.Adam(self.parameters(), lr=self._lr, weight_decay=1e-4)
 
 
 class DecoderLayer(torch.nn.Module):
