@@ -53,7 +53,44 @@ class Tfmd(pl.LightningModule):
         self._transformer = transformer
         self._lr = lr
 
-    def forward(self, demo, codes):
+    def training_step(self, batch, batch_idx):
+        # unclear why the lightning api wants a batch index var
+        w, x, y = batch
+        # lightning recommends keeping the training logic separate
+        # from the inference logic, though this works fine
+        y_hat = self._shared_step(w, x)
+        loss = self._loss_fn(y_hat, y)
+        self.log("train_loss", loss)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        acc = self._accuracy((probas > 0.5), y)
+        self.log("train_accuracy", acc)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        # unclear why the lightning api wants a batch index var
+        w, x, y = batch
+        # lightning recommends keeping the training logic separate
+        # from the inference logic, though this works fine
+        y_hat = self._shared_step(w, x)
+        loss = self._loss_fn(y_hat, y)
+        self.log("val_loss", loss)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        acc = self._accuracy((probas > 0.5), y)
+        self.log("val_accuracy", acc)
+        auroc = self._auroc(probas, y)
+        self.log("val_auroc", auroc)
+        return loss
+
+    def predict_step(self, batch, batch_idx):
+        w, x, y = batch
+        y_hat = self._shared_step(w, x)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        return probas, y
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self._lr, weight_decay=1e-4)
+
+    def _shared_step(self, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self._transformer:
@@ -73,37 +110,6 @@ class Tfmd(pl.LightningModule):
         x = torch.cat((x, demo), axis=1)
         x = relu(self.final(x))
         return self.to_scores(x)
-
-    def training_step(self, batch, batch_idx):
-        # unclear why the lightning api wants a batch index var
-        w, x, y = batch
-        # lightning recommends keeping the training logic separate
-        # from the inference logic, though this works fine
-        y_hat = self(w, x)
-        loss = self._loss_fn(y_hat, y)
-        self.log("train_loss", loss)
-        probas = softmax(y_hat, dim=1)[:, 1]
-        acc = self._accuracy((probas > 0.5), y)
-        self.log("train_accuracy", acc)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        # unclear why the lightning api wants a batch index var
-        w, x, y = batch
-        # lightning recommends keeping the training logic separate
-        # from the inference logic, though this works fine
-        y_hat = self(w, x)
-        loss = self._loss_fn(y_hat, y)
-        self.log("val_loss", loss)
-        probas = softmax(y_hat, dim=1)[:, 1]
-        acc = self._accuracy((probas > 0.5), y)
-        self.log("val_accuracy", acc)
-        auroc = self._auroc(probas, y)
-        self.log("val_auroc", auroc)
-        return loss
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self._lr, weight_decay=1e-4)
 
 
 class DecoderLayer(torch.nn.Module):
