@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 
 
@@ -61,10 +61,6 @@ def padded_collate(batch, pad=True):
     return ws, xs, ys
 
 
-def bag_of_words_collate(batch, lookup):
-    pass
-
-
 def balanced_sampler(ix, labels):
     p = labels[ix].sum() / len(ix)
     weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
@@ -72,3 +68,26 @@ def balanced_sampler(ix, labels):
     return WeightedRandomSampler(
         weights=sample_weights, num_samples=len(sample_weights), replacement=True
     )
+
+
+def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
+    if val_size > 0:
+        keys = ("train", "val", "test")
+        lengths = (train_size, val_size, test_size)
+    else:
+        keys = ("train", "test")
+        lengths = (train_size, test_size)
+    keys = ("train", "test")
+    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(42))
+    loaders = {"val": None}
+
+    collate_fn = lambda x: padded_collate(x, pad=pad)
+
+    for key, subset in zip(keys, subsets):
+        loaders[key] = DataLoader(
+            subset,
+            collate_fn=collate_fn,
+            batch_size=batch_size,
+            sampler=balanced_sampler(subset.indices, dataset.labels),
+        )
+    return loaders

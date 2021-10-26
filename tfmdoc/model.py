@@ -29,6 +29,10 @@ class Tfmd(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
+        self._d_demo = d_demo
+        self._d_model = d_model
+        self.final = Linear(d_model + d_demo, d_ff)
+        self.to_scores = Linear(d_ff, 2)
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
@@ -40,10 +44,6 @@ class Tfmd(pl.LightningModule):
         else:
             bow_layers = self._make_bow_layers(n_tokens, d_bow)
             self.feedfwd = torch.nn.Sequential(*bow_layers)
-        self._d_demo = d_demo
-        self._d_model = d_model
-        self.final = Linear(d_model + d_demo, d_ff)
-        self.to_scores = Linear(d_ff, 2)
         # binary classification
         self._max_pool = max_pool
         self._loss_fn = torch.nn.CrossEntropyLoss()
@@ -79,6 +79,15 @@ class Tfmd(pl.LightningModule):
         auroc = self._auroc(probas, y)
         self.log("val_auroc", auroc)
         return loss
+
+    def test_step(self, batch, batch_idx):
+        w, x, y = batch
+        y_hat = self._shared_step(w, x)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        acc = self._accuracy((probas > 0.5), y)
+        self.log("test_accuracy", acc)
+        auroc = self._auroc(probas, y)
+        self.log("test_auroc", auroc)
 
     def predict_step(self, batch, batch_idx):
         w, x, y = batch
