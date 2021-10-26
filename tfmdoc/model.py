@@ -38,9 +38,8 @@ class Tfmd(pl.LightningModule):
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
         else:
-            self.feedfwd = torch.nn.Sequential(
-                Linear(n_tokens, d_bow), ReLU(), Linear(d_bow, d_model)
-            )
+            bow_layers = self._make_bow_layers(n_tokens, d_bow)
+            self.feedfwd = torch.nn.Sequential(*bow_layers)
         self._d_demo = d_demo
         self._d_model = d_model
         self.final = Linear(d_model + d_demo, d_ff)
@@ -110,6 +109,19 @@ class Tfmd(pl.LightningModule):
         x = torch.cat((x, demo), axis=1)
         x = relu(self.final(x))
         return self.to_scores(x)
+
+    def _make_bow_layers(self, n_tokens, d_bow):
+        if isinstance(d_bow, int):
+            d_bow = [d_bow]
+        l0 = n_tokens
+        layers = []
+        for dim in d_bow:
+            l1 = dim
+            layers.append(Linear(l0, l1))
+            layers.append(ReLU())
+            l0 = dim
+        layers.append(Linear(l0, self._d_model))
+        return layers
 
 
 class DecoderLayer(torch.nn.Module):

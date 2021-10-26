@@ -51,3 +51,7 @@ disease_codes:
     - "K7040"
     - "K7460"
     - "K7469"
+
+predict:
+  checkpoint: None
+  batch_size: 128
