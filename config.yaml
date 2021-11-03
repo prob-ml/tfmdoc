@@ -5,7 +5,7 @@ model:
   n_blocks: 2
   n_heads: 8
   max_len: 6000
-  block_dropout: 0.5
+  dropout: 0.5
   max_pool: True
   d_ff: 8
   transformer: True
@@ -30,7 +30,7 @@ train:
   train_frac: 0.8
   val_frac: 0
   gpus:
-    - 4
+    - 6
   batch_size: 32
   max_epochs: 5
   limit_train_batches: 1.0
@@ -54,5 +54,10 @@ disease_codes:
     - "K7469"
 
 predict:
-  checkpoint: None
+  checkpoint: outputs/2021-10-27/12-57-53/lightning_logs/version_0/checkpoints/epoch=19-step=153639.ckpt
   batch_size: 128
+
+
+# best checkpoints:
+# transformer: outputs/2021-09-03/10-36-29/lightning_logs/version_0/checkpoints/epoch=9-step=38409.ckpt
+# bow: ?

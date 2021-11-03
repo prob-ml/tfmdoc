@@ -3,7 +3,7 @@ import math
 import pytorch_lightning as pl
 import torch
 import torchmetrics
-from torch.nn import Linear, ReLU
+from torch.nn import Dropout, Linear, ReLU
 from torch.nn.functional import relu, softmax
 
 
@@ -16,7 +16,7 @@ class Tfmd(pl.LightningModule):
         n_blocks,
         n_heads,
         max_len,
-        block_dropout,
+        dropout,
         max_pool,
         d_ff,
         transformer,
@@ -35,19 +35,18 @@ class Tfmd(pl.LightningModule):
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
-                DecoderLayer(d_model, n_heads=n_heads, dropout=block_dropout)
+                DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
                 for _ in range(n_blocks)
             ]
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
         else:
-            bow_layers = make_bow_layers(n_tokens, d_bow, d_model)
+            bow_layers = make_bow_layers(n_tokens, d_bow, d_model, dropout=dropout)
             self.feedfwd = torch.nn.Sequential(*bow_layers)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
-        self._precision = torchmetrics.Precision()
-        self._recall = torchmetrics.Recall()
+        self._pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -106,12 +105,8 @@ class Tfmd(pl.LightningModule):
         self.log("test_accuracy", acc)
         auroc = self._auroc(probas, y)
         self.log("test_auroc", auroc)
-
-    def predict_step(self, batch, batch_idx):
-        w, x, y = batch
-        y_hat = self(w, x)
-        probas = softmax(y_hat, dim=1)[:, 1]
-        return probas, y
+        pr_curve = self._pr_curve(probas, y)
+        self.log("pr_curve", pr_curve)
 
     def configure_optimizers(self):
         return torch.optim.Adam(
@@ -170,7 +165,7 @@ class PositionalEncoding(torch.nn.Module):
 # helpers
 
 
-def make_bow_layers(n_tokens, d_bow, d_model):
+def make_bow_layers(n_tokens, d_bow, d_model, dropout):
     if isinstance(d_bow, int):
         d_bow = [d_bow]
     l0 = n_tokens
@@ -180,5 +175,6 @@ def make_bow_layers(n_tokens, d_bow, d_model):
         layers.append(Linear(l0, l1))
         layers.append(ReLU())
         l0 = dim
+    layers.append(Dropout(dropout))
     layers.append(Linear(l0, d_model))
     return layers

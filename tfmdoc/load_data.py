@@ -77,9 +77,8 @@ def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
     else:
         keys = ("train", "test")
         lengths = (train_size, test_size)
-    keys = ("train", "test")
     subsets = random_split(dataset, lengths, torch.Generator().manual_seed(42))
-    loaders = {"val": None}
+    loaders = {}
 
     collate_fn = lambda x: padded_collate(x, pad=pad)
 

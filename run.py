@@ -42,7 +42,7 @@ def main(cfg=None):
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
     )
-    trainer.fit(tfmd, loaders["train"], loaders["val"])
+    trainer.fit(tfmd, loaders["train"], loaders.get("val"))
     trainer.test(test_dataloaders=loaders["test"], ckpt_path="best")
 
 

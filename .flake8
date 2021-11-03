@@ -2,7 +2,6 @@
 exclude = .git
 max-line-length = 88
 inline-quotes = double
-max-methods = 9
 ignore =
     # documentation not yet needed
     D100,D101,D102,D103,D104,D105,D106,D107,
@@ -114,6 +113,3 @@ ignore =
 
     # Actually, lambda expressions are sick
     E731,
-
-    # A fully-built out Lightning module requires a bunch of methods
-    WPS214 Found too many methods: 8 > 7
