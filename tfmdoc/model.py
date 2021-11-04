@@ -23,7 +23,30 @@ class Tfmd(pl.LightningModule):
         d_bow,
         lr,
     ):
+        """Deep learning model for early detection of disease based on
+            health insurance claims data. This model makes use of both
+            patient records and demographic data to make predictions.
+            The main model is a transformer, with a bag-of-words neural network
+            serving as a performance baseline.
 
+        Args:
+            n_tokens (integer): number of unique tokens (codes) in features
+            d_model (integer): dimension of each (transformer) decoder layer
+            d_demo (integer): dimension of demographic data inputs
+            n_blocks (integer): number of stacked transformer blocks
+            n_heads (integer): number of attention heads
+            max_len (integer): greatest length allowed for a sequence of records
+            dropout (float): proportion of nodes to randomly zero during droupout
+            max_pool (bool): if true, pool transformer output via a maximum.
+                Otherwise, take the average.
+            d_ff (integer): dimension of feedforward layer that projects
+                output of transformer down to 2 (number of classes to predict)
+            transformer (bool): If true, use the transformer architecture.
+                If false, architecture is a bag-of-words feedforward NN.
+            d_bow (integer): dimension(s) of FF layer(s) in bag-of-words
+                model.
+            lr (float): learning rate
+        """  # noqa: RST301
         super().__init__()
         self.save_hyperparameters()
 

@@ -20,16 +20,24 @@ class ClaimsDataset(Dataset):
                 sequence (for the Transformer model).
         """  # noqa: RST301
         file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
+        # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(file["offsets"]))
+        # flat file containing all records, concatenated
         self.records = np.array(file["tokens"])
         if not bag_of_words:
             self.records = torch.from_numpy(self.records)
+        # array of all codes indicating numerical encoding
         self.code_lookup = np.array(file["diag_code_lookup"])
+        # array of all patient IDs
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
+        # array of binary labels (is a patient a case or control?)
         self.labels = torch.from_numpy(np.array(file["labels"])).long()
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
+        # array of patient demographic data
+        # first column is binary (sex) and second column is
+        # normalized age at time of last record
         self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
 
@@ -61,7 +69,7 @@ class ClaimsDataset(Dataset):
 
 def padded_collate(batch, pad=True):
     # each element in a batch is a pair (x, y)
-    # un zip batch
+    # unzip batch
     ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
     if pad:
@@ -73,6 +81,9 @@ def padded_collate(batch, pad=True):
 
 
 def balanced_sampler(ix, labels):
+    # given a very imbalanced data set
+    # downsample the majority class and upsample the minority class
+    # this will result in an approximate 50-50 split per batch
     p = labels[ix].sum() / len(ix)
     weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
     sample_weights = weights[labels[ix]]
@@ -82,6 +93,8 @@ def balanced_sampler(ix, labels):
 
 
 def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
+    # create dataloaders for training, test, and (optionally)
+    # validation set
     if val_size > 0:
         keys = ("train", "val", "test")
         lengths = (train_size, val_size, test_size)

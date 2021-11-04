@@ -2,6 +2,7 @@ import hydra
 import pytorch_lightning as pl
 from hydra.utils import instantiate
 from matplotlib import pyplot as plt
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from tfmdoc.load_data import ClaimsDataset, build_loaders
 from tfmdoc.preprocess import ClaimsPipeline
@@ -46,10 +47,13 @@ def main(cfg=None):
     mapping = dataset.code_lookup
     # initialize tfmd model from config settings
     tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
+    # ensure model with least validation loss is used for testing
+    checkpoint_callback = ModelCheckpoint(monitor="val_loss")
     trainer = pl.Trainer(
         gpus=cfg.train.gpus,
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
+        callbacks=[checkpoint_callback],
     )
     # train and validate
     trainer.fit(tfmd, loaders["train"], loaders.get("val"))
@@ -59,6 +63,7 @@ def main(cfg=None):
 
 
 def diagnostic_plot(model, trainer):
+    # Plot precision/recall curve for the test data set
     precs, recs, _ = model.pr_curve(*model.results)
     fig = plt.figure()
     plt.plot(recs.cpu(), precs.cpu())

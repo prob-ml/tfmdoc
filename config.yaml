@@ -9,7 +9,7 @@ model:
   max_pool: True
   d_ff: 8
   transformer: True
-  d_bow: 128
+  d_bow: 8
   lr: 0.001
 
 
