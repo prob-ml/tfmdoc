@@ -53,10 +53,6 @@ disease_codes:
     - "K7460"
     - "K7469"
 
-predict:
-  checkpoint: outputs/2021-10-27/12-57-53/lightning_logs/version_0/checkpoints/epoch=19-step=153639.ckpt
-  batch_size: 128
-
 
 # best checkpoints:
 # transformer: outputs/2021-09-03/10-36-29/lightning_logs/version_0/checkpoints/epoch=9-step=38409.ckpt
