@@ -2,23 +2,42 @@ import h5py
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
     def __init__(self, preprocess_dir, bag_of_words=False):
+        """Object containing features and labeling for each patient
+            in the processed data set.
+
+        Args:
+            preprocess_dir (string): Path to directory containing
+                hdf5 outputs from preprocessing
+            bag_of_words (bool, optional): If true, transform patient features
+                (e.g. medical history) into an unordered array of counts of all
+                possible codes. If false, return an encoded
+                sequence (for the Transformer model).
+        """  # noqa: RST301
         file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
+        # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(file["offsets"]))
+        # flat file containing all records, concatenated
         self.records = np.array(file["tokens"])
         if not bag_of_words:
             self.records = torch.from_numpy(self.records)
+        # array of all codes indicating numerical encoding
         self.code_lookup = np.array(file["diag_code_lookup"])
+        # array of all patient IDs
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
+        # array of binary labels (is a patient a case or control?)
         self.labels = torch.from_numpy(np.array(file["labels"])).long()
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
+        # array of patient demographic data
+        # first column is binary (sex) and second column is
+        # normalized age at time of last record
         self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
 
@@ -50,7 +69,7 @@ class ClaimsDataset(Dataset):
 
 def padded_collate(batch, pad=True):
     # each element in a batch is a pair (x, y)
-    # un zip batch
+    # unzip batch
     ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
     if pad:
@@ -61,14 +80,41 @@ def padded_collate(batch, pad=True):
     return ws, xs, ys
 
 
-def bag_of_words_collate(batch, lookup):
-    pass
-
-
 def balanced_sampler(ix, labels):
+    # given a very imbalanced data set
+    # downsample the majority class and upsample the minority class
+    # this will result in an approximate 50-50 split per batch
     p = labels[ix].sum() / len(ix)
     weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
     sample_weights = weights[labels[ix]]
     return WeightedRandomSampler(
         weights=sample_weights, num_samples=len(sample_weights), replacement=True
     )
+
+
+def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
+    # create dataloaders for training, test, and (optionally)
+    # validation set
+    if val_size > 0:
+        keys = ("train", "val", "test")
+        lengths = (train_size, val_size, test_size)
+    else:
+        keys = ("train", "test")
+        lengths = (train_size, test_size)
+    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(42))
+    loaders = {}
+
+    collate_fn = lambda x: padded_collate(x, pad=pad)
+
+    for key, subset in zip(keys, subsets):
+        if key == "test":
+            sampler = None
+        else:
+            sampler = balanced_sampler(subset.indices, dataset.labels)
+        loaders[key] = DataLoader(
+            subset,
+            collate_fn=collate_fn,
+            batch_size=batch_size,
+            sampler=sampler,
+        )
+    return loaders

@@ -113,3 +113,6 @@ ignore =
 
     # Actually, lambda expressions are sick
     E731,
+
+    # cryptic docstring error messages are unhelpful
+    RST201, RST203

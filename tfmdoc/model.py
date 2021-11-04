@@ -3,7 +3,7 @@ import math
 import pytorch_lightning as pl
 import torch
 import torchmetrics
-from torch.nn import Linear, ReLU
+from torch.nn import Dropout, Linear, ReLU
 from torch.nn.functional import relu, softmax
 
 
@@ -16,47 +16,66 @@ class Tfmd(pl.LightningModule):
         n_blocks,
         n_heads,
         max_len,
-        block_dropout,
+        dropout,
         max_pool,
         d_ff,
         transformer,
         d_bow,
         lr,
     ):
+        """Deep learning model for early detection of disease based on
+            health insurance claims data. This model makes use of both
+            patient records and demographic data to make predictions.
+            The main model is a transformer, with a bag-of-words neural network
+            serving as a performance baseline.
 
+        Args:
+            n_tokens (integer): number of unique tokens (codes) in features
+            d_model (integer): dimension of each (transformer) decoder layer
+            d_demo (integer): dimension of demographic data inputs
+            n_blocks (integer): number of stacked transformer blocks
+            n_heads (integer): number of attention heads
+            max_len (integer): greatest length allowed for a sequence of records
+            dropout (float): proportion of nodes to randomly zero during droupout
+            max_pool (bool): if true, pool transformer output via a maximum.
+                Otherwise, take the average.
+            d_ff (integer): dimension of feedforward layer that projects
+                output of transformer down to 2 (number of classes to predict)
+            transformer (bool): If true, use the transformer architecture.
+                If false, architecture is a bag-of-words feedforward NN.
+            d_bow (integer): dimension(s) of FF layer(s) in bag-of-words
+                model.
+            lr (float): learning rate
+        """  # noqa: RST301
         super().__init__()
+        self.save_hyperparameters()
 
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
+        self.results = None
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
-                DecoderLayer(d_model, n_heads=n_heads, dropout=block_dropout)
+                DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
                 for _ in range(n_blocks)
             ]
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
         else:
-            self.feedfwd = torch.nn.Sequential(
-                Linear(n_tokens, d_bow), ReLU(), Linear(d_bow, d_model)
-            )
-        self._d_demo = d_demo
-        self._d_model = d_model
-        self.final = Linear(d_model + d_demo, d_ff)
-        self.to_scores = Linear(d_ff, 2)
-        # binary classification
-        self._max_pool = max_pool
+            bow_layers = make_bow_layers(n_tokens, d_bow, d_model, dropout=dropout)
+            self.feedfwd = torch.nn.Sequential(*bow_layers)
+        self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
+        self._final = Linear(d_model + d_demo, d_ff)
+        self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
-        self._transformer = transformer
-        self._lr = lr
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
-        if self._transformer:
+        if self.hparams.transformer:
             x = self.embed(codes)
             # add sinusoidal position encodings
             x = self.pos_encode(x)
@@ -65,14 +84,14 @@ class Tfmd(pl.LightningModule):
                 x = layer(x)
 
             x = self._norm(x)
-            x = x.max(dim=1)[0] if self._max_pool else x.mean(dim=1)
+            x = x.max(dim=1)[0] if self.hparams.max_pool else x.mean(dim=1)
             # shape will be (n_batches, d_model)
             # final linear layer projects this down to (n_batches, n_classes)
         else:
             x = self.feedfwd(codes)
         x = torch.cat((x, demo), axis=1)
-        x = relu(self.final(x))
-        return self.to_scores(x)
+        x = relu(self._final(x))
+        return self._to_scores(x)
 
     def training_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
@@ -102,8 +121,22 @@ class Tfmd(pl.LightningModule):
         self.log("val_auroc", auroc)
         return loss
 
+    def test_step(self, batch, batch_idx):
+        w, x, y = batch
+        y_hat = self(w, x)
+        probas = softmax(y_hat, dim=1)[:, 1]
+        return probas, y
+
+    def test_epoch_end(self, outputs):
+        probas, targets = zip(*outputs)
+        probas = torch.cat(probas)
+        targets = torch.cat(targets)
+        self.results = (probas, targets)
+
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self._lr, weight_decay=1e-4)
+        return torch.optim.Adam(
+            self.parameters(), lr=self.hparams.lr, weight_decay=1e-4
+        )
 
 
 class DecoderLayer(torch.nn.Module):
@@ -152,3 +185,21 @@ class PositionalEncoding(torch.nn.Module):
         t = x.shape[1]
         x = x + self.pe[:, :t, :]
         return self.dropout(x)
+
+
+# helpers
+
+
+def make_bow_layers(n_tokens, d_bow, d_model, dropout):
+    if isinstance(d_bow, int):
+        d_bow = [d_bow]
+    l0 = n_tokens
+    layers = []
+    for dim in d_bow:
+        l1 = dim
+        layers.append(Linear(l0, l1))
+        layers.append(ReLU())
+        l0 = dim
+    layers.append(Dropout(dropout))
+    layers.append(Linear(l0, d_model))
+    return layers
