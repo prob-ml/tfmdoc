@@ -8,6 +8,17 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 class ClaimsDataset(Dataset):
     def __init__(self, preprocess_dir, bag_of_words=False):
+        """Object containing features and labeling for each patient
+            in the processed data set.
+
+        Args:
+            preprocess_dir (string): Path to directory containing
+                hdf5 outputs from preprocessing
+            bag_of_words (bool, optional): If true, transform patient features
+                (e.g. medical history) into an unordered array of counts of all
+                possible codes. If false, return an encoded
+                sequence (for the Transformer model).
+        """  # noqa: RST301
         file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
         self.offsets = np.cumsum(np.array(file["offsets"]))
         self.records = np.array(file["tokens"])
@@ -83,10 +94,14 @@ def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
     collate_fn = lambda x: padded_collate(x, pad=pad)
 
     for key, subset in zip(keys, subsets):
+        if key == "test":
+            sampler = None
+        else:
+            sampler = balanced_sampler(subset.indices, dataset.labels)
         loaders[key] = DataLoader(
             subset,
             collate_fn=collate_fn,
             batch_size=batch_size,
-            sampler=balanced_sampler(subset.indices, dataset.labels),
+            sampler=sampler,
         )
     return loaders

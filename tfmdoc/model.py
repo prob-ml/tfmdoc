@@ -30,8 +30,7 @@ class Tfmd(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
-        self.final = Linear(d_model + d_demo, d_ff)
-        self.to_scores = Linear(d_ff, 2)
+        self.results = None
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
             blocks = [
@@ -43,10 +42,12 @@ class Tfmd(pl.LightningModule):
         else:
             bow_layers = make_bow_layers(n_tokens, d_bow, d_model, dropout=dropout)
             self.feedfwd = torch.nn.Sequential(*bow_layers)
+        self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
+        self._final = Linear(d_model + d_demo, d_ff)
+        self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
-        self._pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -66,8 +67,8 @@ class Tfmd(pl.LightningModule):
         else:
             x = self.feedfwd(codes)
         x = torch.cat((x, demo), axis=1)
-        x = relu(self.final(x))
-        return self.to_scores(x)
+        x = relu(self._final(x))
+        return self._to_scores(x)
 
     def training_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
@@ -101,12 +102,13 @@ class Tfmd(pl.LightningModule):
         w, x, y = batch
         y_hat = self(w, x)
         probas = softmax(y_hat, dim=1)[:, 1]
-        acc = self._accuracy((probas > 0.5), y)
-        self.log("test_accuracy", acc)
-        auroc = self._auroc(probas, y)
-        self.log("test_auroc", auroc)
-        pr_curve = self._pr_curve(probas, y)
-        self.log("pr_curve", pr_curve)
+        return probas, y
+
+    def test_epoch_end(self, outputs):
+        probas, targets = zip(*outputs)
+        probas = torch.cat(probas)
+        targets = torch.cat(targets)
+        self.results = (probas, targets)
 
     def configure_optimizers(self):
         return torch.optim.Adam(

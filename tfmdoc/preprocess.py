@@ -24,6 +24,22 @@ class ClaimsPipeline:
         split_codes=True,
         include_labs=False,
     ):
+        """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
+        and lab results into an encoded record for each patient.
+        Labels each patient as a case or control (e.g. healthy)
+        for a given disease based on the presence of ICD code(s).
+
+        Args:
+            data_dir (string): path to parquet files containing patient records
+            output_dir (string): path to directory where output HDF5 files will be saved
+            disease_codes (list): list of ICD codes indicating disease of interest
+            length_range (tuple, optional): Min/max length of individual record.
+            year_range (tuple, optional): Min/max year of data to ingest
+            n ([type], optional): Max number of patient ids to process
+            test (bool, optional): Shorten pipeline to help with testing
+            split_codes (bool, optional): If true, split off prefixes of ICD codes
+            include_labs (bool, optional): If true, include discretized lab results
+        """  # noqa: RST301
         self.data_dir = data_dir
         self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
         self.length_range = length_range

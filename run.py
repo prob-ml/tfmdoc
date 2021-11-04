@@ -1,6 +1,7 @@
 import hydra
 import pytorch_lightning as pl
 from hydra.utils import instantiate
+from matplotlib import pyplot as plt
 
 from tfmdoc.load_data import ClaimsDataset, build_loaders
 from tfmdoc.preprocess import ClaimsPipeline
@@ -8,6 +9,12 @@ from tfmdoc.preprocess import ClaimsPipeline
 
 @hydra.main(config_path=".", config_name="config.yaml")
 def main(cfg=None):
+    """Script for preprocessing health insurance claims data and training a
+    classification model.
+
+    Args:
+        cfg (OmegaConf object, optional): Placeholder. Defaults to None.
+    """
     if cfg.preprocess.do:
         cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
@@ -19,6 +26,7 @@ def main(cfg=None):
             split_codes=cfg.preprocess.split_codes,
             include_labs=cfg.preproccess.include_labs,
         )
+        # run preprocessing pipeline
         cpl.run()
         if cfg.preprocess.etl_only:
             return
@@ -36,14 +44,27 @@ def main(cfg=None):
         batch_size=cfg.train.batch_size,
     )
     mapping = dataset.code_lookup
+    # initialize tfmd model from config settings
     tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
     trainer = pl.Trainer(
         gpus=cfg.train.gpus,
         max_epochs=cfg.train.max_epochs,
         limit_train_batches=cfg.train.limit_train_batches,
     )
+    # train and validate
     trainer.fit(tfmd, loaders["train"], loaders.get("val"))
+    # test model
     trainer.test(test_dataloaders=loaders["test"], ckpt_path="best")
+    diagnostic_plot(tfmd, trainer)
+
+
+def diagnostic_plot(model, trainer):
+    precs, recs, _ = model.pr_curve(*model.results)
+    fig = plt.figure()
+    plt.plot(recs.cpu(), precs.cpu())
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    trainer.logger.experiment.add_figure("pr_curve", fig)
 
 
 if __name__ == "__main__":
