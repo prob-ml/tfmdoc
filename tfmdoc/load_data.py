@@ -7,7 +7,9 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir, bag_of_words=False, synth_labels=None):
+    def __init__(
+        self, preprocess_dir, bag_of_words=False, shuffle=False, synth_labels=None
+    ):
         """Object containing features and labeling for each patient
             in the processed data set.
 
@@ -31,6 +33,7 @@ class ClaimsDataset(Dataset):
         # array of all patient IDs
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
+        self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
         if synth_labels:
             self.labels = torch.load(preprocess_dir + synth_labels).long()
@@ -56,6 +59,9 @@ class ClaimsDataset(Dataset):
         else:
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
+        if self._shuffle:
+            reindex = torch.randperm(patient_records.shape[0])
+            patient_records = patient_records[reindex]
         if self._bow:
             # get counts of each code
             patient_records = np.bincount(patient_records)
@@ -71,7 +77,6 @@ class ClaimsDataset(Dataset):
 
 
 def padded_collate(batch, pad=True):
-    # each element in a batch is a pair (x, y)
     # unzip batch
     ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)

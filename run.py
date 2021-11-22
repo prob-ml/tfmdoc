@@ -37,6 +37,7 @@ def main(cfg=None):
     dataset = ClaimsDataset(
         preprocess_dir,
         bag_of_words=(not cfg.model.transformer),
+        shuffle=cfg.train.shuffle,
         synth_labels=cfg.train.synth_labels,
     )
     train_size = int(cfg.train.train_frac * len(dataset))
