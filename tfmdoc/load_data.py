@@ -7,7 +7,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir, bag_of_words=False):
+    def __init__(self, preprocess_dir, bag_of_words=False, synth_labels=None):
         """Object containing features and labeling for each patient
             in the processed data set.
 
@@ -32,7 +32,10 @@ class ClaimsDataset(Dataset):
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
         # array of binary labels (is a patient a case or control?)
-        self.labels = torch.from_numpy(np.array(file["labels"])).long()
+        if synth_labels:
+            self.labels = torch.load(preprocess_dir + synth_labels).long()
+        else:
+            self.labels = torch.from_numpy(np.array(file["labels"])).long()
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
         # array of patient demographic data
@@ -92,7 +95,9 @@ def balanced_sampler(ix, labels):
     )
 
 
-def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
+def build_loaders(
+    dataset, train_size, val_size, test_size, pad, batch_size, save_test_index
+):
     # create dataloaders for training, test, and (optionally)
     # validation set
     if val_size > 0:
@@ -109,6 +114,9 @@ def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
     for key, subset in zip(keys, subsets):
         if key == "test":
             sampler = None
+            # save index of test samples for post hoc analysis
+            if save_test_index:
+                torch.save(torch.tensor(subset.indices), "test_index.pt")
         else:
             sampler = balanced_sampler(subset.indices, dataset.labels)
         loaders[key] = DataLoader(

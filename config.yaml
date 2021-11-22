@@ -27,13 +27,15 @@ preprocess:
   etl_only: False
 
 train:
-  train_frac: 0.8
-  val_frac: 0
+  train_frac: 0.75
+  val_frac: 0.1
   gpus:
     - 6
   batch_size: 32
   max_epochs: 5
   limit_train_batches: 1.0
+  save_prediction: False
+  synth_labels: ""
 
 disease_codes:
   ald:
