@@ -27,6 +27,7 @@ def main(cfg=None):
             n=cfg.preprocess.n,
             split_codes=cfg.preprocess.split_codes,
             include_labs=cfg.preproccess.include_labs,
+            prediction_window=cfg.preprocess.prediction_window,
         )
         # run preprocessing pipeline
         cpl.run()

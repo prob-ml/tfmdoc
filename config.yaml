@@ -25,6 +25,7 @@ preprocess:
   do: False
   split_codes: True
   etl_only: False
+  prediction_window: 30
 
 train:
   train_frac: 0.75

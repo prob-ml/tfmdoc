@@ -23,6 +23,7 @@ class ClaimsPipeline:
         test=False,
         split_codes=True,
         include_labs=False,
+        prediction_window=30,
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -46,6 +47,7 @@ class ClaimsPipeline:
         self.n = n
         self._include_labs = include_labs
         self.patient_data = None
+        self._pred_window = prediction_window
         if split_codes:
             self._splitter = (
                 lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
@@ -170,7 +172,7 @@ class ClaimsPipeline:
         chunk = chunk.join(diagnosis_dates, on="patid", how="left")
         chunk["first_diag"] = chunk["first_diag"].fillna(50000)
         # drop patient records after first diagnosis (and up to 1 month before)
-        chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - 30]
+        chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
         counts = counts[counts.between(*self.length_range)]
