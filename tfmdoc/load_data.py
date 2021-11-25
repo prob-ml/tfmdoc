@@ -101,17 +101,21 @@ def balanced_sampler(ix, labels):
 
 
 def build_loaders(
-    dataset, train_size, val_size, test_size, pad, batch_size, save_test_index
+    dataset,
+    lengths,
+    pad,
+    batch_size,
+    save_test_index,
+    random_seed,
 ):
     # create dataloaders for training, test, and (optionally)
-    # validation set
-    if val_size > 0:
+    # check whether to create validation set
+    if lengths[1] > 0:
         keys = ("train", "val", "test")
-        lengths = (train_size, val_size, test_size)
     else:
         keys = ("train", "test")
-        lengths = (train_size, test_size)
-    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(42))
+        lengths = (lengths[0], lengths[2])
+    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(random_seed))
     loaders = {}
 
     collate_fn = lambda x: padded_collate(x, pad=pad)

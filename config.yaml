@@ -38,6 +38,7 @@ train:
   save_prediction: False
   shuffle: False
   synth_labels: ""
+  random_seed: 42
 
 disease_codes:
   ald:

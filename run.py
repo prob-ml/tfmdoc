@@ -45,12 +45,11 @@ def main(cfg=None):
     test_size = len(dataset) - train_size - val_size
     loaders = build_loaders(
         dataset,
-        train_size,
-        val_size,
-        test_size,
+        (train_size, val_size, test_size),
         pad=cfg.model.transformer,
         batch_size=cfg.train.batch_size,
         save_test_index=cfg.train.save_prediction,
+        random_seed=cfg.train.random_seed,
     )
     mapping = dataset.code_lookup
     # initialize tfmd model from config settings
