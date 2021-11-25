@@ -159,8 +159,9 @@ lightning_logs
 .vscode
 .nohup.out
 
-# data exploration
+# jupyter notebooks
 data_explore/
+notebooks/
 
 #outputs
 preprocessed_files/

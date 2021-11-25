@@ -25,15 +25,20 @@ preprocess:
   do: False
   split_codes: True
   etl_only: False
+  prediction_window: 30
 
 train:
-  train_frac: 0.8
-  val_frac: 0
+  train_frac: 0.75
+  val_frac: 0.1
   gpus:
     - 6
   batch_size: 32
   max_epochs: 5
   limit_train_batches: 1.0
+  save_prediction: False
+  shuffle: False
+  synth_labels: ""
+  random_seed: 42
 
 disease_codes:
   ald:

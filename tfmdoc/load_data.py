@@ -7,7 +7,9 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class ClaimsDataset(Dataset):
-    def __init__(self, preprocess_dir, bag_of_words=False):
+    def __init__(
+        self, preprocess_dir, bag_of_words=False, shuffle=False, synth_labels=None
+    ):
         """Object containing features and labeling for each patient
             in the processed data set.
 
@@ -31,8 +33,12 @@ class ClaimsDataset(Dataset):
         # array of all patient IDs
         self.ids = np.array(file["ids"])
         self._length = self.ids.shape[0]
+        self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
-        self.labels = torch.from_numpy(np.array(file["labels"])).long()
+        if synth_labels:
+            self.labels = torch.load(preprocess_dir + synth_labels).long()
+        else:
+            self.labels = torch.from_numpy(np.array(file["labels"])).long()
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
         # array of patient demographic data
@@ -53,6 +59,9 @@ class ClaimsDataset(Dataset):
         else:
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
+        if self._shuffle:
+            reindex = torch.randperm(patient_records.shape[0])
+            patient_records = patient_records[reindex]
         if self._bow:
             # get counts of each code
             patient_records = np.bincount(patient_records)
@@ -68,7 +77,6 @@ class ClaimsDataset(Dataset):
 
 
 def padded_collate(batch, pad=True):
-    # each element in a batch is a pair (x, y)
     # unzip batch
     ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
@@ -92,16 +100,22 @@ def balanced_sampler(ix, labels):
     )
 
 
-def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
+def build_loaders(
+    dataset,
+    lengths,
+    pad,
+    batch_size,
+    save_test_index,
+    random_seed,
+):
     # create dataloaders for training, test, and (optionally)
-    # validation set
-    if val_size > 0:
+    # check whether to create validation set
+    if lengths[1] > 0:
         keys = ("train", "val", "test")
-        lengths = (train_size, val_size, test_size)
     else:
         keys = ("train", "test")
-        lengths = (train_size, test_size)
-    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(42))
+        lengths = (lengths[0], lengths[2])
+    subsets = random_split(dataset, lengths, torch.Generator().manual_seed(random_seed))
     loaders = {}
 
     collate_fn = lambda x: padded_collate(x, pad=pad)
@@ -109,6 +123,9 @@ def build_loaders(dataset, train_size, val_size, test_size, pad, batch_size):
     for key, subset in zip(keys, subsets):
         if key == "test":
             sampler = None
+            # save index of test samples for post hoc analysis
+            if save_test_index:
+                torch.save(torch.tensor(subset.indices), "test_index.pt")
         else:
             sampler = balanced_sampler(subset.indices, dataset.labels)
         loaders[key] = DataLoader(
