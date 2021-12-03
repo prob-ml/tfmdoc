@@ -70,7 +70,6 @@ class Tfmd(pl.LightningModule):
         self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
-        self._auroc = torchmetrics.AUROC(pos_label=1)
 
     def forward(self, demo, codes):
         # embed codes into dimension of model
@@ -117,8 +116,6 @@ class Tfmd(pl.LightningModule):
         probas = softmax(y_hat, dim=1)[:, 1]
         acc = self._accuracy((probas > 0.5), y)
         self.log("val_accuracy", acc)
-        auroc = self._auroc(probas, y)
-        self.log("val_auroc", auroc)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -135,7 +132,10 @@ class Tfmd(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(
-            self.parameters(), lr=self.hparams.lr, weight_decay=1e-4
+            # weight decay could be too steep
+            self.parameters(),
+            lr=self.hparams.lr,
+            weight_decay=1e-5,
         )
 
 
@@ -152,17 +152,16 @@ class DecoderLayer(torch.nn.Module):
         self.ff = torch.nn.Sequential(
             torch.nn.Linear(size, size * 4),
             torch.nn.ReLU(),
-            torch.nn.Dropout(dropout),
             torch.nn.Linear(size * 4, size),
         )
 
     def forward(self, x):
         attn = self.self_attn(x, x, x, need_weights=False)[0]
-        x = x + self.dropout1(attn)
-        x = self.norm1(x)
+        x = self.norm1(attn + x)
+        x = self.dropout1(x)
         fedfwd = self.ff(x)
-        x = x + self.dropout2(fedfwd)
-        return self.norm2(x)
+        x = self.norm2(fedfwd + x)
+        return self.dropout2(x)
 
 
 class PositionalEncoding(torch.nn.Module):
