@@ -32,6 +32,7 @@ class ClaimsDataset(Dataset):
         self.code_lookup = np.array(file["diag_code_lookup"])
         # array of all patient IDs
         self.ids = np.array(file["ids"])
+        self.visits = torch.from_numpy(np.array(file["visits"]))
         self._length = self.ids.shape[0]
         self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
@@ -41,6 +42,7 @@ class ClaimsDataset(Dataset):
             self.labels = torch.from_numpy(np.array(file["labels"])).long()
         demog = np.array(file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
+        demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
         # array of patient demographic data
         # first column is binary (sex) and second column is
         # normalized age at time of last record
@@ -59,6 +61,8 @@ class ClaimsDataset(Dataset):
         else:
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
+        # add one to allow for zero padding
+        visits = self.visits[start:stop] + 1
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
@@ -70,7 +74,7 @@ class ClaimsDataset(Dataset):
             padded[: len(patient_records)] = patient_records
             patient_records = torch.from_numpy(padded).float()
         # return array of diag codes and patient labels
-        return self.demo[index], patient_records, self.labels[index]
+        return visits, self.demo[index], patient_records, self.labels[index]
 
 
 # HELPERS
@@ -78,14 +82,17 @@ class ClaimsDataset(Dataset):
 
 def padded_collate(batch, pad=True):
     # unzip batch
-    ws, xs, ys = zip(*batch)
+    vs, ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
     if pad:
+        vs = pad_sequence(vs, batch_first=True, padding_value=0)
         xs = pad_sequence(xs, batch_first=True, padding_value=0)
     else:
+        # can ignore visits in bag-of-words model
+        vs = None
         xs = torch.stack(xs)
     ys = torch.stack(ys)
-    return ws, xs, ys
+    return vs, ws, xs, ys
 
 
 def balanced_sampler(ix, labels):
