@@ -11,6 +11,7 @@ model:
   transformer: True
   d_bow: 8
   lr: 0.001
+  wd: 0.00001
 
 
 preprocess:

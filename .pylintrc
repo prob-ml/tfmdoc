@@ -58,5 +58,6 @@ disable=
     # Suppressing this until I find a configuration approach that works
     too-many-arguments,
 
-    # not super compatible with neural networks
+    # neural network architecture can be complex
     too-many-instance-attributes,
+    too-many-locals

@@ -22,6 +22,7 @@ class Tfmd(pl.LightningModule):
         transformer,
         d_bow,
         lr,
+        wd,
     ):
         """Deep learning model for early detection of disease based on
             health insurance claims data. This model makes use of both
@@ -135,7 +136,7 @@ class Tfmd(pl.LightningModule):
             # weight decay could be too steep
             self.parameters(),
             lr=self.hparams.lr,
-            weight_decay=1e-5,
+            weight_decay=self.hparams.wd,
         )
 
 
