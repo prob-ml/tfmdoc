@@ -86,6 +86,7 @@ class ClaimsPipeline:
                 ("records", h5py.special_dtype(vlen=str)),
                 ("labels", np.dtype("uint8")),
                 ("ids", np.dtype("float64")),
+                ("visits", np.dtype("uint8")),
             )
             for name, dtype in datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
@@ -118,6 +119,7 @@ class ClaimsPipeline:
                 continue
             chunk = self.transform_patients_chunk(chunk)
             chunk_info = self.pull_patient_info(chunk)
+            # break loop for an empty processed chunk
             if not chunk_info["offsets"].size:
                 continue
             n_patients += len(chunk_info["offsets"])
@@ -141,7 +143,10 @@ class ClaimsPipeline:
                 break
 
     def transform_patients_chunk(self, chunk):
-        # clean data
+        # summary:
+        # cleans and sorts data
+        # merges in lab data
+        # splits ICD codes
         chunk.drop_duplicates(inplace=True)
         chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
         if self._include_labs:
@@ -163,6 +168,10 @@ class ClaimsPipeline:
         return chunk
 
     def pull_patient_info(self, chunk):
+        # summary:
+        # label data
+        # mask records up to some window before first diagnosis
+        # drop patients with too few records
         # if a patient has any code associated with the disease, flag as a positive
         labeled_ids = chunk.groupby("patid")["is_case"].any().astype(int)
         diagnosis_dates = (
@@ -171,7 +180,7 @@ class ClaimsPipeline:
         diagnosis_dates.name = "first_diag"
         chunk = chunk.join(diagnosis_dates, on="patid", how="left")
         chunk["first_diag"] = chunk["first_diag"].fillna(50000)
-        # drop patient records after first diagnosis (and up to 1 month before)
+        # drop patient records after first diagnosis
         chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
@@ -185,6 +194,7 @@ class ClaimsPipeline:
 
 
 def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
+    # downsample to a 19-1 control/case ratio
     cases = labeled_ids[labeled_ids == 1]
     controls = labeled_ids[labeled_ids == 0]
     try:
@@ -195,14 +205,11 @@ def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
     counts = counts.loc[labeled_ids.index]
     chunk = chunk.set_index("patid").loc[labeled_ids.index]
     patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+    visits = chunk.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0])
     last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
     last_date.name = "last_date"
     patient_data = patient_data.join(last_date, on="Patid")
     patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
-    # standard normalize
-    patient_data["latest_age"] = (
-        patient_data["latest_age"] - patient_data["latest_age"].mean()
-    ) / patient_data["latest_age"].std()
     patient_data = patient_data.set_index("Patid").loc[labeled_ids.index]
     patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
     patient_data.drop(columns=["Yrdob", "last_date", "Gdr_Cd", "is_case"], inplace=True)
@@ -213,6 +220,7 @@ def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
     chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
     chunk_info["labels"] = labeled_ids.to_numpy()
     chunk_info["ids"] = counts.index
+    chunk_info["visits"] = visits.to_numpy()
     chunk_info["demo"] = patient_data.to_numpy()
 
     return chunk_info

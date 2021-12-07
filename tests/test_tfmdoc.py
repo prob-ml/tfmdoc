@@ -49,6 +49,7 @@ def test_model():
     with initialize(config_path=".."):
         cfg = compose(config_name="config")
         model = instantiate(cfg.model, n_tokens=6)
+        v = torch.randint(high=3, size=(4, 32))
         w = torch.randn(size=(4, 2))
         # fmt: off
         w[:, 1] = (w[:, 1] >= 0)
@@ -56,10 +57,8 @@ def test_model():
         x = torch.randint(high=6, size=(4, 32))
         y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
-        assert model.training_step((w, x, y), 0) > 0
-        assert model.validation_step((w, x, y), 0) > 0
-        encoding = model.pos_encode
-        assert encoding.pe.shape[1] == 6000
+        assert model.training_step((v, w, x, y), 0) > 0
+        assert model.validation_step((v, w, x, y), 0) > 0
 
 
 def test_bow():
@@ -69,6 +68,7 @@ def test_bow():
             overrides=["model.transformer=False", "model.d_bow=40"],
         )
         model = instantiate(cfg.model, n_tokens=60)
+        v = None
         w = torch.randn(size=(4, 2))
         # fmt: off
         w[:, 1] = (w[:, 1] >= 0)
@@ -76,8 +76,8 @@ def test_bow():
         x = torch.randint(high=4, size=(4, 60)).float()
         y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
-        assert model.training_step((w, x, y), 0) > 0
-        assert model.validation_step((w, x, y), 0) > 0
+        assert model.training_step((v, w, x, y), 0) > 0
+        assert model.validation_step((v, w, x, y), 0) > 0
 
 
 def test_pipeline():
@@ -100,10 +100,11 @@ def test_pipeline():
         preprocess_dir = "tests/test_data/test_pipeline/"
         torch_dataset = ClaimsDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
-        w, x, y = torch_dataset[7]
+        v, w, x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
         assert y.item() in {0, 1}
         assert w.shape[0] == 2
+        assert v.max().item() == 1
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
 

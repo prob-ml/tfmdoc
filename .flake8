@@ -2,6 +2,7 @@
 exclude = .git
 max-line-length = 88
 inline-quotes = double
+
 ignore =
     # documentation not yet needed
     D100,D101,D102,D103,D104,D105,D106,D107,
@@ -116,3 +117,6 @@ ignore =
 
     # cryptic docstring error messages are unhelpful
     RST201, RST203
+
+    # Fine to have public instance attributes aplenty
+    WPS230

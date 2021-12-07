@@ -1,5 +1,3 @@
-import math
-
 import pytorch_lightning as pl
 import torch
 import torchmetrics
@@ -55,7 +53,7 @@ class Tfmd(pl.LightningModule):
         )
         self.results = None
         if transformer:
-            self.pos_encode = PositionalEncoding(d_model=d_model, max_len=max_len)
+            self.pos_embed = torch.nn.Embedding(max_len, d_model, padding_idx=0)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
                 for _ in range(n_blocks)
@@ -72,14 +70,14 @@ class Tfmd(pl.LightningModule):
         self._accuracy = torchmetrics.Accuracy()
         self._auroc = torchmetrics.AUROC(pos_label=1)
 
-    def forward(self, demo, codes):
+    def forward(self, visits, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self.hparams.transformer:
             x = self.embed(codes)
-            # add sinusoidal position encodings
-            x = self.pos_encode(x)
-
+            # embed visits
+            positions = self.pos_embed(visits.long())
+            x += positions
             for layer in self._layers:
                 x = layer(x)
 
@@ -95,10 +93,10 @@ class Tfmd(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
-        w, x, y = batch
+        v, w, x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
-        y_hat = self(w, x)
+        y_hat = self(v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -108,10 +106,10 @@ class Tfmd(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # unclear why the lightning api wants a batch index var
-        w, x, y = batch
+        v, w, x, y = batch
         # lightning recommends keeping the training logic separate
         # from the inference logic, though this works fine
-        y_hat = self(w, x)
+        y_hat = self(v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -122,8 +120,8 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        w, x, y = batch
-        y_hat = self(w, x)
+        v, w, x, y = batch
+        y_hat = self(v, w, x)
         probas = softmax(y_hat, dim=1)[:, 1]
         return probas, y
 
@@ -163,28 +161,6 @@ class DecoderLayer(torch.nn.Module):
         fedfwd = self.ff(x)
         x = x + self.dropout2(fedfwd)
         return self.norm2(x)
-
-
-class PositionalEncoding(torch.nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
-        super().__init__()
-        self.dropout = torch.nn.Dropout(p=dropout)
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model),
-        )
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0)
-        self.register_buffer("pe", pe)
-
-    def forward(self, x):
-        # x has shape (n_batches, seq_length, d_model)
-        # add encodings for positions found in batched sequences
-        t = x.shape[1]
-        x = x + self.pe[:, :t, :]
-        return self.dropout(x)
 
 
 # helpers
