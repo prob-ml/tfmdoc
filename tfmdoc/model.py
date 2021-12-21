@@ -1,3 +1,5 @@
+import math
+
 import pytorch_lightning as pl
 import torch
 import torchmetrics
@@ -54,6 +56,7 @@ class Tfmd(pl.LightningModule):
         self.results = None
         if transformer:
             self.pos_embed = torch.nn.Embedding(max_len, d_model, padding_idx=0)
+            self.pos_encode = PositionalEncoding(d_model=d_model)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
                 for _ in range(n_blocks)
@@ -75,9 +78,8 @@ class Tfmd(pl.LightningModule):
         # for continuous representation
         if self.hparams.transformer:
             x = self.embed(codes)
-            # embed visits
-            positions = self.pos_embed(visits.long())
-            x += positions
+            # apply position encodings
+            x = self.pos_encode(visits, x)
             for layer in self._layers:
                 x = layer(x)
 
@@ -92,10 +94,7 @@ class Tfmd(pl.LightningModule):
         return self._to_scores(x)
 
     def training_step(self, batch, batch_idx):
-        # unclear why the lightning api wants a batch index var
         v, w, x, y = batch
-        # lightning recommends keeping the training logic separate
-        # from the inference logic, though this works fine
         y_hat = self(v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
@@ -105,10 +104,7 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        # unclear why the lightning api wants a batch index var
         v, w, x, y = batch
-        # lightning recommends keeping the training logic separate
-        # from the inference logic, though this works fine
         y_hat = self(v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
@@ -161,6 +157,34 @@ class DecoderLayer(torch.nn.Module):
         fedfwd = self.ff(x)
         x = x + self.dropout2(fedfwd)
         return self.norm2(x)
+
+
+class PositionalEncoding(torch.nn.Module):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
+        super().__init__()
+        self.dropout = torch.nn.Dropout(p=dropout)
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model),
+        )
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+        # non-optimizable parameter
+        self.register_buffer("pe", pe)
+
+    def forward(self, v, x):
+        # x has shape (n_batches, seq_length, d_model)
+        # expand position encodings along batch dimension
+        pos = self.pe.expand(v.shape[0], self.pe.shape[1], self.pe.shape[2])
+        # expand visit indices along embedding dimension
+        v = v.unsqueeze(2).expand(v.shape[0], v.shape[1], pos.shape[2])
+        # select visit encodings for each patient
+        pos_encoding = pos.gather(1, v.long())
+        # add encodings to embedded input
+        x += pos_encoding
+        return self.dropout(x)
 
 
 # helpers
