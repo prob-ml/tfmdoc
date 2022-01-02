@@ -73,6 +73,9 @@ class ClaimsDataset(Dataset):
             padded = np.zeros(self.code_lookup.shape)
             padded[: len(patient_records)] = patient_records
             patient_records = torch.from_numpy(padded).float()
+        else:
+            patient_records = patient_records.flip(0)
+            visits = visits.flip(0)
         # return array of diag codes and patient labels
         return visits, self.demo[index], patient_records, self.labels[index]
 

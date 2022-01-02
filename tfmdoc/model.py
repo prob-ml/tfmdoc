@@ -71,7 +71,6 @@ class Tfmd(pl.LightningModule):
         self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
-        self._auroc = torchmetrics.AUROC(pos_label=1)
 
     def forward(self, visits, demo, codes):
         # embed codes into dimension of model
@@ -111,8 +110,6 @@ class Tfmd(pl.LightningModule):
         probas = softmax(y_hat, dim=1)[:, 1]
         acc = self._accuracy((probas > 0.5), y)
         self.log("val_accuracy", acc)
-        auroc = self._auroc(probas, y)
-        self.log("val_auroc", auroc)
         return loss
 
     def test_step(self, batch, batch_idx):

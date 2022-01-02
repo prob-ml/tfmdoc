@@ -26,6 +26,7 @@ preprocess:
   split_codes: True
   etl_only: False
   prediction_window: 30
+  disease: "ald"
 
 train:
   train_frac: 0.75
@@ -57,6 +58,8 @@ disease_codes:
     - "K7040"
     - "K7460"
     - "K7469"
+  heart_failure:
+    - "I50"
 
 
 # best checkpoints:
