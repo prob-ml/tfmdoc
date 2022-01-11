@@ -167,3 +167,6 @@ notebooks/
 preprocessed_files/
 outputs/
 multirun/
+
+# research notes
+multirun_notes.md

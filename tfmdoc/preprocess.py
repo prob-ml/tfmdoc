@@ -16,6 +16,7 @@ class ClaimsPipeline:
         self,
         data_dir,
         output_dir,
+        disease,
         disease_codes,
         length_range=(16, 512),
         year_range=(2002, 2018),
@@ -24,6 +25,7 @@ class ClaimsPipeline:
         split_codes=True,
         include_labs=False,
         prediction_window=30,
+        output_name="preprocessed",
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -42,19 +44,21 @@ class ClaimsPipeline:
             include_labs (bool, optional): If true, include discretized lab results
         """  # noqa: RST301
         self.data_dir = data_dir
-        self.disease_codes = [f"{code: <7}".encode("utf-8") for code in disease_codes]
+        self._disease = disease
+        self.disease_codes = disease_codes
         self.length_range = length_range
         self.n = n
         self._include_labs = include_labs
         self.patient_data = None
         self._pred_window = prediction_window
+        self._output_name = output_name
         if split_codes:
             self._splitter = (
                 lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
             )
         else:
             self._splitter = lambda x: x
-        self.output_dir = output_dir
+        self._output_dir = output_dir
         if test:
             self._parquets = ["diag_toydata1.parquet", "diag_toydata2.parquet"]
         else:
@@ -79,8 +83,8 @@ class ClaimsPipeline:
         log.info("Read patient data")
         self._parquets = [ParquetFile(self.data_dir + f) for f in self._parquets]
 
-        pathlib.Path(self.output_dir).mkdir(exist_ok=True)
-        with h5py.File(self.output_dir + "preprocessed.hdf5", "w") as f:
+        pathlib.Path(self._output_dir).mkdir(exist_ok=True)
+        with h5py.File(self._output_dir + self._output_name + ".hdf5", "w") as f:
             datasets = (
                 ("offsets", np.dtype("uint16")),
                 ("records", h5py.special_dtype(vlen=str)),
@@ -152,7 +156,19 @@ class ClaimsPipeline:
         if self._include_labs:
             chunk = discretize_labs(chunk)
         # identify positive diagnoses
-        chunk["is_case"] = chunk["Diag"].isin(self.disease_codes)
+        if self._disease == "heart_failure":
+            code = self.disease_codes[0].encode("utf-8")
+
+            def starts_with(x):
+                try:
+                    return x.startswith(code)
+                except AttributeError:
+                    return False
+
+            chunk["is_case"] = chunk["Diag"].apply(starts_with)
+        elif self._disease == "ald":
+            codes = [f"{code: <7}".encode("utf-8") for code in self.disease_codes]
+            chunk["is_case"] = chunk["Diag"].isin(codes)
         # incorporate icd codes into diag codes
         chunk["DiagId"] = chunk["Icd_Flag"] + b":" + chunk["Diag"]
         chunk.drop(columns=["Icd_Flag", "Diag"], inplace=True)

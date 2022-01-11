@@ -21,6 +21,7 @@ def main(cfg=None):
         cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
             output_dir=cfg.preprocess.output_dir,
+            disease=cfg.preprocess.disease,
             disease_codes=cfg.disease_codes[cfg.preprocess.disease],
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
@@ -28,17 +29,18 @@ def main(cfg=None):
             split_codes=cfg.preprocess.split_codes,
             include_labs=cfg.preprocess.include_labs,
             prediction_window=cfg.preprocess.prediction_window,
+            output_name=cfg.preprocess.output_name,
         )
         # run preprocessing pipeline
         cpl.run()
-        if cfg.preprocess.etl_only:
-            return
+        return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     dataset = ClaimsDataset(
         preprocess_dir,
         bag_of_words=(not cfg.model.transformer),
         shuffle=cfg.train.shuffle,
         synth_labels=cfg.train.synth_labels,
+        filename=cfg.train.data_name,
     )
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = int(cfg.train.val_frac * len(dataset))
