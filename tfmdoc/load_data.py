@@ -8,7 +8,12 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 class ClaimsDataset(Dataset):
     def __init__(
-        self, preprocess_dir, bag_of_words=False, shuffle=False, synth_labels=None
+        self,
+        preprocess_dir,
+        bag_of_words=False,
+        shuffle=False,
+        synth_labels=None,
+        filename="preprocessed",
     ):
         """Object containing features and labeling for each patient
             in the processed data set.
@@ -21,7 +26,7 @@ class ClaimsDataset(Dataset):
                 possible codes. If false, return an encoded
                 sequence (for the Transformer model).
         """  # noqa: RST301
-        file = h5py.File(preprocess_dir + "preprocessed.hdf5", "r")
+        file = h5py.File(preprocess_dir + filename + ".hdf5", "r")
         # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(file["offsets"]))
         # flat file containing all records, concatenated
@@ -73,6 +78,9 @@ class ClaimsDataset(Dataset):
             padded = np.zeros(self.code_lookup.shape)
             padded[: len(patient_records)] = patient_records
             patient_records = torch.from_numpy(padded).float()
+        else:
+            patient_records = patient_records.flip(0)
+            visits = visits.flip(0)
         # return array of diag codes and patient labels
         return visits, self.demo[index], patient_records, self.labels[index]
 

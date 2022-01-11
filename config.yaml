@@ -16,6 +16,7 @@ model:
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
   output_dir: "/nfs/turbo/lsa-regier/OPTUM2/preprocessed_files/"
+  output_name: "preprocessed"
   min_length: 8
   max_length: 512
   min_year: 2002
@@ -24,8 +25,8 @@ preprocess:
   include_labs: True
   do: False
   split_codes: True
-  etl_only: False
   prediction_window: 30
+  disease: "ald"
 
 train:
   train_frac: 0.75
@@ -39,6 +40,7 @@ train:
   shuffle: False
   synth_labels: ""
   random_seed: 42
+  data_name: "preprocessed"
 
 disease_codes:
   ald:
@@ -57,6 +59,8 @@ disease_codes:
     - "K7040"
     - "K7460"
     - "K7469"
+  heart_failure:
+    - "I50"
 
 
 # best checkpoints:

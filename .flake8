@@ -120,3 +120,6 @@ ignore =
 
     # Fine to have public instance attributes aplenty
     WPS230
+
+    # nested functions make sense sometimes
+    WPS430
