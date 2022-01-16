@@ -27,6 +27,7 @@ preprocess:
   split_codes: True
   prediction_window: 30
   disease: "ald"
+  early_detection: 0
 
 train:
   train_frac: 0.75

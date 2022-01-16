@@ -26,6 +26,7 @@ class ClaimsPipeline:
         include_labs=False,
         prediction_window=30,
         output_name="preprocessed",
+        early_detection=0,
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -52,6 +53,7 @@ class ClaimsPipeline:
         self.patient_data = None
         self._pred_window = prediction_window
         self._output_name = output_name
+        self._early_detection = early_detection
         if split_codes:
             self._splitter = (
                 lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
@@ -205,11 +207,50 @@ class ClaimsPipeline:
         labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[
             "is_case"
         ]
+        if self._early_detection:
+            return early_stage_sample(
+                labeled_ids, counts, chunk, self.patient_data, self._early_detection
+            )
+        else:
+            return case_control_sample(labeled_ids, counts, chunk, self.patient_data)
 
-        return sample_chunk_info(labeled_ids, counts, chunk, self.patient_data)
+
+def early_stage_sample(labeled_ids, counts, chunk, patient_data, early_detection):
+    cases = labeled_ids[labeled_ids == 1]
+    late = chunk.set_index("patid").loc[cases.index]
+    early = late[late["Fst_Dt"] < late["first_diag"] - early_detection]
+    # might be fewer seqs in early than late...
+    # if ppl's medical history begins only right before they get ALD
+    late_counts = counts.loc[cases.index]
+    early_counts = early.groupby("patid")["diag"].count().rename("count")
+    counts = pd.concat([late_counts, early_counts])
+    labeled_ids = pd.concat([cases, (cases.loc[np.unique(early.index)] - 1)])
+    chunk = pd.concat([late, early])
+    patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+    visits = pd.concat(
+        [
+            late.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0]),
+            early.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0]),
+        ]
+    )
+    last_date = (
+        pd.concat(
+            [
+                late.groupby("patid")["Fst_Dt"].last(),
+                early.groupby("patid")["Fst_Dt"].last(),
+            ]
+        )
+        / 365.25
+        + 1960
+    )
+    last_date.name = "last_date"
+    n_late = len(late_counts)
+    patient_data = patient_data.join(last_date.head(n_late), on="Patid")
+
+    return collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data)
 
 
-def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
+def case_control_sample(labeled_ids, counts, chunk, patient_data):
     # downsample to a 19-1 control/case ratio
     cases = labeled_ids[labeled_ids == 1]
     controls = labeled_ids[labeled_ids == 0]
@@ -225,13 +266,16 @@ def sample_chunk_info(labeled_ids, counts, chunk, patient_data):
     last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
     last_date.name = "last_date"
     patient_data = patient_data.join(last_date, on="Patid")
+
+    return collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data)
+
+
+def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data):
     patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
-    patient_data = patient_data.set_index("Patid").loc[labeled_ids.index]
+    patient_data = patient_data.set_index("Patid")
     patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
     patient_data.drop(columns=["Yrdob", "last_date", "Gdr_Cd", "is_case"], inplace=True)
-
     chunk_info = {}
-
     chunk_info["offsets"] = counts.to_numpy()
     chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
     chunk_info["labels"] = labeled_ids.to_numpy()

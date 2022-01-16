@@ -30,6 +30,7 @@ def main(cfg=None):
             include_labs=cfg.preprocess.include_labs,
             prediction_window=cfg.preprocess.prediction_window,
             output_name=cfg.preprocess.output_name,
+            early_detection=cfg.preprocess.early_detection,
         )
         # run preprocessing pipeline
         cpl.run()
