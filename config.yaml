@@ -2,7 +2,7 @@ model:
   _target_: tfmdoc.Tfmd
   d_model: 32
   d_demo: 2
-  n_blocks: 2
+  n_blocks: 4
   n_heads: 8
   max_len: 512
   dropout: 0.1
@@ -27,7 +27,7 @@ preprocess:
   split_codes: True
   prediction_window: 30
   disease: "ald"
-  early_detection: 0
+  early_detection: False
 
 train:
   train_frac: 0.75

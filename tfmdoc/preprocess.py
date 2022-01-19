@@ -26,7 +26,7 @@ class ClaimsPipeline:
         include_labs=False,
         prediction_window=30,
         output_name="preprocessed",
-        early_detection=0,
+        early_detection=False,
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -87,13 +87,18 @@ class ClaimsPipeline:
 
         pathlib.Path(self._output_dir).mkdir(exist_ok=True)
         with h5py.File(self._output_dir + self._output_name + ".hdf5", "w") as f:
-            datasets = (
+            datasets = [
                 ("offsets", np.dtype("uint16")),
                 ("records", h5py.special_dtype(vlen=str)),
                 ("labels", np.dtype("uint8")),
                 ("ids", np.dtype("float64")),
                 ("visits", np.dtype("uint8")),
-            )
+            ]
+            if self._early_detection:
+                datasets += [
+                    ("diagnosed_dates", np.dtype("uint16")),
+                    ("dates", np.dtype("uint16")),
+                ]
             for name, dtype in datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
@@ -134,6 +139,7 @@ class ClaimsPipeline:
                 f"Wrote data for {n_patients :,} patient ids, {n_records :,} records"
             )
             for name, arr in chunk_info.items():
+                # write out to an h5py object in chunks
                 if name == "demo":
                     file[name].resize((len(file[name]) + len(arr), 2))
                 else:
@@ -199,7 +205,8 @@ class ClaimsPipeline:
         chunk = chunk.join(diagnosis_dates, on="patid", how="left")
         chunk["first_diag"] = chunk["first_diag"].fillna(50000)
         # drop patient records after first diagnosis
-        chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
+        if not self._early_detection:
+            chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
         counts = counts[counts.between(*self.length_range)]
@@ -207,70 +214,41 @@ class ClaimsPipeline:
         labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[
             "is_case"
         ]
-        if self._early_detection:
-            return early_stage_sample(
-                labeled_ids, counts, chunk, self.patient_data, self._early_detection
-            )
-        else:
-            return case_control_sample(labeled_ids, counts, chunk, self.patient_data)
-
-
-def early_stage_sample(labeled_ids, counts, chunk, patient_data, early_detection):
-    cases = labeled_ids[labeled_ids == 1]
-    late = chunk.set_index("patid").loc[cases.index]
-    early = late[late["Fst_Dt"] < late["first_diag"] - early_detection]
-    # might be fewer seqs in early than late...
-    # if ppl's medical history begins only right before they get ALD
-    late_counts = counts.loc[cases.index]
-    early_counts = early.groupby("patid")["diag"].count().rename("count")
-    counts = pd.concat([late_counts, early_counts])
-    labeled_ids = pd.concat([cases, (cases.loc[np.unique(early.index)] - 1)])
-    chunk = pd.concat([late, early])
-    patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
-    visits = pd.concat(
-        [
-            late.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0]),
-            early.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0]),
-        ]
-    )
-    last_date = (
-        pd.concat(
-            [
-                late.groupby("patid")["Fst_Dt"].last(),
-                early.groupby("patid")["Fst_Dt"].last(),
-            ]
+        return sample_cases(
+            labeled_ids, counts, chunk, self.patient_data, self._early_detection
         )
-        / 365.25
-        + 1960
-    )
-    last_date.name = "last_date"
-    n_late = len(late_counts)
-    patient_data = patient_data.join(last_date.head(n_late), on="Patid")
-
-    return collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data)
 
 
-def case_control_sample(labeled_ids, counts, chunk, patient_data):
-    # downsample to a 19-1 control/case ratio
-    cases = labeled_ids[labeled_ids == 1]
-    controls = labeled_ids[labeled_ids == 0]
-    try:
-        controls = controls.sample(19 * len(cases))
-    except ValueError:
-        pass
-    labeled_ids = pd.concat([controls, cases])
-    counts = counts.loc[labeled_ids.index]
-    chunk = chunk.set_index("patid").loc[labeled_ids.index]
+def sample_cases(labeled_ids, counts, chunk, patient_data, early_detection):
+    if early_detection:
+        labeled_ids = labeled_ids[labeled_ids == 1]
+        counts = counts.loc[labeled_ids.index]
+        chunk = chunk.set_index("patid").loc[labeled_ids.index]
+        diag_dates = chunk.groupby(chunk.index)["first_diag"].first()
+    else:
+        # downsample to a 19-1 control/case ratio
+        cases = labeled_ids[labeled_ids == 1]
+        controls = labeled_ids[labeled_ids == 0]
+        try:
+            controls = controls.sample(19 * len(cases))
+        except ValueError:
+            pass
+        labeled_ids = pd.concat([controls, cases])
+        counts = counts.loc[labeled_ids.index]
+        chunk = chunk.set_index("patid").loc[labeled_ids.index]
+        diag_dates = None
     patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
     visits = chunk.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0])
     last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
     last_date.name = "last_date"
     patient_data = patient_data.join(last_date, on="Patid")
 
-    return collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data)
+    return collect_chunk_info(
+        chunk, counts, labeled_ids, visits, patient_data, diag_dates
+    )
 
 
-def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data):
+def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data, diag_date):
     patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
     patient_data = patient_data.set_index("Patid")
     patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
@@ -282,6 +260,10 @@ def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data):
     chunk_info["ids"] = counts.index
     chunk_info["visits"] = visits.to_numpy()
     chunk_info["demo"] = patient_data.to_numpy()
+
+    if diag_date is not None:
+        chunk_info["diagnosed_dates"] = diag_date.to_numpy()
+        chunk_info["dates"] = chunk["Fst_Dt"].to_numpy()
 
     return chunk_info
 
