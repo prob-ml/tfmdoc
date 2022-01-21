@@ -5,7 +5,7 @@ from hydra.utils import instantiate
 from matplotlib import pyplot as plt
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from tfmdoc.load_data import ClaimsDataset, build_loaders
+from tfmdoc import load_data as ld
 from tfmdoc.preprocess import ClaimsPipeline
 
 
@@ -36,23 +36,35 @@ def main(cfg=None):
         cpl.run()
         return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
-    dataset = ClaimsDataset(
-        preprocess_dir,
-        bag_of_words=(not cfg.model.transformer),
-        shuffle=cfg.train.shuffle,
-        synth_labels=cfg.train.synth_labels,
-        filename=cfg.train.data_name,
-    )
+    if cfg.preprocess.early_detection:
+        dataset = ld.EarlyDetectionDataset(
+            preprocess_dir,
+            bag_of_words=(not cfg.model.transformer),
+            shuffle=cfg.train.shuffle,
+            synth_labels=cfg.train.synth_labels,
+            filename=cfg.train.data_name,
+            late_cutoff=cfg.preprocess.prediction_window,
+            early_cutoff=cfg.preprocess.early_detection,
+        )
+    else:
+        dataset = ld.ClaimsDataset(
+            preprocess_dir,
+            bag_of_words=(not cfg.model.transformer),
+            shuffle=cfg.train.shuffle,
+            synth_labels=cfg.train.synth_labels,
+            filename=cfg.train.data_name,
+        )
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = int(cfg.train.val_frac * len(dataset))
     test_size = len(dataset) - train_size - val_size
-    loaders = build_loaders(
+    loaders = ld.build_loaders(
         dataset,
         (train_size, val_size, test_size),
         pad=cfg.model.transformer,
         batch_size=cfg.train.batch_size,
         save_test_index=cfg.train.save_prediction,
         random_seed=cfg.train.random_seed,
+        early_detection=bool(cfg.preprocess.early_detection),
     )
     mapping = dataset.code_lookup
     # initialize tfmd model from config settings

@@ -26,26 +26,26 @@ class ClaimsDataset(Dataset):
                 possible codes. If false, return an encoded
                 sequence (for the Transformer model).
         """  # noqa: RST301
-        file = h5py.File(preprocess_dir + filename + ".hdf5", "r")
+        self.file = h5py.File(preprocess_dir + filename + ".hdf5", "r")
         # indicates starting point of each patient's individual record
-        self.offsets = np.cumsum(np.array(file["offsets"]))
+        self.offsets = np.cumsum(np.array(self.file["offsets"]))
         # flat file containing all records, concatenated
-        self.records = np.array(file["tokens"])
+        self.records = np.array(self.file["tokens"])
         if not bag_of_words:
             self.records = torch.from_numpy(self.records)
         # array of all codes indicating numerical encoding
-        self.code_lookup = np.array(file["diag_code_lookup"])
+        self.code_lookup = np.array(self.file["diag_code_lookup"])
         # array of all patient IDs
-        self.ids = np.array(file["ids"])
-        self.visits = torch.from_numpy(np.array(file["visits"]))
+        self.ids = np.array(self.file["ids"])
+        self.visits = torch.from_numpy(np.array(self.file["visits"]))
         self._length = self.ids.shape[0]
         self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
         if synth_labels:
             self.labels = torch.load(preprocess_dir + synth_labels).long()
         else:
-            self.labels = torch.from_numpy(np.array(file["labels"])).long()
-        demog = np.array(file["demo"])
+            self.labels = torch.from_numpy(np.array(self.file["labels"])).long()
+        demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
         demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
         # array of patient demographic data
@@ -85,12 +85,82 @@ class ClaimsDataset(Dataset):
         return visits, self.demo[index], patient_records, self.labels[index]
 
 
+class EarlyDetectionDataset(ClaimsDataset):
+    def __init__(
+        self,
+        preprocess_dir,
+        bag_of_words=False,
+        shuffle=False,
+        synth_labels=None,
+        filename="preprocessed",
+        late_cutoff=30,
+        early_cutoff=90,
+    ):
+        super().__init__(preprocess_dir, bag_of_words, shuffle, synth_labels, filename)
+        self.diagnosed_dates = np.array(self.file["diagnosed_dates"])
+        self.dates = np.array(self.file["dates"])
+        self.late_cutoff = late_cutoff
+        self.early_cutoff = early_cutoff
+        self.viable_indices = []
+        self.stops = []
+
+        self.validate_sequences()
+
+    def __len__(self):
+        return len(self.viable_indices)
+
+    def __getitem__(self, index):
+        if index > 0:
+            start = self.offsets[index - 1]
+        elif index == 0:
+            start = 0
+
+        early_stop = int(start + self.stops[index][0])
+        late_stop = int(start + self.stops[index][1])
+
+        early_visits = self.visits[start:early_stop] + 1
+        late_visits = self.visits[start:late_stop] + 1
+
+        early_records = self.records[start:early_stop]
+        late_records = self.records[start:late_stop]
+
+        return (
+            (early_visits, self.demo[index], early_records, 0),
+            (late_visits, self.demo[index], late_records, 1),
+        )
+
+    def validate_sequences(self):
+        for index, offset in enumerate(self.offsets):
+            if index > 0:
+                start, stop = self.offsets[index - 1], offset
+            elif index == 0:
+                start, stop = 0, offset
+
+            ind_dates = self.dates[start:stop]
+
+            late_stop = np.argmax(
+                ind_dates >= self.diagnosed_dates[index] - self.late_cutoff
+            )
+
+            early_stop = np.argmax(
+                ind_dates >= self.diagnosed_dates[index] - self.early_cutoff
+            )
+
+            if (early_stop > 0) & (late_stop > 0):
+                if (late_stop >= 8) & (early_stop <= 512):
+                    self.viable_indices.append(index)
+                    self.stops.append((early_stop, late_stop))
+
+
 # HELPERS
 
 
-def padded_collate(batch, pad=True):
-    # unzip batch
-    vs, ws, xs, ys = zip(*batch)
+def padded_collate(batch, pad=True, early_detection=False):
+    if early_detection:
+        early, late = zip(*batch)
+        vs, ws, xs, ys = zip(*(early + late))
+    else:
+        vs, ws, xs, ys = zip(*batch)
     ws = torch.stack(ws)
     if pad:
         vs = pad_sequence(vs, batch_first=True, padding_value=0)
@@ -122,6 +192,7 @@ def build_loaders(
     batch_size,
     save_test_index,
     random_seed,
+    early_detection,
 ):
     # create dataloaders for training, test, and (optionally)
     # check whether to create validation set
@@ -133,10 +204,10 @@ def build_loaders(
     subsets = random_split(dataset, lengths, torch.Generator().manual_seed(random_seed))
     loaders = {}
 
-    collate_fn = lambda x: padded_collate(x, pad=pad)
+    collate_fn = lambda x: padded_collate(x, pad, early_detection)
 
     for key, subset in zip(keys, subsets):
-        if key == "test":
+        if key == "test" or early_detection:
             sampler = None
             # save index of test samples for post hoc analysis
             if save_test_index:
