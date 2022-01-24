@@ -42,7 +42,7 @@ def main(cfg=None):
             bag_of_words=(not cfg.model.transformer),
             shuffle=cfg.train.shuffle,
             synth_labels=cfg.train.synth_labels,
-            filename=cfg.train.data_name,
+            filename=cfg.preprocess.filename,
             late_cutoff=cfg.preprocess.prediction_window,
             early_cutoff=cfg.preprocess.early_detection,
         )
@@ -52,7 +52,7 @@ def main(cfg=None):
             bag_of_words=(not cfg.model.transformer),
             shuffle=cfg.train.shuffle,
             synth_labels=cfg.train.synth_labels,
-            filename=cfg.train.data_name,
+            filename=cfg.preprocess.filename,
         )
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = int(cfg.train.val_frac * len(dataset))

@@ -1,9 +1,13 @@
+import logging
+
 import h5py
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
+
+log = logging.getLogger(__name__)
 
 
 class ClaimsDataset(Dataset):
@@ -72,12 +76,7 @@ class ClaimsDataset(Dataset):
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
         if self._bow:
-            # get counts of each code
-            patient_records = np.bincount(patient_records)
-            # pad each vector to length T, all possible codes
-            padded = np.zeros(self.code_lookup.shape)
-            padded[: len(patient_records)] = patient_records
-            patient_records = torch.from_numpy(padded).float()
+            patient_records = pad_bincount(patient_records, self.code_lookup.shape)
         else:
             patient_records = patient_records.flip(0)
             visits = visits.flip(0)
@@ -97,6 +96,7 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_cutoff=90,
     ):
         super().__init__(preprocess_dir, bag_of_words, shuffle, synth_labels, filename)
+        self.labels = None
         self.diagnosed_dates = np.array(self.file["diagnosed_dates"])
         self.dates = np.array(self.file["dates"])
         self.late_cutoff = late_cutoff
@@ -124,6 +124,10 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_records = self.records[start:early_stop]
         late_records = self.records[start:late_stop]
 
+        if self._bow:
+            early_records = pad_bincount(early_records, self.code_lookup.shape)
+            late_records = pad_bincount(late_records, self.code_lookup.shape)
+
         return (
             (early_visits, self.demo[index], early_records, 0),
             (late_visits, self.demo[index], late_records, 1),
@@ -147,9 +151,11 @@ class EarlyDetectionDataset(ClaimsDataset):
             )
 
             if (early_stop > 0) & (late_stop > 0):
-                if (late_stop >= 8) & (early_stop <= 512):
+                if ((late_stop >= 8) & (early_stop <= 512)) & (early_stop < late_stop):
                     self.viable_indices.append(index)
                     self.stops.append((early_stop, late_stop))
+
+        log.info(f"{len(self):,} viable patient records.")
 
 
 # HELPERS
@@ -159,8 +165,10 @@ def padded_collate(batch, pad=True, early_detection=False):
     if early_detection:
         early, late = zip(*batch)
         vs, ws, xs, ys = zip(*(early + late))
+        ys = torch.tensor(ys)
     else:
         vs, ws, xs, ys = zip(*batch)
+        ys = torch.stack(ys)
     ws = torch.stack(ws)
     if pad:
         vs = pad_sequence(vs, batch_first=True, padding_value=0)
@@ -169,7 +177,6 @@ def padded_collate(batch, pad=True, early_detection=False):
         # can ignore visits in bag-of-words model
         vs = None
         xs = torch.stack(xs)
-    ys = torch.stack(ys)
     return vs, ws, xs, ys
 
 
@@ -183,6 +190,15 @@ def balanced_sampler(ix, labels):
     return WeightedRandomSampler(
         weights=sample_weights, num_samples=len(sample_weights), replacement=True
     )
+
+
+def pad_bincount(records, n_codes):
+    # get counts of each cod
+    records = np.bincount(records)
+    # pad each vector to length T, all possible codes
+    padded = np.zeros(n_codes)
+    padded[: len(records)] = records
+    return torch.from_numpy(padded).float()
 
 
 def build_loaders(

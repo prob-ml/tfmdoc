@@ -1,7 +1,6 @@
 model:
   _target_: tfmdoc.Tfmd
   d_model: 32
-  d_demo: 2
   n_blocks: 4
   n_heads: 8
   max_len: 512
@@ -16,7 +15,7 @@ model:
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
   output_dir: "/nfs/turbo/lsa-regier/OPTUM2/preprocessed_files/"
-  output_name: "preprocessed"
+  filename: "preprocessed"
   min_length: 8
   max_length: 512
   min_year: 2002
@@ -33,7 +32,7 @@ train:
   train_frac: 0.75
   val_frac: 0.1
   gpus:
-    - 6
+    - 5
   batch_size: 32
   max_epochs: 5
   limit_train_batches: 1.0
@@ -41,7 +40,6 @@ train:
   shuffle: False
   synth_labels: ""
   random_seed: 42
-  data_name: "preprocessed"
 
 disease_codes:
   ald:
