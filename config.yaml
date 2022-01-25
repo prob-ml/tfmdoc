@@ -32,7 +32,7 @@ train:
   train_frac: 0.75
   val_frac: 0.1
   gpus:
-    - 5
+    - 6
   batch_size: 32
   max_epochs: 5
   limit_train_batches: 1.0

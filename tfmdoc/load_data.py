@@ -101,25 +101,25 @@ class EarlyDetectionDataset(ClaimsDataset):
         self.dates = np.array(self.file["dates"])
         self.late_cutoff = late_cutoff
         self.early_cutoff = early_cutoff
-        self.viable_indices = []
+        self.starts = []
         self.stops = []
 
         self.validate_sequences()
 
     def __len__(self):
-        return len(self.viable_indices)
+        return len(self.starts)
 
     def __getitem__(self, index):
-        if index > 0:
-            start = self.offsets[index - 1]
-        elif index == 0:
-            start = 0
+        start = self.starts[index]
 
         early_stop = int(start + self.stops[index][0])
         late_stop = int(start + self.stops[index][1])
-
-        early_visits = self.visits[start:early_stop] + 1
-        late_visits = self.visits[start:late_stop] + 1
+        # flip because relative visits from end of observation
+        # are easier to interpret
+        early_visits = self.visits[start:early_stop]
+        early_visits = early_visits.max() - early_visits
+        late_visits = self.visits[start:late_stop]
+        late_visits = late_visits.max() - late_visits
 
         early_records = self.records[start:early_stop]
         late_records = self.records[start:late_stop]
@@ -141,7 +141,6 @@ class EarlyDetectionDataset(ClaimsDataset):
                 start, stop = 0, offset
 
             ind_dates = self.dates[start:stop]
-
             late_stop = np.argmax(
                 ind_dates >= self.diagnosed_dates[index] - self.late_cutoff
             )
@@ -152,7 +151,7 @@ class EarlyDetectionDataset(ClaimsDataset):
 
             if (early_stop > 0) & (late_stop > 0):
                 if ((late_stop >= 8) & (early_stop <= 512)) & (early_stop < late_stop):
-                    self.viable_indices.append(index)
+                    self.starts.append(start)
                     self.stops.append((early_stop, late_stop))
 
         log.info(f"{len(self):,} viable patient records.")
