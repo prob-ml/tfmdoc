@@ -230,7 +230,7 @@ def sample_cases(labeled_ids, counts, chunk, patient_data, early_detection):
         cases = labeled_ids[labeled_ids == 1]
         controls = labeled_ids[labeled_ids == 0]
         try:
-            controls = controls.sample(19 * len(cases))
+            controls = controls.sample(4 * len(cases))
         except ValueError:
             pass
         labeled_ids = pd.concat([controls, cases])

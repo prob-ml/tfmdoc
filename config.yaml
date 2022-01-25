@@ -20,7 +20,7 @@ preprocess:
   max_length: 512
   min_year: 2002
   max_year: 2018
-  n: 600000
+  n: 500000
   include_labs: True
   do: False
   split_codes: True

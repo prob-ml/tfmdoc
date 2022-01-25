@@ -70,16 +70,15 @@ class ClaimsDataset(Dataset):
         else:
             raise IndexError(f"Index {index:,} may be out of range ({self._length:,})")
         patient_records = self.records[start:stop]
-        # add one to allow for zero padding
-        visits = self.visits[start:stop] + 1
+        # flip so that visits increase going back in time
+        # from the last date
+        visits = self.visits[start:stop]
+        visits = visits.max() - visits
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
-        else:
-            patient_records = patient_records.flip(0)
-            visits = visits.flip(0)
         # return array of diag codes and patient labels
         return visits, self.demo[index], patient_records, self.labels[index]
 
