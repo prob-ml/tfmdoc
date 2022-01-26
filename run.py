@@ -29,7 +29,7 @@ def main(cfg=None):
             split_codes=cfg.preprocess.split_codes,
             include_labs=cfg.preprocess.include_labs,
             prediction_window=cfg.preprocess.prediction_window,
-            output_name=cfg.preprocess.output_name,
+            output_name=cfg.preprocess.filename,
             early_detection=cfg.preprocess.early_detection,
         )
         # run preprocessing pipeline

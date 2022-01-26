@@ -109,19 +109,23 @@ class EarlyDetectionDataset(ClaimsDataset):
         return len(self.starts)
 
     def __getitem__(self, index):
-        start = self.starts[index]
-
-        early_stop = int(start + self.stops[index][0])
-        late_stop = int(start + self.stops[index][1])
-        # flip because relative visits from end of observation
-        # are easier to interpret
-        early_visits = self.visits[start:early_stop]
+        # this is hacky, but
+        # it prevents the same patient from appearing twice in the same batch
+        # or at least makes it very unlikely
+        late_index = (index + 1000) % len(self)
+        early_start = self.starts[index]
+        late_start = self.starts[late_index]
+        early_stop = int(early_start + self.stops[index][0])
+        late_stop = int(late_start + self.stops[late_index][1])
+        early_visits = self.visits[early_start:early_stop]
+        # flip visits so that the position ordering
+        # increases going back in time from the last visit
         early_visits = early_visits.max() - early_visits
-        late_visits = self.visits[start:late_stop]
+        late_visits = self.visits[late_start:late_stop]
         late_visits = late_visits.max() - late_visits
 
-        early_records = self.records[start:early_stop]
-        late_records = self.records[start:late_stop]
+        early_records = self.records[early_start:early_stop]
+        late_records = self.records[late_start:late_stop]
 
         if self._bow:
             early_records = pad_bincount(early_records, self.code_lookup.shape)
