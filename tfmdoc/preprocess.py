@@ -226,11 +226,11 @@ def sample_cases(labeled_ids, counts, chunk, patient_data, early_detection):
         chunk = chunk.set_index("patid").loc[labeled_ids.index]
         diag_dates = chunk.groupby(chunk.index)["first_diag"].first()
     else:
-        # downsample to a 19-1 control/case ratio
+        # downsample to a 4-1 control/case ratio
         cases = labeled_ids[labeled_ids == 1]
         controls = labeled_ids[labeled_ids == 0]
         try:
-            controls = controls.sample(4 * len(cases))
+            controls = controls.sample(4 * len(cases), random_state=17)
         except ValueError:
             pass
         labeled_ids = pd.concat([controls, cases])
