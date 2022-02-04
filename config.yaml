@@ -1,8 +1,7 @@
 model:
   _target_: tfmdoc.Tfmd
   d_model: 32
-  d_demo: 2
-  n_blocks: 2
+  n_blocks: 4
   n_heads: 8
   max_len: 512
   dropout: 0.1
@@ -16,17 +15,18 @@ model:
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
   output_dir: "/nfs/turbo/lsa-regier/OPTUM2/preprocessed_files/"
-  output_name: "preprocessed"
+  filename: "preprocessed"
   min_length: 8
   max_length: 512
   min_year: 2002
   max_year: 2018
-  n: 600000
+  n: 500000
   include_labs: True
   do: False
   split_codes: True
   prediction_window: 30
   disease: "ald"
+  early_detection: 0
 
 train:
   train_frac: 0.75
@@ -40,7 +40,6 @@ train:
   shuffle: False
   synth_labels: ""
   random_seed: 42
-  data_name: "preprocessed"
 
 disease_codes:
   ald:

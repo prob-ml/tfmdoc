@@ -12,7 +12,6 @@ class Tfmd(pl.LightningModule):
         self,
         n_tokens,
         d_model,
-        d_demo,
         n_blocks,
         n_heads,
         max_len,
@@ -32,7 +31,6 @@ class Tfmd(pl.LightningModule):
         Args:
             n_tokens (integer): number of unique tokens (codes) in features
             d_model (integer): dimension of each (transformer) decoder layer
-            d_demo (integer): dimension of demographic data inputs
             n_blocks (integer): number of stacked transformer blocks
             n_heads (integer): number of attention heads
             max_len (integer): greatest length allowed for a sequence of records
@@ -67,7 +65,8 @@ class Tfmd(pl.LightningModule):
             bow_layers = make_bow_layers(n_tokens, d_bow, d_model, dropout=dropout)
             self.feedfwd = torch.nn.Sequential(*bow_layers)
         self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
-        self._final = Linear(d_model + d_demo, d_ff)
+        # add two to input dim for demographic data (sex, age)
+        self._final = Linear(d_model + 2, d_ff)
         self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
