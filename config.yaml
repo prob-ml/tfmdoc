@@ -15,7 +15,7 @@ model:
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
   output_dir: "/nfs/turbo/lsa-regier/OPTUM2/preprocessed_files/"
-  filename: "preprocessed"
+  filename: "test_etl"
   min_length: 8
   max_length: 512
   min_year: 2002

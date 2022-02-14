@@ -93,6 +93,7 @@ class ClaimsPipeline:
                 ("labels", np.dtype("uint8")),
                 ("ids", np.dtype("float64")),
                 ("visits", np.dtype("uint8")),
+                ("ages", np.dtype("uint8")),
             ]
             if self._early_detection:
                 datasets += [
@@ -105,7 +106,6 @@ class ClaimsPipeline:
             f.create_dataset(
                 "demo", (0, 2), dtype=np.dtype("float64"), maxshape=(None, 2)
             )
-
             self.process_chunks(f)
 
             records = f["records"]
@@ -189,7 +189,11 @@ class ClaimsPipeline:
         if self._include_labs:
             chunk["diag"].fillna(chunk["lab_code"], inplace=True)
             chunk.drop(columns="lab_code", inplace=True)
-        return chunk
+
+        # keep only patients for whom we have age info
+        return chunk.merge(
+            self.patient_data, left_on="patid", how="inner", right_on="Patid"
+        )
 
     def pull_patient_info(self, chunk):
         # summary:
@@ -260,6 +264,9 @@ def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data, diag_da
     chunk_info["ids"] = counts.index
     chunk_info["visits"] = visits.to_numpy()
     chunk_info["demo"] = patient_data.to_numpy()
+    chunk_info["ages"] = ((chunk["Fst_Dt"] / 365.25 + 1960) - chunk["Yrdob"]).astype(
+        int
+    )
 
     if diag_date is not None:
         chunk_info["diagnosed_dates"] = diag_date.to_numpy()

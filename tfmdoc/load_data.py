@@ -42,6 +42,7 @@ class ClaimsDataset(Dataset):
         # array of all patient IDs
         self.ids = np.array(self.file["ids"])
         self.visits = torch.from_numpy(np.array(self.file["visits"]))
+        self.ages = torch.from_numpy(np.array(self.file["ages"]))
         self._length = self.ids.shape[0]
         self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
@@ -74,13 +75,14 @@ class ClaimsDataset(Dataset):
         # from the last date
         visits = self.visits[start:stop]
         visits = visits.max() - visits
+        ages = self.ages[start:stop]
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
         # return array of diag codes and patient labels
-        return visits, self.demo[index], patient_records, self.labels[index]
+        return ages, visits, self.demo[index], patient_records, self.labels[index]
 
 
 class EarlyDetectionDataset(ClaimsDataset):
@@ -169,17 +171,19 @@ def padded_collate(batch, pad=True, early_detection=False):
         vs, ws, xs, ys = zip(*(early + late))
         ys = torch.tensor(ys)
     else:
-        vs, ws, xs, ys = zip(*batch)
+        ts, vs, ws, xs, ys = zip(*batch)
         ys = torch.stack(ys)
     ws = torch.stack(ws)
     if pad:
+        ts = pad_sequence(ts, batch_first=True, padding_value=0)
         vs = pad_sequence(vs, batch_first=True, padding_value=0)
         xs = pad_sequence(xs, batch_first=True, padding_value=0)
     else:
         # can ignore visits in bag-of-words model
+        ts = torch.stack(ts)
         vs = None
         xs = torch.stack(xs)
-    return vs, ws, xs, ys
+    return ts, vs, ws, xs, ys
 
 
 def balanced_sampler(ix, labels):
