@@ -12,6 +12,7 @@ from tfmdoc.preprocess import ClaimsPipeline
 
 
 def test_lightning():
+
     with initialize(config_path=".."):
         cfg = compose(
             config_name="config",
@@ -50,6 +51,7 @@ def test_model():
     with initialize(config_path=".."):
         cfg = compose(config_name="config")
         model = instantiate(cfg.model, n_tokens=6)
+        t = torch.randint(low=20, high=60, size=(4, 32))
         v = torch.randint(high=3, size=(4, 32))
         w = torch.randn(size=(4, 2))
         # fmt: off
@@ -58,8 +60,8 @@ def test_model():
         x = torch.randint(high=6, size=(4, 32))
         y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
-        assert model.training_step((v, w, x, y), 0) > 0
-        assert model.validation_step((v, w, x, y), 0) > 0
+        assert model.training_step((t, v, w, x, y), 0) > 0
+        assert model.validation_step((t, v, w, x, y), 0) > 0
 
 
 def test_bow():
@@ -102,11 +104,12 @@ def test_pipeline():
         preprocess_dir = "tests/test_data/test_pipeline/"
         torch_dataset = ClaimsDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
-        v, w, x, y = torch_dataset[7]
+        t, v, w, x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
         assert y.item() in {0, 1}
         assert w.shape[0] == 2
         assert v.max().item() == 1
+        assert t.shape[0] == x.shape[0]
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
 

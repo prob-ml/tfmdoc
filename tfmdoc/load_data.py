@@ -75,7 +75,7 @@ class ClaimsDataset(Dataset):
         # from the last date
         visits = self.visits[start:stop]
         visits = visits.max() - visits
-        ages = self.ages[start:stop]
+        ages = self.ages[start:stop].int()
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
@@ -183,6 +183,7 @@ def padded_collate(batch, pad=True, early_detection=False):
         ts = torch.stack(ts)
         vs = None
         xs = torch.stack(xs)
+    # ages, visits, demog data, codes, labels
     return ts, vs, ws, xs, ys
 
 

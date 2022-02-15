@@ -51,9 +51,14 @@ class Tfmd(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
+        self.age_embed = torch.nn.Embedding(
+            # assume a max age of 100
+            num_embeddings=100,
+            embedding_dim=d_model,
+            padding_idx=0,
+        )
         self.results = None
         if transformer:
-            self.pos_embed = torch.nn.Embedding(max_len, d_model, padding_idx=0)
             self.pos_encode = PositionalEncoding(d_model=d_model)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
@@ -72,13 +77,14 @@ class Tfmd(pl.LightningModule):
         self._accuracy = torchmetrics.Accuracy()
         self._val_auroc = torchmetrics.AUROC(compute_on_step=False)
 
-    def forward(self, visits, demo, codes):
+    def forward(self, ages, visits, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self.hparams.transformer:
             x = self.embed(codes)
             # apply position encodings
             x = self.pos_encode(visits, x)
+            x = x + self.age_embed(ages)
             for layer in self._layers:
                 x = layer(x)
 
@@ -87,14 +93,16 @@ class Tfmd(pl.LightningModule):
             # shape will be (n_batches, d_model)
             # final linear layer projects this down to (n_batches, n_classes)
         else:
+            # concatenate?
+            # add them together?
             x = self.feedfwd(codes)
         x = torch.cat((x, demo), axis=1)
         x = relu(self._final(x))
         return self._to_scores(x)
 
     def training_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -103,8 +111,8 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -116,8 +124,8 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         probas = softmax(y_hat, dim=1)[:, 1]
         return probas, y
 
