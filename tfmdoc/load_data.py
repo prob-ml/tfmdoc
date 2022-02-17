@@ -125,9 +125,13 @@ class EarlyDetectionDataset(ClaimsDataset):
         late_start = self.starts[late_index]
         early_stop = int(early_start + self.stops[index][0])
         late_stop = int(late_start + self.stops[late_index][1])
+
+        # incorporate ages
+        early_ages = self.ages[early_start:early_stop].int()
+        late_ages = self.ages[late_start:late_stop].int()
+
+        # flip visit ordering
         early_visits = self.visits[early_start:early_stop]
-        # flip visits so that the position ordering
-        # increases going back in time from the last visit
         early_visits = early_visits.max() - early_visits
         late_visits = self.visits[late_start:late_stop]
         late_visits = late_visits.max() - late_visits
@@ -135,13 +139,19 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_records = self.records[early_start:early_stop]
         late_records = self.records[late_start:late_stop]
 
+        if self._age_q:
+            early_ages = (early_ages / self._age_q).round() * self._age_q
+            late_ages = (late_ages / self._age_q).round() * self._age_q
+
         if self._bow:
             early_records = pad_bincount(early_records, self.code_lookup.shape)
             late_records = pad_bincount(late_records, self.code_lookup.shape)
+            early_ages = pad_bincount(early_ages, 100)
+            late_ages = pad_bincount(late_ages, 100)
 
         return (
-            (early_visits, self.demo[index], early_records, 0),
-            (late_visits, self.demo[index], late_records, 1),
+            (early_ages, early_visits, self.demo[index], early_records, 0),
+            (late_ages, late_visits, self.demo[index], late_records, 1),
         )
 
     def validate_sequences(self):
@@ -174,7 +184,7 @@ class EarlyDetectionDataset(ClaimsDataset):
 def padded_collate(batch, pad=True, early_detection=False):
     if early_detection:
         early, late = zip(*batch)
-        vs, ws, xs, ys = zip(*(early + late))
+        ts, vs, ws, xs, ys = zip(*(early + late))
         ys = torch.tensor(ys)
     else:
         ts, vs, ws, xs, ys = zip(*batch)
