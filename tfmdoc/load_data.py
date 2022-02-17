@@ -18,6 +18,7 @@ class ClaimsDataset(Dataset):
         shuffle=False,
         synth_labels=None,
         filename="preprocessed",
+        age_quantum=0,
     ):
         """Object containing features and labeling for each patient
             in the processed data set.
@@ -58,6 +59,8 @@ class ClaimsDataset(Dataset):
         # normalized age at time of last record
         self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
+        # bin ages to nearest multiple of q
+        self._age_q = age_quantum
 
     def __len__(self):
         # sufficient to return the number of patients
@@ -76,11 +79,14 @@ class ClaimsDataset(Dataset):
         visits = self.visits[start:stop]
         visits = visits.max() - visits
         ages = self.ages[start:stop].int()
+        if self._age_q:
+            ages = (ages / self._age_q).round() * self._age_q
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
+            ages = pad_bincount(ages, 100)
         # return array of diag codes and patient labels
         return ages, visits, self.demo[index], patient_records, self.labels[index]
 

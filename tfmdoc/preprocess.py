@@ -213,6 +213,7 @@ class ClaimsPipeline:
             chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
+        # perhaps there's a clever way to truncate long sequences
         counts = counts[counts.between(*self.length_range)]
         chunk = chunk.join(counts, on="patid", how="right")
         labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[

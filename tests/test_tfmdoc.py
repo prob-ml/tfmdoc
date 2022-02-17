@@ -68,19 +68,20 @@ def test_bow():
     with initialize(config_path=".."):
         cfg = compose(
             config_name="config",
-            overrides=["model.transformer=False", "model.d_bow=40"],
+            overrides=["model.transformer=False", "model.d_model=40"],
         )
-        model = instantiate(cfg.model, n_tokens=60)
+        model = instantiate(cfg.model, n_tokens=200)
+        t = torch.randint(low=20, high=60, size=(4, 100))
         v = None
         w = torch.randn(size=(4, 2))
         # fmt: off
         w[:, 1] = (w[:, 1] >= 0)
         # fmt: on
-        x = torch.randint(high=4, size=(4, 60)).float()
+        x = torch.randint(high=4, size=(4, 200)).float()
         y = torch.LongTensor([0, 1, 1, 0])
         assert model.configure_optimizers().defaults
-        assert model.training_step((v, w, x, y), 0) > 0
-        assert model.validation_step((v, w, x, y), 0) > 0
+        assert model.training_step((t, v, w, x, y), 0) > 0
+        assert model.validation_step((t, v, w, x, y), 0) > 0
 
 
 def test_pipeline():
