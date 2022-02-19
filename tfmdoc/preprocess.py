@@ -190,6 +190,8 @@ class ClaimsPipeline:
             chunk["diag"].fillna(chunk["lab_code"], inplace=True)
             chunk.drop(columns="lab_code", inplace=True)
 
+        # filter out invalid ages
+        self.patient_data = self.patient_data[self.patient_data["Yrdob"] > 1900]
         # keep only patients for whom we have age info
         return chunk.merge(
             self.patient_data, left_on="patid", how="inner", right_on="Patid"

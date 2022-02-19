@@ -44,6 +44,7 @@ class ClaimsDataset(Dataset):
         self.ids = np.array(self.file["ids"])
         self.visits = torch.from_numpy(np.array(self.file["visits"]))
         self.ages = torch.from_numpy(np.array(self.file["ages"]))
+        self.ages = torch.clamp(self.ages, max=99)
         self._length = self.ids.shape[0]
         self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
