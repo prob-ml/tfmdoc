@@ -16,7 +16,6 @@ class Tfmd(pl.LightningModule):
         n_heads,
         max_len,
         dropout,
-        max_pool,
         d_ff,
         transformer,
         d_bow,
@@ -35,8 +34,6 @@ class Tfmd(pl.LightningModule):
             n_heads (integer): number of attention heads
             max_len (integer): greatest length allowed for a sequence of records
             dropout (float): proportion of nodes to randomly zero during droupout
-            max_pool (bool): if true, pool transformer output via a maximum.
-                Otherwise, take the average.
             d_ff (integer): dimension of feedforward layer that projects
                 output of transformer down to 2 (number of classes to predict)
             transformer (bool): If true, use the transformer architecture.
@@ -51,9 +48,14 @@ class Tfmd(pl.LightningModule):
         self.embed = torch.nn.Embedding(
             num_embeddings=n_tokens, embedding_dim=d_model, padding_idx=0
         )
+        self.age_embed = torch.nn.Embedding(
+            # assume a max age of 100
+            num_embeddings=100,
+            embedding_dim=d_model,
+            padding_idx=0,
+        )
         self.results = None
         if transformer:
-            self.pos_embed = torch.nn.Embedding(max_len, d_model, padding_idx=0)
             self.pos_encode = PositionalEncoding(d_model=d_model)
             blocks = [
                 DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
@@ -61,40 +63,45 @@ class Tfmd(pl.LightningModule):
             ]
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
+            self._final = Linear(d_model + 2, d_ff)
         else:
-            bow_layers = make_bow_layers(n_tokens, d_bow, d_model, dropout=dropout)
-            self.feedfwd = torch.nn.Sequential(*bow_layers)
+            d_bow.append(d_model)
+            bow_layers = make_bow_layers(n_tokens, d_bow, dropout=dropout)
+            self.dense = torch.nn.Sequential(*bow_layers)
+            self._final = Linear(d_bow[-1] + 2, d_ff)
         self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
         # add two to input dim for demographic data (sex, age)
-        self._final = Linear(d_model + 2, d_ff)
         self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._val_auroc = torchmetrics.AUROC(compute_on_step=False)
+        self._test_auroc = torchmetrics.AUROC(compute_on_step=False)
 
-    def forward(self, visits, demo, codes):
+    def forward(self, ages, visits, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self.hparams.transformer:
             x = self.embed(codes)
             # apply position encodings
             x = self.pos_encode(visits, x)
+            x = x + self.age_embed(ages)
             for layer in self._layers:
                 x = layer(x)
 
             x = self._norm(x)
-            x = x.max(dim=1)[0] if self.hparams.max_pool else x.mean(dim=1)
+            x = x.max(dim=1)[0]
             # shape will be (n_batches, d_model)
             # final linear layer projects this down to (n_batches, n_classes)
         else:
-            x = self.feedfwd(codes)
+            x = torch.cat((codes, ages), axis=1)
+            x = self.dense(x)
         x = torch.cat((x, demo), axis=1)
         x = relu(self._final(x))
         return self._to_scores(x)
 
     def training_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("train_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -103,8 +110,8 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         loss = self._loss_fn(y_hat, y)
         self.log("val_loss", loss)
         probas = softmax(y_hat, dim=1)[:, 1]
@@ -116,9 +123,11 @@ class Tfmd(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        v, w, x, y = batch
-        y_hat = self(v, w, x)
+        t, v, w, x, y = batch
+        y_hat = self(t, v, w, x)
         probas = softmax(y_hat, dim=1)[:, 1]
+        self._test_auroc(probas, y)
+        self.log("test_auroc", self._test_auroc.compute(), on_step=False, on_epoch=True)
         return probas, y
 
     def test_epoch_end(self, outputs):
@@ -190,10 +199,9 @@ class PositionalEncoding(torch.nn.Module):
 # helpers
 
 
-def make_bow_layers(n_tokens, d_bow, d_model, dropout):
-    if isinstance(d_bow, int):
-        d_bow = [d_bow]
-    l0 = n_tokens
+def make_bow_layers(n_tokens, d_bow, dropout):
+    # account for age embeddings
+    l0 = n_tokens + 100
     layers = []
     for dim in d_bow:
         l1 = dim
@@ -201,5 +209,4 @@ def make_bow_layers(n_tokens, d_bow, d_model, dropout):
         layers.append(ReLU())
         l0 = dim
     layers.append(Dropout(dropout))
-    layers.append(Linear(l0, d_model))
     return layers

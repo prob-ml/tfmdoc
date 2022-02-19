@@ -18,6 +18,7 @@ class ClaimsDataset(Dataset):
         shuffle=False,
         synth_labels=None,
         filename="preprocessed",
+        age_quantum=0,
     ):
         """Object containing features and labeling for each patient
             in the processed data set.
@@ -42,6 +43,8 @@ class ClaimsDataset(Dataset):
         # array of all patient IDs
         self.ids = np.array(self.file["ids"])
         self.visits = torch.from_numpy(np.array(self.file["visits"]))
+        self.ages = torch.from_numpy(np.array(self.file["ages"]))
+        self.ages = torch.clamp(self.ages, max=99)
         self._length = self.ids.shape[0]
         self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
@@ -57,6 +60,8 @@ class ClaimsDataset(Dataset):
         # normalized age at time of last record
         self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
+        # bin ages to nearest multiple of q
+        self._age_q = age_quantum
 
     def __len__(self):
         # sufficient to return the number of patients
@@ -74,13 +79,17 @@ class ClaimsDataset(Dataset):
         # from the last date
         visits = self.visits[start:stop]
         visits = visits.max() - visits
+        ages = self.ages[start:stop].int()
+        if self._age_q:
+            ages = (ages / self._age_q).round() * self._age_q
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
             patient_records = patient_records[reindex]
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
+            ages = pad_bincount(ages, 100)
         # return array of diag codes and patient labels
-        return visits, self.demo[index], patient_records, self.labels[index]
+        return ages, visits, self.demo[index], patient_records, self.labels[index]
 
 
 class EarlyDetectionDataset(ClaimsDataset):
@@ -117,9 +126,13 @@ class EarlyDetectionDataset(ClaimsDataset):
         late_start = self.starts[late_index]
         early_stop = int(early_start + self.stops[index][0])
         late_stop = int(late_start + self.stops[late_index][1])
+
+        # incorporate ages
+        early_ages = self.ages[early_start:early_stop].int()
+        late_ages = self.ages[late_start:late_stop].int()
+
+        # flip visit ordering
         early_visits = self.visits[early_start:early_stop]
-        # flip visits so that the position ordering
-        # increases going back in time from the last visit
         early_visits = early_visits.max() - early_visits
         late_visits = self.visits[late_start:late_stop]
         late_visits = late_visits.max() - late_visits
@@ -127,13 +140,19 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_records = self.records[early_start:early_stop]
         late_records = self.records[late_start:late_stop]
 
+        if self._age_q:
+            early_ages = (early_ages / self._age_q).round() * self._age_q
+            late_ages = (late_ages / self._age_q).round() * self._age_q
+
         if self._bow:
             early_records = pad_bincount(early_records, self.code_lookup.shape)
             late_records = pad_bincount(late_records, self.code_lookup.shape)
+            early_ages = pad_bincount(early_ages, 100)
+            late_ages = pad_bincount(late_ages, 100)
 
         return (
-            (early_visits, self.demo[index], early_records, 0),
-            (late_visits, self.demo[index], late_records, 1),
+            (early_ages, early_visits, self.demo[index], early_records, 0),
+            (late_ages, late_visits, self.demo[index], late_records, 1),
         )
 
     def validate_sequences(self):
@@ -166,20 +185,23 @@ class EarlyDetectionDataset(ClaimsDataset):
 def padded_collate(batch, pad=True, early_detection=False):
     if early_detection:
         early, late = zip(*batch)
-        vs, ws, xs, ys = zip(*(early + late))
+        ts, vs, ws, xs, ys = zip(*(early + late))
         ys = torch.tensor(ys)
     else:
-        vs, ws, xs, ys = zip(*batch)
+        ts, vs, ws, xs, ys = zip(*batch)
         ys = torch.stack(ys)
     ws = torch.stack(ws)
     if pad:
+        ts = pad_sequence(ts, batch_first=True, padding_value=0)
         vs = pad_sequence(vs, batch_first=True, padding_value=0)
         xs = pad_sequence(xs, batch_first=True, padding_value=0)
     else:
         # can ignore visits in bag-of-words model
+        ts = torch.stack(ts)
         vs = None
         xs = torch.stack(xs)
-    return vs, ws, xs, ys
+    # ages, visits, demog data, codes, labels
+    return ts, vs, ws, xs, ys
 
 
 def balanced_sampler(ix, labels):

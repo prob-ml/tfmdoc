@@ -123,3 +123,6 @@ ignore =
 
     # nested functions make sense sometimes
     WPS430
+
+    # five isn't too many elements to unpack
+    WPS236
