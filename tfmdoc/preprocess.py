@@ -188,9 +188,7 @@ class ClaimsPipeline:
         patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
         patient_data = patient_data.set_index("Patid")
         patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
-        patient_data.drop(
-            columns=["Yrdob", "last_date", "Gdr_Cd", "is_case"], inplace=True
-        )
+        patient_data.drop(columns=["Yrdob", "last_date", "Gdr_Cd"], inplace=True)
         chunk_info = {}
         chunk_info["offsets"] = counts.to_numpy()
         chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
@@ -358,8 +356,7 @@ def collect_chunk_info(
     chunk_info["ages"] = ((chunk["Fst_Dt"] / 365.25 + 1960) - chunk["Yrdob"]).astype(
         int
     )
-    if mode != "pretraining":
-        chunk_info["labels"] = labeled_ids.to_numpy()
+    chunk_info["labels"] = labeled_ids.to_numpy()
 
     if mode == "early_detection":
         chunk_info["diagnosed_dates"] = diag_date.to_numpy()

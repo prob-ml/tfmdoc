@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from tfmdoc import load_data as ld
-from tfmdoc.preprocess import ClaimsPipeline
+from tfmdoc.preprocess import ClaimsPipeline, DiagnosisPipeline
 
 
 @hydra.main(config_path=".", config_name="config.yaml")
@@ -18,22 +18,34 @@ def main(cfg=None):
         cfg (OmegaConf object, optional): Placeholder. Defaults to None.
     """
     if cfg.preprocess.do:
-        cpl = ClaimsPipeline(
-            data_dir=cfg.preprocess.data_dir,
-            output_dir=cfg.preprocess.output_dir,
-            disease=cfg.preprocess.disease,
-            disease_codes=cfg.disease_codes[cfg.preprocess.disease],
-            length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
-            year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
-            n=cfg.preprocess.n,
-            split_codes=cfg.preprocess.split_codes,
-            include_labs=cfg.preprocess.include_labs,
-            prediction_window=cfg.preprocess.prediction_window,
-            output_name=cfg.preprocess.filename,
-            early_detection=cfg.preprocess.early_detection,
-        )
+        if cfg.preprocess.mode == "pretraining":
+            pipeline = ClaimsPipeline(
+                data_dir=cfg.preprocess.data_dir,
+                output_dir=cfg.preprocess.output_dir,
+                length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
+                year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
+                n=cfg.preprocess.n,
+                split_codes=cfg.preprocess.split_codes,
+                include_labs=cfg.preprocess.include_labs,
+                output_name=cfg.preprocess.filename,
+            )
+        else:
+            pipeline = DiagnosisPipeline(
+                data_dir=cfg.preprocess.data_dir,
+                output_dir=cfg.preprocess.output_dir,
+                disease=cfg.preprocess.disease,
+                disease_codes=cfg.disease_codes[cfg.preprocess.disease],
+                length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
+                year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
+                n=cfg.preprocess.n,
+                split_codes=cfg.preprocess.split_codes,
+                include_labs=cfg.preprocess.include_labs,
+                prediction_window=cfg.preprocess.prediction_window,
+                output_name=cfg.preprocess.filename,
+                mode=cfg.preprocess.mode,
+            )
         # run preprocessing pipeline
-        cpl.run()
+        pipeline.run()
         return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     if cfg.preprocess.early_detection:
