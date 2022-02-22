@@ -16,27 +16,21 @@ class ClaimsPipeline:
         self,
         data_dir,
         output_dir,
-        disease,
-        disease_codes,
         length_range=(16, 512),
         year_range=(2002, 2018),
         n=None,
         test=False,
         split_codes=True,
         include_labs=False,
-        prediction_window=30,
-        output_name="preprocessed",
-        early_detection=False,
+        output_name="test_etl",
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
-        Labels each patient as a case or control (e.g. healthy)
-        for a given disease based on the presence of ICD code(s).
+        Base class for pretraining pipeline.
 
         Args:
             data_dir (string): path to parquet files containing patient records
             output_dir (string): path to directory where output HDF5 files will be saved
-            disease_codes (list): list of ICD codes indicating disease of interest
             length_range (tuple, optional): Min/max length of individual record.
             year_range (tuple, optional): Min/max year of data to ingest
             n ([type], optional): Max number of patient ids to process
@@ -45,15 +39,11 @@ class ClaimsPipeline:
             include_labs (bool, optional): If true, include discretized lab results
         """  # noqa: RST301
         self.data_dir = data_dir
-        self._disease = disease
-        self.disease_codes = disease_codes
         self.length_range = length_range
         self.n = n
         self._include_labs = include_labs
         self.patient_data = None
-        self._pred_window = prediction_window
         self._output_name = output_name
-        self._early_detection = early_detection
         if split_codes:
             self._splitter = (
                 lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
@@ -74,6 +64,13 @@ class ClaimsPipeline:
                 ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
                 for _ in range(*year_range)
             ]
+        self.datasets = [
+            ("offsets", np.dtype("uint16")),
+            ("records", h5py.special_dtype(vlen=str)),
+            ("ids", np.dtype("float64")),
+            ("visits", np.dtype("uint8")),
+            ("ages", np.dtype("uint8")),
+        ]
 
     def run(self):
         log.info("Began pipeline. Reading patient data...")
@@ -87,20 +84,7 @@ class ClaimsPipeline:
 
         pathlib.Path(self._output_dir).mkdir(exist_ok=True)
         with h5py.File(self._output_dir + self._output_name + ".hdf5", "w") as f:
-            datasets = [
-                ("offsets", np.dtype("uint16")),
-                ("records", h5py.special_dtype(vlen=str)),
-                ("labels", np.dtype("uint8")),
-                ("ids", np.dtype("float64")),
-                ("visits", np.dtype("uint8")),
-                ("ages", np.dtype("uint8")),
-            ]
-            if self._early_detection:
-                datasets += [
-                    ("diagnosed_dates", np.dtype("uint16")),
-                    ("dates", np.dtype("uint16")),
-                ]
-            for name, dtype in datasets:
+            for name, dtype in self.datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
             f.create_dataset(
@@ -154,6 +138,10 @@ class ClaimsPipeline:
                 # stop processing chunks if enough patient ids have been processed
                 break
 
+    def diagnose(self, chunk):
+        # placeholder
+        pass
+
     def transform_patients_chunk(self, chunk):
         # summary:
         # cleans and sorts data
@@ -164,19 +152,7 @@ class ClaimsPipeline:
         if self._include_labs:
             chunk = discretize_labs(chunk)
         # identify positive diagnoses
-        if self._disease == "heart_failure":
-            code = self.disease_codes[0].encode("utf-8")
-
-            def starts_with(x):
-                try:
-                    return x.startswith(code)
-                except AttributeError:
-                    return False
-
-            chunk["is_case"] = chunk["Diag"].apply(starts_with)
-        elif self._disease == "ald":
-            codes = [f"{code: <7}".encode("utf-8") for code in self.disease_codes]
-            chunk["is_case"] = chunk["Diag"].isin(codes)
+        self.diagnose(chunk)
         # incorporate icd codes into diag codes
         chunk["DiagId"] = chunk["Icd_Flag"] + b":" + chunk["Diag"]
         chunk.drop(columns=["Icd_Flag", "Diag"], inplace=True)
@@ -198,6 +174,115 @@ class ClaimsPipeline:
         )
 
     def pull_patient_info(self, chunk):
+        counts = chunk.groupby("patid")["diag"].count().rename("count")
+        # drop patients with too few or too many records
+        # perhaps there's a clever way to truncate long sequences
+        counts = counts[counts.between(*self.length_range)]
+        chunk = chunk.join(counts, on="patid", how="right")
+        visits = chunk.groupby("patid")["Fst_Dt"].transform(
+            lambda x: pd.factorize(x)[0]
+        )
+        last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
+        last_date.name = "last_date"
+        patient_data = self.patient_data.join(last_date, on="Patid")
+        patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
+        patient_data = patient_data.set_index("Patid")
+        patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
+        patient_data.drop(
+            columns=["Yrdob", "last_date", "Gdr_Cd", "is_case"], inplace=True
+        )
+        chunk_info = {}
+        chunk_info["offsets"] = counts.to_numpy()
+        chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
+        chunk_info["ids"] = counts.index
+        chunk_info["visits"] = visits.to_numpy()
+        chunk_info["demo"] = patient_data.to_numpy()
+        chunk_info["ages"] = (
+            (chunk["Fst_Dt"] / 365.25 + 1960) - chunk["Yrdob"]
+        ).astype(int)
+
+        return chunk_info
+
+
+#########
+
+
+class DiagnosisPipeline(ClaimsPipeline):
+    def __init__(
+        self,
+        data_dir,
+        output_dir,
+        disease=None,
+        disease_codes=None,
+        length_range=(16, 512),
+        year_range=(2002, 2018),
+        n=None,
+        test=False,
+        split_codes=True,
+        include_labs=False,
+        prediction_window=30,
+        output_name="test_etl",
+        mode="diagnosis",
+    ):
+        """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
+        and lab results into an encoded record for each patient.
+        Pipeline for fine-tuning prediction task.
+
+        Args:
+            data_dir (string): path to parquet files containing patient records
+            output_dir (string): path to directory where output HDF5 files will be saved
+            disease_codes (list): list of ICD codes indicating disease of interest
+            length_range (tuple, optional): Min/max length of individual record.
+            year_range (tuple, optional): Min/max year of data to ingest
+            n ([type], optional): Max number of patient ids to process
+            test (bool, optional): Shorten pipeline to help with testing
+            split_codes (bool, optional): If true, split off prefixes of ICD codes
+            include_labs (bool, optional): If true, include discretized lab results
+
+        Raises:
+            ValueError: if an invalid task mode is provided
+        """  # noqa: RST301
+        super().__init__(
+            data_dir,
+            output_dir,
+            length_range,
+            year_range,
+            n,
+            test,
+            split_codes,
+            include_labs,
+            output_name,
+        )
+        self._disease = disease
+        self.disease_codes = disease_codes
+        self._pred_window = prediction_window
+
+        if mode not in {"diagnosis", "early_detection"}:
+            raise ValueError("Invalid Preprocessing Mode")
+        self._mode = mode
+        self.datasets.append(("labels", np.dtype("uint8")))
+        if self._mode == "early_detection":
+            self.datasets += [
+                ("diagnosed_dates", np.dtype("uint16")),
+                ("dates", np.dtype("uint16")),
+            ]
+
+    def diagnose(self, chunk):
+        if self._disease == "heart_failure":
+            code = self.disease_codes[0].encode("utf-8")
+
+            def starts_with(x):
+                try:
+                    return x.startswith(code)
+                except AttributeError:
+                    return False
+
+            chunk["is_case"] = chunk["Diag"].apply(starts_with)
+        elif self._disease == "ald":
+            codes = [f"{code: <7}".encode("utf-8") for code in self.disease_codes]
+            chunk["is_case"] = chunk["Diag"].isin(codes)
+
+    def pull_patient_info(self, chunk):
         # summary:
         # label data
         # mask records up to some window before first diagnosis
@@ -211,28 +296,28 @@ class ClaimsPipeline:
         chunk = chunk.join(diagnosis_dates, on="patid", how="left")
         chunk["first_diag"] = chunk["first_diag"].fillna(50000)
         # drop patient records after first diagnosis
-        if not self._early_detection:
+        if self._mode == "diagnosis":
             chunk = chunk[chunk["Fst_Dt"] < chunk["first_diag"] - self._pred_window]
         counts = chunk.groupby("patid")["diag"].count().rename("count")
         # drop patients with too few or too many records
         # perhaps there's a clever way to truncate long sequences
         counts = counts[counts.between(*self.length_range)]
         chunk = chunk.join(counts, on="patid", how="right")
-        labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[
-            "is_case"
-        ]
-        return sample_cases(
-            labeled_ids, counts, chunk, self.patient_data, self._early_detection
-        )
+        if self._mode != "pretraining":
+            labeled_ids = labeled_ids.to_frame().join(counts, on="patid", how="right")[
+                "is_case"
+            ]
+        return sample_cases(labeled_ids, counts, chunk, self.patient_data, self._mode)
 
 
-def sample_cases(labeled_ids, counts, chunk, patient_data, early_detection):
-    if early_detection:
+def sample_cases(labeled_ids, counts, chunk, patient_data, mode):
+    if mode == "early_detection":
         labeled_ids = labeled_ids[labeled_ids == 1]
         counts = counts.loc[labeled_ids.index]
         chunk = chunk.set_index("patid").loc[labeled_ids.index]
         diag_dates = chunk.groupby(chunk.index)["first_diag"].first()
-    else:
+        patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+    elif mode == "diagnosis":
         # downsample to a 4-1 control/case ratio
         cases = labeled_ids[labeled_ids == 1]
         controls = labeled_ids[labeled_ids == 0]
@@ -244,18 +329,22 @@ def sample_cases(labeled_ids, counts, chunk, patient_data, early_detection):
         counts = counts.loc[labeled_ids.index]
         chunk = chunk.set_index("patid").loc[labeled_ids.index]
         diag_dates = None
-    patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+        patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
+    else:
+        diag_dates = None
     visits = chunk.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0])
     last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
     last_date.name = "last_date"
     patient_data = patient_data.join(last_date, on="Patid")
 
     return collect_chunk_info(
-        chunk, counts, labeled_ids, visits, patient_data, diag_dates
+        chunk, counts, labeled_ids, visits, patient_data, diag_dates, mode
     )
 
 
-def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data, diag_date):
+def collect_chunk_info(
+    chunk, counts, labeled_ids, visits, patient_data, diag_date, mode
+):
     patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
     patient_data = patient_data.set_index("Patid")
     patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
@@ -263,15 +352,16 @@ def collect_chunk_info(chunk, counts, labeled_ids, visits, patient_data, diag_da
     chunk_info = {}
     chunk_info["offsets"] = counts.to_numpy()
     chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
-    chunk_info["labels"] = labeled_ids.to_numpy()
     chunk_info["ids"] = counts.index
     chunk_info["visits"] = visits.to_numpy()
     chunk_info["demo"] = patient_data.to_numpy()
     chunk_info["ages"] = ((chunk["Fst_Dt"] / 365.25 + 1960) - chunk["Yrdob"]).astype(
         int
     )
+    if mode != "pretraining":
+        chunk_info["labels"] = labeled_ids.to_numpy()
 
-    if diag_date is not None:
+    if mode == "early_detection":
         chunk_info["diagnosed_dates"] = diag_date.to_numpy()
         chunk_info["dates"] = chunk["Fst_Dt"].to_numpy()
 
