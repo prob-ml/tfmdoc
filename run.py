@@ -21,16 +21,15 @@ def main(cfg=None):
         cpl = ClaimsPipeline(
             data_dir=cfg.preprocess.data_dir,
             output_dir=cfg.preprocess.output_dir,
-            disease=cfg.preprocess.disease,
             disease_codes=cfg.disease_codes[cfg.preprocess.disease],
             length_range=(cfg.preprocess.min_length, cfg.preprocess.max_length),
             year_range=(cfg.preprocess.min_year, cfg.preprocess.max_year + 1),
             n=cfg.preprocess.n,
             split_codes=cfg.preprocess.split_codes,
-            include_labs=cfg.preprocess.include_labs,
             prediction_window=cfg.preprocess.prediction_window,
             output_name=cfg.preprocess.filename,
             early_detection=cfg.preprocess.early_detection,
+            pad=cfg.pad[cfg.preprocess.disease],
         )
         # run preprocessing pipeline
         cpl.run()
