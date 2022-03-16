@@ -65,16 +65,18 @@ class ClaimsPipeline:
             ("Patid", "Fst_Dt", "Icd_Flag", "Diag") for _ in range(*year_range)
         ]
         # lab data
-        self._parquets += [f"lab_{yyyy}.parquet" for yyyy in range(*year_range)]
-        self._parq_cols += [
-            ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
-            for _ in range(*year_range)
-        ]
-        # pharm data
-        self._parquets += [f"pharm_{yyyy}.parquet" for yyyy in range(*year_range)]
-        self._parq_cols += [
-            ("Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm") for _ in range(*year_range)
-        ]
+        if not test:
+            self._parquets += [f"lab_{yyyy}.parquet" for yyyy in range(*year_range)]
+            self._parq_cols += [
+                ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
+                for _ in range(*year_range)
+            ]
+            # pharm data
+            self._parquets += [f"pharm_{yyyy}.parquet" for yyyy in range(*year_range)]
+            self._parq_cols += [
+                ("Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm") for _ in range(*year_range)
+            ]
+        self._test = test
         self._pad = pad
 
     def run(self):
@@ -162,10 +164,12 @@ class ClaimsPipeline:
         # merges in lab data
         # splits ICD codes
         chunk.drop_duplicates(inplace=True)
-        chunk = clean_pharm(chunk)
+        if not self._test:
+            chunk = clean_pharm(chunk)
         # melt + merge back in i guess
         chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
-        chunk = discretize_labs(chunk)
+        if not self._test:
+            chunk = discretize_labs(chunk)
         # identify positive diagnoses
         codes = [f"{code: <{self._pad}}".encode("utf-8") for code in self.disease_codes]
         chunk["is_case"] = chunk["Diag"].isin(codes)
@@ -178,8 +182,9 @@ class ClaimsPipeline:
         chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
         # data go boom!
         chunk = chunk.explode("diag")
-        chunk["diag"].fillna(chunk["lab_code"], inplace=True)
-        chunk.drop(columns="lab_code", inplace=True)
+        if not self._test:
+            chunk["diag"].fillna(chunk["lab_code"], inplace=True)
+            chunk.drop(columns="lab_code", inplace=True)
 
         # filter out invalid ages
         self.patient_data = self.patient_data[self.patient_data["Yrdob"] > 1900]

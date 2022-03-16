@@ -30,7 +30,6 @@ def test_lightning():
         cpl = ClaimsPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
-            cfg.preprocess.disease,
             cfg.disease_codes.ald,
             test=True,
         )
@@ -67,7 +66,6 @@ def test_early_etl():
         cpl = ClaimsPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
-            cfg.preprocess.disease,
             cfg.disease_codes.ald,
             early_detection=cfg.preprocess.early_detection,
             test=True,
@@ -136,7 +134,6 @@ def test_pipeline():
         cpl = ClaimsPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
-            cfg.preprocess.disease,
             cfg.disease_codes.ald,
             test=True,
         )
