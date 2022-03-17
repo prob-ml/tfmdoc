@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from tfmdoc import load_data
 from tfmdoc.aipw import aipw_estimator
-from tfmdoc.preprocess import ClaimsPipeline
+from tfmdoc.preprocess import DiagnosisPipeline
 
 
 def test_lightning():
@@ -22,15 +22,17 @@ def test_lightning():
                 "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
                 "preprocess.output_dir=tests/test_data/test_lightning/",
+                "preprocess.filename=preprocessed",
             ],
         )
 
         assert cfg["model"]["n_blocks"] == 1
 
-        cpl = ClaimsPipeline(
+        cpl = DiagnosisPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
             cfg.disease_codes.ald,
+            output_name=cfg.preprocess.filename,
             test=True,
         )
         cpl.run()
@@ -59,15 +61,17 @@ def test_early_etl():
                 "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
                 "preprocess.output_dir=tests/test_data/test_lightning/",
-                "preprocess.early_detection=True",
+                "preprocess.filename=preprocessed",
+                "preprocess.mode=early_detection",
             ],
         )
 
-        cpl = ClaimsPipeline(
+        cpl = DiagnosisPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
             cfg.disease_codes.ald,
-            early_detection=cfg.preprocess.early_detection,
+            mode=cfg.preprocess.mode,
+            output_name=cfg.preprocess.filename,
             test=True,
         )
         cpl.run()
@@ -129,12 +133,14 @@ def test_pipeline():
                 "disease_codes.ald=['7231']",
                 "preprocess.data_dir=tests/test_data/",
                 "preprocess.output_dir=tests/test_data/test_pipeline/",
+                "preprocess.filename=preprocessed",
             ],
         )
-        cpl = ClaimsPipeline(
+        cpl = DiagnosisPipeline(
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
             cfg.disease_codes.ald,
+            output_name=cfg.preprocess.filename,
             test=True,
         )
         cpl.run()
