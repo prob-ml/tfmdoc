@@ -21,8 +21,7 @@ class ClaimsPipeline:
         n=None,
         test=False,
         split_codes=True,
-        include_labs=False,
-        output_name="test_etl",
+        output_name="test_bert_etl",
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -36,12 +35,10 @@ class ClaimsPipeline:
             n ([type], optional): Max number of patient ids to process
             test (bool, optional): Shorten pipeline to help with testing
             split_codes (bool, optional): If true, split off prefixes of ICD codes
-            include_labs (bool, optional): If true, include discretized lab results
         """  # noqa: RST301
         self.data_dir = data_dir
         self.length_range = length_range
         self.n = n
-        self._include_labs = include_labs
         self.patient_data = None
         self._output_name = output_name
         if split_codes:
@@ -58,12 +55,19 @@ class ClaimsPipeline:
         self._parq_cols = [
             ("Patid", "Fst_Dt", "Icd_Flag", "Diag") for _ in range(*year_range)
         ]
-        if self._include_labs:
+        # lab data
+        if not test:
             self._parquets += [f"lab_{yyyy}.parquet" for yyyy in range(*year_range)]
             self._parq_cols += [
                 ("Patid", "Fst_Dt", "Loinc_Cd", "Rslt_Nbr", "Hi_Nrml", "Low_Nrml")
                 for _ in range(*year_range)
             ]
+            # pharm data
+            self._parquets += [f"pharm_{yyyy}.parquet" for yyyy in range(*year_range)]
+            self._parq_cols += [
+                ("Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm") for _ in range(*year_range)
+            ]
+        self._test = test
         self.datasets = [
             ("offsets", np.dtype("uint16")),
             ("records", h5py.special_dtype(vlen=str)),
@@ -148,8 +152,11 @@ class ClaimsPipeline:
         # merges in lab data
         # splits ICD codes
         chunk.drop_duplicates(inplace=True)
+        if not self._test:
+            chunk = clean_pharm(chunk)
+        # melt + merge back in i guess
         chunk.sort_values(["Patid", "Fst_Dt"], inplace=True)
-        if self._include_labs:
+        if not self._test:
             chunk = discretize_labs(chunk)
         # identify positive diagnoses
         self.diagnose(chunk)
@@ -162,7 +169,7 @@ class ClaimsPipeline:
         chunk.rename(columns={"Patid": "patid", "DiagId": "diag"}, inplace=True)
         # data go boom!
         chunk = chunk.explode("diag")
-        if self._include_labs:
+        if not self._test:
             chunk["diag"].fillna(chunk["lab_code"], inplace=True)
             chunk.drop(columns="lab_code", inplace=True)
 
@@ -210,17 +217,16 @@ class DiagnosisPipeline(ClaimsPipeline):
         self,
         data_dir,
         output_dir,
-        disease=None,
-        disease_codes=None,
+        disease_codes,
         length_range=(16, 512),
         year_range=(2002, 2018),
         n=None,
         test=False,
         split_codes=True,
-        include_labs=False,
         prediction_window=30,
-        output_name="test_etl",
+        output_name="test_diagnosis_etl",
         mode="diagnosis",
+        pad=7,
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -235,7 +241,6 @@ class DiagnosisPipeline(ClaimsPipeline):
             n ([type], optional): Max number of patient ids to process
             test (bool, optional): Shorten pipeline to help with testing
             split_codes (bool, optional): If true, split off prefixes of ICD codes
-            include_labs (bool, optional): If true, include discretized lab results
 
         Raises:
             ValueError: if an invalid task mode is provided
@@ -248,10 +253,8 @@ class DiagnosisPipeline(ClaimsPipeline):
             n,
             test,
             split_codes,
-            include_labs,
             output_name,
         )
-        self._disease = disease
         self.disease_codes = disease_codes
         self._pred_window = prediction_window
 
@@ -264,21 +267,11 @@ class DiagnosisPipeline(ClaimsPipeline):
                 ("diagnosed_dates", np.dtype("uint16")),
                 ("dates", np.dtype("uint16")),
             ]
+        self._pad = pad
 
     def diagnose(self, chunk):
-        if self._disease == "heart_failure":
-            code = self.disease_codes[0].encode("utf-8")
-
-            def starts_with(x):
-                try:
-                    return x.startswith(code)
-                except AttributeError:
-                    return False
-
-            chunk["is_case"] = chunk["Diag"].apply(starts_with)
-        elif self._disease == "ald":
-            codes = [f"{code: <7}".encode("utf-8") for code in self.disease_codes]
-            chunk["is_case"] = chunk["Diag"].isin(codes)
+        codes = [f"{code: <{self._pad}}".encode("utf-8") for code in self.disease_codes]
+        chunk["is_case"] = chunk["Diag"].isin(codes)
 
     def pull_patient_info(self, chunk):
         # summary:
@@ -377,3 +370,16 @@ def discretize_labs(chunk):
     return chunk.drop(
         columns=["Loinc_Cd", "Rslt_Nbr", "lab_status", "Hi_Nrml", "Low_Nrml"]
     )
+
+
+def clean_pharm(chunk):
+    pharm = chunk[["Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm"]]
+    pharm.dropna(subset=["Fill_Dt"], inplace=True)
+    chunk.dropna(subset=["Fst_Dt"], inplace=True)
+    chunk.drop(columns=["Fill_Dt", "Ahfsclss", "Brnd_Nm"], inplace=True)
+    pharm = pharm.melt(id_vars=["Patid", "Fill_Dt"])
+    pharm = pharm.rename(
+        columns={"Fill_Dt": "Fst_Dt", "variable": "Icd_Flag", "value": "Diag"}
+    )
+    pharm["Icd_Flag"] = pharm["Icd_Flag"].str.encode("utf-8")
+    return pd.concat([chunk, pharm])

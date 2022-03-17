@@ -58,8 +58,17 @@ disease_codes:
     - "K7040"
     - "K7460"
     - "K7469"
-  heart_failure:
-    - "I50"
+  bleed:
+    - "K922"
+    - "5789"
+  thinner:
+    - "WARFARIN SODIUM"
+    - "COUMADIN"
+
+pad:
+  ald: 7
+  bleed: 7
+  thinner: 30
 
 
 # best checkpoints:
