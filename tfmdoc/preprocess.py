@@ -101,7 +101,8 @@ class ClaimsPipeline:
             code_lookup, indexed_records = np.unique(records, return_inverse=True)
             # make sure that zero does not map to a code
             code_lookup = np.insert(code_lookup, 0, "pad")
-            indexed_records += 1
+            code_lookup = np.insert(code_lookup, 1, "mask")
+            indexed_records += 2
             f.create_dataset("tokens", data=indexed_records)
             f.create_dataset("diag_code_lookup", data=code_lookup)
 

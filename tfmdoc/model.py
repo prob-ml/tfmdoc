@@ -14,12 +14,12 @@ class Tfmd(pl.LightningModule):
         d_model,
         n_blocks,
         n_heads,
-        max_len,
         dropout,
         d_ff,
         transformer,
         d_bow,
         lr,
+        mask,
     ):
         """Deep learning model for early detection of disease based on
             health insurance claims data. This model makes use of both
@@ -32,7 +32,6 @@ class Tfmd(pl.LightningModule):
             d_model (integer): dimension of each (transformer) decoder layer
             n_blocks (integer): number of stacked transformer blocks
             n_heads (integer): number of attention heads
-            max_len (integer): greatest length allowed for a sequence of records
             dropout (float): proportion of nodes to randomly zero during droupout
             d_ff (integer): dimension of feedforward layer that projects
                 output of transformer down to 2 (number of classes to predict)
@@ -76,17 +75,25 @@ class Tfmd(pl.LightningModule):
         self._accuracy = torchmetrics.Accuracy()
         self._val_auroc = torchmetrics.AUROC(compute_on_step=False)
         self._test_auroc = torchmetrics.AUROC(compute_on_step=False)
+        self._n_heads = n_heads
+        self._mask = mask
 
     def forward(self, ages, visits, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self.hparams.transformer:
+            if self._mask:
+                mask = (codes > 0).unsqueeze(1).repeat(1, codes.size(1), 1)
+                # very helpful documentation! (not)
+                mask = mask.repeat_interleave(repeats=self._n_head, dim=0)
+            else:
+                mask = None
             x = self.embed(codes)
             # apply position encodings
             x = self.pos_encode(visits, x)
             x = x + self.age_embed(ages)
             for layer in self._layers:
-                x = layer(x)
+                x = layer(x, mask)
 
             x = self._norm(x)
             x = x.max(dim=1)[0]
@@ -146,7 +153,7 @@ class DecoderLayer(torch.nn.Module):
     def __init__(self, size, n_heads, dropout):
 
         super().__init__()
-        self.self_attn = torch.nn.MultiheadAttention(size, n_heads)
+        self.self_attn = torch.nn.MultiheadAttention(size, n_heads, batch_first=True)
         self.norm1 = torch.nn.LayerNorm(size)
         self.norm2 = torch.nn.LayerNorm(size)
         self.dropout1 = torch.nn.Dropout(dropout)
@@ -159,8 +166,8 @@ class DecoderLayer(torch.nn.Module):
             torch.nn.Linear(size * 4, size),
         )
 
-    def forward(self, x):
-        attn = self.self_attn(x, x, x, need_weights=False)[0]
+    def forward(self, x, mask=None):
+        attn = self.self_attn(x, x, x, need_weights=False, attn_mask=mask)[0]
         x = x + self.dropout1(attn)
         x = self.norm1(x)
         fedfwd = self.ff(x)

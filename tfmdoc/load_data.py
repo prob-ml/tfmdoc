@@ -1,4 +1,5 @@
 import logging
+import random
 
 import h5py
 import numpy as np
@@ -14,30 +15,21 @@ class ClaimsDataset(Dataset):
     def __init__(
         self,
         preprocess_dir,
-        bag_of_words=False,
-        shuffle=False,
-        synth_labels=None,
         filename="preprocessed",
         age_quantum=0,
     ):
-        """Object containing features and labeling for each patient
+        """Object containing features and labeling for each patienxs[t
             in the processed data set.
 
         Args:
             preprocess_dir (string): Path to directory containing
                 hdf5 outputs from preprocessing
-            bag_of_words (bool, optional): If true, transform patient features
-                (e.g. medical history) into an unordered array of counts of all
-                possible codes. If false, return an encoded
-                sequence (for the Transformer model).
         """  # noqa: RST301
         self.file = h5py.File(preprocess_dir + filename + ".hdf5", "r")
         # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(self.file["offsets"]))
         # flat file containing all records, concatenated
         self.records = np.array(self.file["tokens"])
-        if not bag_of_words:
-            self.records = torch.from_numpy(self.records)
         # array of all codes indicating numerical encoding
         self.code_lookup = np.array(self.file["diag_code_lookup"])
         # array of all patient IDs
@@ -46,12 +38,7 @@ class ClaimsDataset(Dataset):
         self.ages = torch.from_numpy(np.array(self.file["ages"]))
         self.ages = torch.clamp(self.ages, max=99)
         self._length = self.ids.shape[0]
-        self._shuffle = shuffle
         # array of binary labels (is a patient a case or control?)
-        if synth_labels:
-            self.labels = torch.load(preprocess_dir + synth_labels).long()
-        else:
-            self.labels = torch.from_numpy(np.array(self.file["labels"])).long()
         demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
         demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
@@ -59,9 +46,9 @@ class ClaimsDataset(Dataset):
         # first column is binary (sex) and second column is
         # normalized age at time of last record
         self.demo = torch.from_numpy(demog).float()
-        self._bow = bag_of_words
         # bin ages to nearest multiple of q
         self._age_q = age_quantum
+        self.mask = True
 
     def __len__(self):
         # sufficient to return the number of patients
@@ -82,13 +69,53 @@ class ClaimsDataset(Dataset):
         ages = self.ages[start:stop].int()
         if self._age_q:
             ages = (ages / self._age_q).round() * self._age_q
-        if self._shuffle:
-            reindex = torch.randperm(patient_records.shape[0])
-            patient_records = patient_records[reindex]
+        labels = []
+        if self.mask:
+            for i in range(len(patient_records)):
+                prob = random.random()
+                if prob < 0.15:
+                    prob /= 0.15
+                    if prob < 0.8:
+                        # mask out token
+                        patient_records[i] = 1
+                    elif prob < 0.9:
+                        # replace with random token
+                        patient_records[i] = random.randrange(self.code_lookup.shape[0])
+                    # keep the same
+                    labels.append(patient_records[i])
+                else:
+                    labels.append(0)
+
+            patient_records = torch.tensor(patient_records)
+            labels = torch.tensor(labels)
+
+        # return array of diag codes and patient labels
+        return ages, visits, self.demo[index], patient_records, labels
+
+
+class DiagnosisDataset(ClaimsDataset):
+    def __init__(
+        self,
+        preprocess_dir,
+        bag_of_words=False,
+        synth_labels=None,
+        filename="preprocessed",
+    ):
+        super().__init__(preprocess_dir, filename)
+        self._bow = bag_of_words
+        if not bag_of_words:
+            self.records = torch.from_numpy(self.records)
+        if synth_labels:
+            self.labels = torch.load(preprocess_dir + synth_labels).long()
+        else:
+            self.labels = torch.from_numpy(np.array(self.file["labels"])).long()
+        self.mask = False
+
+    def __getitem__(self, index):
+        ages, visits, self.demo[index], patient_records, _ = super().__getitem__(index)
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
             ages = pad_bincount(ages, 100)
-        # return array of diag codes and patient labels
         return ages, visits, self.demo[index], patient_records, self.labels[index]
 
 
@@ -97,14 +124,14 @@ class EarlyDetectionDataset(ClaimsDataset):
         self,
         preprocess_dir,
         bag_of_words=False,
-        shuffle=False,
-        synth_labels=None,
         filename="preprocessed",
         late_cutoff=30,
         early_cutoff=90,
     ):
-        super().__init__(preprocess_dir, bag_of_words, shuffle, synth_labels, filename)
-        self.labels = None
+        super().__init__(preprocess_dir, filename)
+        self._bow = bag_of_words
+        if not bag_of_words:
+            self.records = torch.from_numpy(self.records)
         self.diagnosed_dates = np.array(self.file["diagnosed_dates"])
         self.dates = np.array(self.file["dates"])
         self.late_cutoff = late_cutoff
@@ -182,14 +209,17 @@ class EarlyDetectionDataset(ClaimsDataset):
 # HELPERS
 
 
-def padded_collate(batch, pad=True, early_detection=False):
-    if early_detection:
+def padded_collate(batch, pad=True, mode="pretraining"):
+    if mode == "early_detection":
         early, late = zip(*batch)
         ts, vs, ws, xs, ys = zip(*(early + late))
         ys = torch.tensor(ys)
     else:
         ts, vs, ws, xs, ys = zip(*batch)
-        ys = torch.stack(ys)
+        if mode == "diagnosis":
+            ys = torch.stack(ys)
+        elif mode == "pretraining":
+            ys = pad_sequence(ys, batch_first=True, padding_value=0)
     ws = torch.stack(ws)
     if pad:
         ts = pad_sequence(ts, batch_first=True, padding_value=0)
@@ -232,7 +262,7 @@ def build_loaders(
     batch_size,
     save_test_index,
     random_seed,
-    early_detection,
+    mode,
 ):
     # create dataloaders for training, test, and (optionally)
     # check whether to create validation set
@@ -244,10 +274,10 @@ def build_loaders(
     subsets = random_split(dataset, lengths, torch.Generator().manual_seed(random_seed))
     loaders = {}
 
-    collate_fn = lambda x: padded_collate(x, pad, early_detection)
+    collate_fn = lambda x: padded_collate(x, pad, mode)
 
     for key, subset in zip(keys, subsets):
-        if key == "test" or early_detection:
+        if key == "test" or mode != "diagnosis":
             sampler = None
             # save index of test samples for post hoc analysis
             if save_test_index:

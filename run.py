@@ -46,7 +46,19 @@ def main(cfg=None):
         pipeline.run()
         return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
-    if cfg.preprocess.early_detection:
+    if cfg.preprocess.mode == "pretraining":
+        dataset = ld.ClaimsDataset(
+            preprocess_dir,
+            filename=cfg.preprocess.filename,
+        )
+    elif cfg.preprocess.mode == "diagnsosis":
+        dataset = ld.DiagnosisDataset(
+            preprocess_dir,
+            bag_of_words=(not cfg.model.transformer),
+            synth_labels=cfg.train.synth_labels,
+            filename=cfg.preprocess.filename,
+        )
+    elif cfg.preprocess.mode == "early_detection":
         dataset = ld.EarlyDetectionDataset(
             preprocess_dir,
             bag_of_words=(not cfg.model.transformer),
@@ -55,14 +67,6 @@ def main(cfg=None):
             filename=cfg.preprocess.filename,
             late_cutoff=cfg.preprocess.prediction_window,
             early_cutoff=cfg.preprocess.early_detection,
-        )
-    else:
-        dataset = ld.ClaimsDataset(
-            preprocess_dir,
-            bag_of_words=(not cfg.model.transformer),
-            shuffle=cfg.train.shuffle,
-            synth_labels=cfg.train.synth_labels,
-            filename=cfg.preprocess.filename,
         )
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = int(cfg.train.val_frac * len(dataset))
@@ -74,11 +78,12 @@ def main(cfg=None):
         batch_size=cfg.train.batch_size,
         save_test_index=cfg.train.save_prediction,
         random_seed=cfg.train.random_seed,
-        early_detection=bool(cfg.preprocess.early_detection),
+        mode=cfg.preprocess.mode,
     )
     mapping = dataset.code_lookup
     # initialize tfmd model from config settings
-    tfmd = instantiate(cfg.model, n_tokens=mapping.shape[0])
+    mask = cfg.preprocess.mode == "pretraining"
+    tfmd = instantiate(cfg.model, mask=mask, n_tokens=mapping.shape[0])
     # ensure model with least validation loss is used for testing
     if val_size:
         callbacks = [ModelCheckpoint(monitor="val_loss")]

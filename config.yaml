@@ -3,7 +3,6 @@ model:
   d_model: 32
   n_blocks: 4
   n_heads: 8
-  max_len: 512
   dropout: 0.1
   d_ff: 8
   transformer: True

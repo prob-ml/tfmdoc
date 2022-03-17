@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "~3.8"
-torch = {url = "https://download.pytorch.org/whl/cu111/torch-1.8.1%2Bcu111-cp38-cp38-linux_x86_64.whl"}
+torch = "~1.11"
 scikit-learn = "^0.24.1"
 jupyter = "^1.0.0"
 pytorch-lightning = "^1.1.5"
@@ -32,6 +32,8 @@ jedi = "^0.17.2"
 wemake-python-styleguide = "^0.15.1"
 sas7bdat = "^2.2.3"
 jupyterlab = "^3.0.14"
+bandit = "1.7.2"
+
 
 [tool.poetry.scripts]
 tfmdoc = "tfmdoc.main:main"
