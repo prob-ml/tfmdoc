@@ -1,2 +1,2 @@
-from .load_data import ClaimsDataset
+from .datasets import ClaimsDataset
 from .model import Tfmd

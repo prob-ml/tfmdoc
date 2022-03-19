@@ -126,3 +126,6 @@ ignore =
 
     # five isn't too many elements to unpack
     WPS236
+
+    # overly prescriptive
+    WPS518

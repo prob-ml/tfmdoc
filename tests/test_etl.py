@@ -2,7 +2,7 @@ import os
 
 from hydra import compose, initialize
 
-from tfmdoc import load_data
+from tfmdoc import datasets
 from tfmdoc.preprocess import ClaimsPipeline, DiagnosisPipeline
 
 
@@ -48,7 +48,7 @@ def test_diag_pipeline():
         )
         cpl.run()
         preprocess_dir = "tests/test_data/test_pipeline/"
-        torch_dataset = load_data.DiagnosisDataset(preprocess_dir)
+        torch_dataset = datasets.DiagnosisDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
         t, v, w, x, y = torch_dataset[7]
         assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
@@ -87,7 +87,7 @@ def test_early_etl():
         cpl.run()
 
         preprocess_dir = "tests/test_data/test_lightning/"
-        dataset = load_data.EarlyDetectionDataset(
+        dataset = datasets.EarlyDetectionDataset(
             preprocess_dir, late_cutoff=10, early_cutoff=30
         )
         assert len(dataset)

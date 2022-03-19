@@ -5,7 +5,8 @@ from hydra.utils import instantiate
 from matplotlib import pyplot as plt
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from tfmdoc import load_data as ld
+from tfmdoc import datasets as ds
+from tfmdoc.loader import build_loaders
 from tfmdoc.preprocess import ClaimsPipeline, DiagnosisPipeline
 
 
@@ -47,19 +48,19 @@ def main(cfg=None):
         return
     preprocess_dir = cfg.preprocess.data_dir + "preprocessed_files/"
     if cfg.preprocess.mode == "pretraining":
-        dataset = ld.ClaimsDataset(
+        dataset = ds.ClaimsDataset(
             preprocess_dir,
             filename=cfg.preprocess.filename,
         )
-    elif cfg.preprocess.mode == "diagnsosis":
-        dataset = ld.DiagnosisDataset(
+    elif cfg.preprocess.mode == "diagnosis":
+        dataset = ds.DiagnosisDataset(
             preprocess_dir,
             bag_of_words=(not cfg.model.transformer),
             synth_labels=cfg.train.synth_labels,
             filename=cfg.preprocess.filename,
         )
     elif cfg.preprocess.mode == "early_detection":
-        dataset = ld.EarlyDetectionDataset(
+        dataset = ds.EarlyDetectionDataset(
             preprocess_dir,
             bag_of_words=(not cfg.model.transformer),
             shuffle=cfg.train.shuffle,
@@ -71,7 +72,7 @@ def main(cfg=None):
     train_size = int(cfg.train.train_frac * len(dataset))
     val_size = int(cfg.train.val_frac * len(dataset))
     test_size = len(dataset) - train_size - val_size
-    loaders = ld.build_loaders(
+    loaders = build_loaders(
         dataset,
         (train_size, val_size, test_size),
         pad=cfg.model.transformer,

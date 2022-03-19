@@ -19,7 +19,7 @@ class Tfmd(pl.LightningModule):
         transformer,
         d_bow,
         lr,
-        mask,
+        mask=False,
     ):
         """Deep learning model for early detection of disease based on
             health insurance claims data. This model makes use of both
