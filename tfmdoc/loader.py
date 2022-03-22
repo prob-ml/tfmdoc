@@ -15,9 +15,9 @@ def padded_collate(batch, pad=True, mode="pretraining"):
         ts, vs, ws, xs, ys = zip(*batch)
         if mode == "diagnosis":
             ys = torch.stack(ys)
+            ws = torch.stack(ws)
         elif mode == "pretraining":
             ys = pad_sequence(ys, batch_first=True, padding_value=0)
-    ws = torch.stack(ws)
     if pad:
         ts = pad_sequence(ts, batch_first=True, padding_value=0)
         vs = pad_sequence(vs, batch_first=True, padding_value=0)

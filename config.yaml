@@ -1,14 +1,18 @@
-model:
-  _target_: tfmdoc.Tfmd
+bert: &bert
+  _target_: tfmdoc.BERT
   d_model: 32
   n_blocks: 4
   n_heads: 8
   dropout: 0.1
-  d_ff: 8
-  transformer: True
-  d_bow: []
+  d_ff: 32
   lr: 0.001
 
+
+model:
+  <<: *bert
+  _target_: tfmdoc.Tfmd
+  transformer: True
+  d_bow: []
 
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"

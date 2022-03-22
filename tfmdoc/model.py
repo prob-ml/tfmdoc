@@ -19,7 +19,6 @@ class Tfmd(pl.LightningModule):
         transformer,
         d_bow,
         lr,
-        mask=False,
     ):
         """Deep learning model for early detection of disease based on
             health insurance claims data. This model makes use of both
@@ -62,6 +61,7 @@ class Tfmd(pl.LightningModule):
             ]
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
+            # incorporate demographic info in a  layer
             self._final = Linear(d_model + 2, d_ff)
         else:
             d_bow.append(d_model)
@@ -69,29 +69,22 @@ class Tfmd(pl.LightningModule):
             self.dense = torch.nn.Sequential(*bow_layers)
             self._final = Linear(d_bow[-1] + 2, d_ff)
         self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
-        # add two to input dim for demographic data (sex, age)
         self._to_scores = Linear(d_ff, 2)
-        self._loss_fn = torch.nn.CrossEntropyLoss()
+        self._loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
         self._accuracy = torchmetrics.Accuracy()
         self._val_auroc = torchmetrics.AUROC(compute_on_step=False)
         self._test_auroc = torchmetrics.AUROC(compute_on_step=False)
         self._n_heads = n_heads
-        self._mask = mask
 
     def forward(self, ages, visits, demo, codes):
         # embed codes into dimension of model
         # for continuous representation
         if self.hparams.transformer:
-            if self._mask:
-                mask = (codes > 0).unsqueeze(1).repeat(1, codes.size(1), 1)
-                # very helpful documentation! (not)
-                mask = mask.repeat_interleave(repeats=self._n_head, dim=0)
-            else:
-                mask = None
             x = self.embed(codes)
             # apply position encodings
             x = self.pos_encode(visits, x)
             x = x + self.age_embed(ages)
+            mask = None
             for layer in self._layers:
                 x = layer(x, mask)
 

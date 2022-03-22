@@ -82,9 +82,10 @@ def main(cfg=None):
         mode=cfg.preprocess.mode,
     )
     mapping = dataset.code_lookup
-    # initialize tfmd model from config settings
-    mask = cfg.preprocess.mode == "pretraining"
-    tfmd = instantiate(cfg.model, mask=mask, n_tokens=mapping.shape[0])
+    if cfg.preprocess.mode == "pretraining":
+        model = instantiate(cfg.bert, n_tokens=mapping.shape[0])
+    else:
+        model = instantiate(cfg.model, n_tokens=mapping.shape[0])
     # ensure model with least validation loss is used for testing
     if val_size:
         callbacks = [ModelCheckpoint(monitor="val_loss")]
@@ -97,13 +98,13 @@ def main(cfg=None):
         callbacks=callbacks,
     )
     # train and validate
-    trainer.fit(tfmd, loaders["train"], loaders.get("val"))
+    trainer.fit(model, loaders["train"], loaders.get("val"))
     # test model
     trainer.test(test_dataloaders=loaders["test"], ckpt_path="best")
-    diagnostic_plot(tfmd, trainer)
+    diagnostic_plot(model, trainer)
     if cfg.train.save_prediction:
-        torch.save(tfmd.results[0], "test_predictions.pt")
-        torch.save(tfmd.results[1], "test_targets.pt")
+        torch.save(model.results[0], "test_predictions.pt")
+        torch.save(model.results[1], "test_targets.pt")
 
 
 def diagnostic_plot(model, trainer):

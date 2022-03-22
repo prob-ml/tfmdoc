@@ -36,14 +36,6 @@ class ClaimsDataset(Dataset):
         self.ages = torch.from_numpy(np.array(self.file["ages"]))
         self.ages = torch.clamp(self.ages, max=99)
         self._length = self.ids.shape[0]
-        # array of binary labels (is a patient a case or control?)
-        demog = np.array(self.file["demo"])
-        demog[:, 0] = np.nan_to_num(demog[:, 0])
-        demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
-        # array of patient demographic data
-        # first column is binary (sex) and second column is
-        # normalized age at time of last record
-        self.demo = torch.from_numpy(demog).float()
         # bin ages to nearest multiple of q
         self._age_q = age_quantum
         self.mask = True
@@ -76,7 +68,7 @@ class ClaimsDataset(Dataset):
             labels = torch.tensor(labels)
 
         # return array of diag codes and patient labels
-        return ages, visits, self.demo[index], patient_records, labels
+        return ages, visits, None, patient_records, labels
 
 
 class DiagnosisDataset(ClaimsDataset):
@@ -88,6 +80,14 @@ class DiagnosisDataset(ClaimsDataset):
         filename="preprocessed",
     ):
         super().__init__(preprocess_dir, filename)
+        # array of binary labels (is a patient a case or control?)
+        demog = np.array(self.file["demo"])
+        demog[:, 0] = np.nan_to_num(demog[:, 0])
+        demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
+        # array of patient demographic data
+        # first column is binary (sex) and second column is
+        # normalized age at time of last record
+        self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
         if not bag_of_words:
             self.records = torch.from_numpy(self.records)
@@ -98,7 +98,7 @@ class DiagnosisDataset(ClaimsDataset):
         self.mask = False
 
     def __getitem__(self, index):
-        ages, visits, self.demo[index], patient_records, _ = super().__getitem__(index)
+        ages, visits, _, patient_records, _ = super().__getitem__(index)
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
             ages = pad_bincount(ages, 100)
@@ -115,6 +115,14 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_cutoff=90,
     ):
         super().__init__(preprocess_dir, filename)
+        # array of binary labels (is a patient a case or control?)
+        demog = np.array(self.file["demo"])
+        demog[:, 0] = np.nan_to_num(demog[:, 0])
+        demog[:, 0] = (demog[:, 0] - demog[:, 0].mean()) / demog[:, 0].std()
+        # array of patient demographic data
+        # first column is binary (sex) and second column is
+        # normalized age at time of last record
+        self.demo = torch.from_numpy(demog).float()
         self._bow = bag_of_words
         if not bag_of_words:
             self.records = torch.from_numpy(self.records)
@@ -206,6 +214,7 @@ def random_mask(patient_records, labels, n_tokens):
         prob = random.random()
         if prob < 0.15:
             prob /= 0.15
+            labels.append(patient_records[i])
             if prob < 0.8:
                 # mask out token
                 patient_records[i] = 1
@@ -213,7 +222,6 @@ def random_mask(patient_records, labels, n_tokens):
                 # replace with random token
                 patient_records[i] = random.randrange(n_tokens)
             # keep the same
-            labels.append(patient_records[i])
         else:
             labels.append(0)
 
