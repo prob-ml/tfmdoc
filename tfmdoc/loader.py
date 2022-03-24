@@ -48,7 +48,6 @@ def build_loaders(
     lengths,
     pad,
     batch_size,
-    save_test_index,
     random_seed,
     mode,
 ):
@@ -68,8 +67,6 @@ def build_loaders(
         if key == "test" or mode != "diagnosis":
             sampler = None
             # save index of test samples for post hoc analysis
-            if save_test_index:
-                torch.save(torch.tensor(subset.indices), "test_index.pt")
         else:
             sampler = balanced_sampler(subset.indices, dataset.labels)
         loaders[key] = DataLoader(
