@@ -3,7 +3,6 @@ import math
 import pytorch_lightning as pl
 import torch
 from torch.nn import Linear
-from torch.nn.functional import softmax
 
 
 class BERT(pl.LightningModule):
@@ -14,7 +13,6 @@ class BERT(pl.LightningModule):
         n_blocks,
         n_heads,
         dropout,
-        d_ff,
         lr,
     ):
         super().__init__()
@@ -37,10 +35,8 @@ class BERT(pl.LightningModule):
         ]
         self._norm = torch.nn.LayerNorm(d_model)
         self._layers = torch.nn.Sequential(*blocks)
-        # incorporate demographic info in a  layer
-        self._final = Linear(d_model + 2, d_ff)
-        self._to_scores = Linear(d_ff, n_tokens)
-        self._loss_fn = torch.nn.CrossEntropyLoss()
+        self._to_scores = Linear(d_model, n_tokens)
+        self._loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
 
         self._n_heads = n_heads
 
@@ -77,18 +73,6 @@ class BERT(pl.LightningModule):
         self.log("val_loss", loss)
 
         return loss
-
-    def test_step(self, batch, batch_idx):
-        t, v, _, x, y = batch
-        y_hat = self(t, v, x)
-        probas = softmax(y_hat, dim=1)[:, 1]
-        return probas, y
-
-    def test_epoch_end(self, outputs):
-        probas, targets = zip(*outputs)
-        probas = torch.cat(probas)
-        targets = torch.cat(targets)
-        self.results = (probas, targets)
 
     def configure_optimizers(self):
         return torch.optim.Adam(

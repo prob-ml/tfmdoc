@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from tfmdoc import datasets as ds
-from tfmdoc.loader import build_loaders
+from tfmdoc.loader import build_loaders, calc_sizes
 from tfmdoc.preprocess import ClaimsPipeline, DiagnosisPipeline
 
 
@@ -69,12 +69,10 @@ def main(cfg=None):
             late_cutoff=cfg.preprocess.prediction_window,
             early_cutoff=cfg.preprocess.early_detection,
         )
-    train_size = int(cfg.train.train_frac * len(dataset))
-    val_size = int(cfg.train.val_frac * len(dataset))
-    test_size = len(dataset) - train_size - val_size
+    sizes = calc_sizes(cfg.train.train_frac, cfg.train.val_frac, len(dataset))
     loaders = build_loaders(
         dataset,
-        (train_size, val_size, test_size),
+        sizes,
         pad=cfg.model.transformer,
         batch_size=cfg.train.batch_size,
         save_test_index=cfg.train.save_prediction,
@@ -86,11 +84,7 @@ def main(cfg=None):
         model = instantiate(cfg.bert, n_tokens=mapping.shape[0])
     else:
         model = instantiate(cfg.model, n_tokens=mapping.shape[0])
-    # ensure model with least validation loss is used for testing
-    if val_size:
-        callbacks = [ModelCheckpoint(monitor="val_loss")]
-    else:
-        callbacks = None
+    callbacks = [ModelCheckpoint(monitor="val_loss")]
     trainer = pl.Trainer(
         gpus=cfg.train.gpus,
         max_epochs=cfg.train.max_epochs,
@@ -100,11 +94,12 @@ def main(cfg=None):
     # train and validate
     trainer.fit(model, loaders["train"], loaders.get("val"))
     # test model
-    trainer.test(test_dataloaders=loaders["test"], ckpt_path="best")
-    diagnostic_plot(model, trainer)
-    if cfg.train.save_prediction:
-        torch.save(model.results[0], "test_predictions.pt")
-        torch.save(model.results[1], "test_targets.pt")
+    if sizes[2]:
+        trainer.test(test_dataloaders=loaders["test"], ckpt_path="best")
+        diagnostic_plot(model, trainer)
+        if cfg.train.save_prediction:
+            torch.save(model.results[0], "test_predictions.pt")
+            torch.save(model.results[1], "test_targets.pt")
 
 
 def diagnostic_plot(model, trainer):

@@ -70,7 +70,7 @@ class Tfmd(pl.LightningModule):
             self._final = Linear(d_bow[-1] + 2, d_ff)
         self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
         self._to_scores = Linear(d_ff, 2)
-        self._loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
+        self._loss_fn = torch.nn.CrossEntropyLoss()
         self._accuracy = torchmetrics.Accuracy()
         self._val_auroc = torchmetrics.AUROC(compute_on_step=False)
         self._test_auroc = torchmetrics.AUROC(compute_on_step=False)

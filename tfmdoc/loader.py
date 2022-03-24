@@ -52,13 +52,13 @@ def build_loaders(
     random_seed,
     mode,
 ):
-    # create dataloaders for training, test, and (optionally)
-    # check whether to create validation set
-    if lengths[1] > 0:
+    # create dataloaders for training, validation, and (optionally)
+    # check whether to create a test set
+    if lengths[2] > 0:
         keys = ("train", "val", "test")
     else:
-        keys = ("train", "test")
-        lengths = (lengths[0], lengths[2])
+        keys = ("train", "val")
+        lengths = (lengths[0], lengths[1])
     subsets = random_split(dataset, lengths, torch.Generator().manual_seed(random_seed))
     loaders = {}
 
@@ -79,3 +79,14 @@ def build_loaders(
             sampler=sampler,
         )
     return loaders
+
+
+def calc_sizes(train_frac, val_frac, n):
+    train_size = int(train_frac * n)
+    if train_frac + val_frac == 1:
+        val_size = n - train_size
+        test_size = 0
+    else:
+        val_size = int(val_frac * n)
+        test_size = n - train_size - val_size
+    return train_size, val_size, test_size

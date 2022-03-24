@@ -4,7 +4,6 @@ bert: &bert
   n_blocks: 4
   n_heads: 8
   dropout: 0.1
-  d_ff: 32
   lr: 0.001
 
 
@@ -12,6 +11,7 @@ model:
   <<: *bert
   _target_: tfmdoc.Tfmd
   transformer: True
+  d_ff: 32
   d_bow: []
 
 preprocess:
@@ -27,7 +27,7 @@ preprocess:
   do: False
   split_codes: True
   prediction_window: 30
-  disease: "ald"
+  disease: "NA"
   mode: "pretraining"
   early_detection: 0
 
@@ -77,3 +77,7 @@ pad:
 # best checkpoints:
 # transformer: outputs/2021-09-03/10-36-29/lightning_logs/version_0/checkpoints/epoch=9-step=38409.ckpt
 # bow: ?
+
+hydra:
+  sweep:
+    dir: multirun/${preprocess.mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}
