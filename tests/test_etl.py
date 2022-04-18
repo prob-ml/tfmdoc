@@ -72,7 +72,7 @@ def test_early_etl():
                 "preprocess.data_dir=tests/test_data/",
                 "preprocess.output_dir=tests/test_data/test_lightning/",
                 "preprocess.filename=preprocessed",
-                "preprocess.mode=early_detection",
+                "mode=early_detection",
             ],
         )
 
@@ -80,7 +80,7 @@ def test_early_etl():
             cfg.preprocess.data_dir,
             cfg.preprocess.output_dir,
             cfg.disease_codes.ald,
-            mode=cfg.preprocess.mode,
+            mode=cfg.mode,
             output_name=cfg.preprocess.filename,
             test=True,
         )

@@ -18,6 +18,8 @@ class Tfmd(pl.LightningModule):
         d_ff,
         transformer,
         d_bow,
+        d_demo,
+        batch_first,
         lr,
     ):
         """Deep learning model for early detection of disease based on
@@ -56,18 +58,20 @@ class Tfmd(pl.LightningModule):
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model)
             blocks = [
-                DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
+                DecoderLayer(
+                    d_model, n_heads=n_heads, dropout=dropout, batch_first=batch_first
+                )
                 for _ in range(n_blocks)
             ]
             self._norm = torch.nn.LayerNorm(d_model)
             self._layers = torch.nn.Sequential(*blocks)
             # incorporate demographic info in a  layer
-            self._final = Linear(d_model + 2, d_ff)
+            self._final = Linear(d_model + d_demo, d_ff)
         else:
             d_bow.append(d_model)
             bow_layers = make_bow_layers(n_tokens, d_bow, dropout=dropout)
             self.dense = torch.nn.Sequential(*bow_layers)
-            self._final = Linear(d_bow[-1] + 2, d_ff)
+            self._final = Linear(d_bow[-1] + d_demo, d_ff)
         self.pr_curve = torchmetrics.PrecisionRecallCurve(pos_label=1)
         self._to_scores = Linear(d_ff, 2)
         self._loss_fn = torch.nn.CrossEntropyLoss()
@@ -141,12 +145,21 @@ class Tfmd(pl.LightningModule):
             self.parameters(), lr=self.hparams.lr, weight_decay=1e-4
         )
 
+    def predict_step(self, batch, batch_ix):
+        # drop last element (true labels)
+        # if they are defined
+        batch = batch[:4]
+        y_hat = self(*batch)
+        return softmax(y_hat, dim=1)[:, 1]
+
 
 class DecoderLayer(torch.nn.Module):
-    def __init__(self, size, n_heads, dropout):
+    def __init__(self, size, n_heads, dropout, batch_first):
 
         super().__init__()
-        self.self_attn = torch.nn.MultiheadAttention(size, n_heads, batch_first=True)
+        self.self_attn = torch.nn.MultiheadAttention(
+            size, n_heads, batch_first=batch_first
+        )
         self.norm1 = torch.nn.LayerNorm(size)
         self.norm2 = torch.nn.LayerNorm(size)
         self.dropout1 = torch.nn.Dropout(dropout)

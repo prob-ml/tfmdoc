@@ -78,6 +78,7 @@ class DiagnosisDataset(ClaimsDataset):
         bag_of_words=False,
         synth_labels=None,
         filename="preprocessed",
+        shuffle=False,
     ):
         super().__init__(preprocess_dir, filename)
         # array of binary labels (is a patient a case or control?)
@@ -96,12 +97,16 @@ class DiagnosisDataset(ClaimsDataset):
         else:
             self.labels = torch.from_numpy(np.array(self.file["labels"])).long()
         self.mask = False
+        self._shuffle = shuffle
 
     def __getitem__(self, index):
         ages, visits, _, patient_records, _ = super().__getitem__(index)
         if self._bow:
             patient_records = pad_bincount(patient_records, self.code_lookup.shape)
             ages = pad_bincount(ages, 100)
+        if self._shuffle:
+            reindex = torch.randperm(patient_records.shape[0])
+            patient_records = patient_records[reindex]
         return ages, visits, self.demo[index], patient_records, self.labels[index]
 
 

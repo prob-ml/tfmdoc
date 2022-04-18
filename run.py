@@ -58,6 +58,7 @@ def main(cfg=None):
             preprocess_dir,
             bag_of_words=(not cfg.model.transformer),
             synth_labels=cfg_train.synth_labels,
+            shuffle=cfg_train.shuffle,
             filename=cfg.preprocess.filename,
         )
     elif cfg.mode == "early_detection":

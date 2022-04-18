@@ -13,6 +13,8 @@ model:
   transformer: True
   d_ff: 32
   d_bow: []
+  d_demo: 2
+  batch_first: True
 
 
 pretrain: &pretrain
@@ -51,7 +53,6 @@ preprocess:
   split_codes: True
   prediction_window: 30
   disease: "NA"
-  mode: "pretraining"
   early_detection: 0
 
 
@@ -91,4 +92,4 @@ pad:
 
 hydra:
   sweep:
-    dir: multirun/${preprocess.mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/${mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}

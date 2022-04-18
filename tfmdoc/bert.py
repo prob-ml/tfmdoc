@@ -84,7 +84,7 @@ class DecoderLayer(torch.nn.Module):
     def __init__(self, size, n_heads, dropout):
 
         super().__init__()
-        self.self_attn = torch.nn.MultiheadAttention(size, n_heads, batch_first=True)
+        self.self_attn = torch.nn.MultiheadAttention(size, n_heads)
         self.norm1 = torch.nn.LayerNorm(size)
         self.norm2 = torch.nn.LayerNorm(size)
         self.dropout1 = torch.nn.Dropout(dropout)

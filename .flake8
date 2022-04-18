@@ -128,4 +128,4 @@ ignore =
     WPS236
 
     # overly prescriptive
-    WPS518
+    WPS518, WPS214
