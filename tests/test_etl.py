@@ -54,7 +54,7 @@ def test_diag_pipeline():
         assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
         assert y.item() in {0, 1}
         assert w.shape[0] == 2
-        assert v.max().item() == 1
+        assert (v.sort(descending=True)[0] == v).all().item()
         assert t.shape[0] == x.shape[0]
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)

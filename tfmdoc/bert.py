@@ -29,12 +29,15 @@ class BERT(pl.LightningModule):
         )
         self.results = None
         self.pos_encode = PositionalEncoding(d_model=d_model)
-        blocks = [
-            DecoderLayer(d_model, n_heads=n_heads, dropout=dropout)
-            for _ in range(n_blocks)
-        ]
-        self._norm = torch.nn.LayerNorm(d_model)
-        self._layers = torch.nn.Sequential(*blocks)
+        encoder_layer = torch.nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=n_heads,
+            dropout=dropout,
+            batch_first=True,
+            dim_feedforward=d_model * 4,
+        )
+        norm = torch.nn.LayerNorm(d_model)
+        self._transformer = torch.nn.TransformerEncoder(encoder_layer, n_blocks, norm)
         self._to_scores = Linear(d_model, n_tokens)
         self._loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
 
@@ -46,15 +49,13 @@ class BERT(pl.LightningModule):
         mask = (codes < 1).unsqueeze(1).repeat(1, codes.size(1), 1)
         # very helpful documentation! (not)
         mask = mask.repeat_interleave(repeats=self._n_heads, dim=0)
+        pad_mask = codes == 0
         x = self.embed(codes)
         # apply position encodings
         x = self.pos_encode(visits, x)
         x = x + self.age_embed(ages)
         # wat happens if an entire batch is masked out??
-        for layer in self._layers:
-            x = layer(x, mask)
-
-        x = self._norm(x)
+        x = self._transformer(x, mask, pad_mask)
         # shape will be (n_batches, d_model)
         # final linear layer projects this down to (n_batches, n_classes
         return self._to_scores(x)
@@ -78,32 +79,6 @@ class BERT(pl.LightningModule):
         return torch.optim.Adam(
             self.parameters(), lr=self.hparams.lr, weight_decay=1e-4
         )
-
-
-class DecoderLayer(torch.nn.Module):
-    def __init__(self, size, n_heads, dropout):
-
-        super().__init__()
-        self.self_attn = torch.nn.MultiheadAttention(size, n_heads)
-        self.norm1 = torch.nn.LayerNorm(size)
-        self.norm2 = torch.nn.LayerNorm(size)
-        self.dropout1 = torch.nn.Dropout(dropout)
-        self.dropout2 = torch.nn.Dropout(dropout)
-
-        self.ff = torch.nn.Sequential(
-            torch.nn.Linear(size, size * 4),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(size * 4, size),
-        )
-
-    def forward(self, x, mask=None):
-        attn = self.self_attn(x, x, x, need_weights=False, attn_mask=mask)[0]
-        x = x + self.dropout1(attn)
-        x = self.norm1(x)
-        fedfwd = self.ff(x)
-        x = x + self.dropout2(fedfwd)
-        return self.norm2(x)
 
 
 class PositionalEncoding(torch.nn.Module):

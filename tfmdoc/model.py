@@ -57,15 +57,17 @@ class Tfmd(pl.LightningModule):
         self.results = None
         if transformer:
             self.pos_encode = PositionalEncoding(d_model=d_model)
-            blocks = [
-                DecoderLayer(
-                    d_model, n_heads=n_heads, dropout=dropout, batch_first=batch_first
-                )
-                for _ in range(n_blocks)
-            ]
-            self._norm = torch.nn.LayerNorm(d_model)
-            self._layers = torch.nn.Sequential(*blocks)
-            # incorporate demographic info in a  layer
+            encoder_layer = torch.nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=n_heads,
+                dropout=dropout,
+                batch_first=batch_first,
+                dim_feedforward=d_model * 4,
+            )
+            norm = torch.nn.LayerNorm(d_model)
+            self._transformer = torch.nn.TransformerEncoder(
+                encoder_layer, n_blocks, norm
+            )
             self._final = Linear(d_model + d_demo, d_ff)
         else:
             d_bow.append(d_model)
@@ -89,10 +91,8 @@ class Tfmd(pl.LightningModule):
             x = self.pos_encode(visits, x)
             x = x + self.age_embed(ages)
             mask = None
-            for layer in self._layers:
-                x = layer(x, mask)
-
-            x = self._norm(x)
+            pad_mask = codes == 0
+            x = self._transformer(x, mask, pad_mask)
             x = x.max(dim=1)[0]
             # shape will be (n_batches, d_model)
             # final linear layer projects this down to (n_batches, n_classes)
@@ -151,34 +151,6 @@ class Tfmd(pl.LightningModule):
         batch = batch[:4]
         y_hat = self(*batch)
         return softmax(y_hat, dim=1)[:, 1]
-
-
-class DecoderLayer(torch.nn.Module):
-    def __init__(self, size, n_heads, dropout, batch_first):
-
-        super().__init__()
-        self.self_attn = torch.nn.MultiheadAttention(
-            size, n_heads, batch_first=batch_first
-        )
-        self.norm1 = torch.nn.LayerNorm(size)
-        self.norm2 = torch.nn.LayerNorm(size)
-        self.dropout1 = torch.nn.Dropout(dropout)
-        self.dropout2 = torch.nn.Dropout(dropout)
-
-        self.ff = torch.nn.Sequential(
-            torch.nn.Linear(size, size * 4),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(size * 4, size),
-        )
-
-    def forward(self, x, mask=None):
-        attn = self.self_attn(x, x, x, need_weights=False, attn_mask=mask)[0]
-        x = x + self.dropout1(attn)
-        x = self.norm1(x)
-        fedfwd = self.ff(x)
-        x = x + self.dropout2(fedfwd)
-        return self.norm2(x)
 
 
 class PositionalEncoding(torch.nn.Module):
