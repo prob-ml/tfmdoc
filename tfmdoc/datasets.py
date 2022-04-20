@@ -13,8 +13,10 @@ class ClaimsDataset(Dataset):
     def __init__(
         self,
         preprocess_dir,
+        encoding_tag,
         filename="preprocessed",
         age_quantum=0,
+        encoding_threshold=80,
     ):
         """Object containing features and labeling for each patienxs[t
             in the processed data set.
@@ -27,7 +29,9 @@ class ClaimsDataset(Dataset):
         # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(self.file["offsets"]))
         # flat file containing all records, concatenated
-        self.records = np.array(self.file["tokens"])
+        self.records = self._encode_records(
+            preprocess_dir, encoding_tag, encoding_threshold
+        )
         # array of all codes indicating numerical encoding
         self.code_lookup = np.array(self.file["diag_code_lookup"])
         # array of all patient IDs
@@ -70,17 +74,33 @@ class ClaimsDataset(Dataset):
         # return array of diag codes and patient labels
         return ages, visits, None, patient_records, labels
 
+    def _encode_records(self, preprocess_dir, tag, threshold):
+        records = np.array(self.file["records"])
+        unique = np.load(
+            preprocess_dir + f"code_counts/{tag}_unique.npy", allow_pickle=True
+        )
+        counts = np.load(
+            preprocess_dir + f"code_counts/{tag}_counts.npy",
+        )
+        codes = unique[counts >= threshold]
+        codes = np.insert(codes, 0, ["pad", "mask", "unk"])
+        code_dict = {code: i for i, code in enumerate(codes)}
+        encoder = lambda x: code_dict.get(x, 2)
+        return np.vectorize(encoder)(records)
+
 
 class DiagnosisDataset(ClaimsDataset):
     def __init__(
         self,
         preprocess_dir,
+        encoding_tag,
         bag_of_words=False,
         synth_labels=None,
         filename="preprocessed",
         shuffle=False,
+        encoding_threshold=80,
     ):
-        super().__init__(preprocess_dir, filename)
+        super().__init__(preprocess_dir, filename, encoding_tag, encoding_threshold)
         # array of binary labels (is a patient a case or control?)
         demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
@@ -114,12 +134,14 @@ class EarlyDetectionDataset(ClaimsDataset):
     def __init__(
         self,
         preprocess_dir,
+        encoding_tag,
         bag_of_words=False,
         filename="preprocessed",
         late_cutoff=30,
         early_cutoff=90,
+        encoding_threshold=80,
     ):
-        super().__init__(preprocess_dir, filename)
+        super().__init__(preprocess_dir, filename, encoding_tag, encoding_threshold)
         # array of binary labels (is a patient a case or control?)
         demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])

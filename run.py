@@ -27,6 +27,7 @@ def main(cfg=None):
                 n=cfg.preprocess.n,
                 split_codes=cfg.preprocess.split_codes,
                 output_name=cfg.preprocess.filename,
+                save_counts=cfg.preprocess.save_counts,
             )
         else:
             pipeline = DiagnosisPipeline(
@@ -51,6 +52,8 @@ def main(cfg=None):
         dataset = ds.ClaimsDataset(
             preprocess_dir,
             filename=cfg.preprocess.filename,
+            encoding_tag=cfg.encoding.tag,
+            encoding_threshold=cfg.encoding.threshold,
         )
     elif cfg.mode == "diagnosis":
         cfg_train = cfg.train
@@ -60,6 +63,8 @@ def main(cfg=None):
             synth_labels=cfg_train.synth_labels,
             shuffle=cfg_train.shuffle,
             filename=cfg.preprocess.filename,
+            encoding_tag=cfg.encoding.tag,
+            encoding_threshold=cfg.encoding.threshold,
         )
     elif cfg.mode == "early_detection":
         dataset = ds.EarlyDetectionDataset(
@@ -70,6 +75,8 @@ def main(cfg=None):
             filename=cfg.preprocess.filename,
             late_cutoff=cfg.preprocess.prediction_window,
             early_cutoff=cfg.preprocess.early_detection,
+            encoding_tag=cfg.encoding.tag,
+            encoding_threshold=cfg.encoding.threshold,
         )
         cfg_train = cfg.train
     sizes = calc_sizes(cfg_train.train_frac, cfg_train.val_frac, len(dataset))

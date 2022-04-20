@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import uuid
 
 import h5py
 import numpy as np
@@ -21,7 +22,8 @@ class ClaimsPipeline:
         n=None,
         test=False,
         split_codes=True,
-        output_name="test_bert_etl",
+        output_name="test_etl",
+        save_counts=False,
     ):
         """ETL Pipeline for Health Insurance Claims data. Combines diagnoses
         and lab results into an encoded record for each patient.
@@ -42,9 +44,7 @@ class ClaimsPipeline:
         self.patient_data = None
         self._output_name = output_name
         if split_codes:
-            self._splitter = (
-                lambda x: (x[:5], x[:6], x.rstrip()) if pd.notnull(x) else x
-            )
+            self._splitter = lambda x: (x[:6], x.rstrip()) if pd.notnull(x) else x
         else:
             self._splitter = lambda x: x
         self._output_dir = output_dir
@@ -65,16 +65,18 @@ class ClaimsPipeline:
             # pharm data
             self._parquets += [f"pharm_{yyyy}.parquet" for yyyy in range(*year_range)]
             self._parq_cols += [
-                ("Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm") for _ in range(*year_range)
+                ("Patid", "Fill_Dt", "Ahfsclss") for _ in range(*year_range)
             ]
         self._test = test
         self.datasets = [
             ("offsets", np.dtype("uint16")),
             ("records", h5py.special_dtype(vlen=str)),
-            ("ids", np.dtype("float64")),
+            ("ids", np.dtype("float32")),
             ("visits", np.dtype("uint8")),
             ("ages", np.dtype("uint8")),
         ]
+        self.write_demo = False
+        self.save_counts = save_counts
 
     def run(self):
         log.info("Began pipeline. Reading patient data...")
@@ -91,21 +93,16 @@ class ClaimsPipeline:
             for name, dtype in self.datasets:
                 f.create_dataset(name, (0,), dtype=dtype, maxshape=(None,))
 
-            f.create_dataset(
-                "demo", (0, 2), dtype=np.dtype("float64"), maxshape=(None, 2)
-            )
+            if self.write_demo:
+                f.create_dataset(
+                    "demo", (0, 2), dtype=np.dtype("float64"), maxshape=(None, 2)
+                )
             self.process_chunks(f)
-
-            records = f["records"]
-            # assign each diag code a unique integer key
-            code_lookup, indexed_records = np.unique(records, return_inverse=True)
-            # make sure that zero does not map to a code
-            code_lookup = np.insert(code_lookup, 0, "pad")
-            code_lookup = np.insert(code_lookup, 1, "mask")
-            indexed_records += 2
-            f.create_dataset("tokens", data=indexed_records)
-            f.create_dataset("diag_code_lookup", data=code_lookup)
-
+            if self.save_counts:
+                unique, counts = np.unique(f["records"], return_counts=True)
+                tag = str(uuid.uuid4())[:3]
+                np.save(self._output_dir + f"code_counts/{tag}_unique", unique)
+                np.save(self._output_dir + f"code_counts/{tag}_counts", counts)
         log.info("Completed pipeline")
 
     def process_chunks(self, file):
@@ -192,17 +189,11 @@ class ClaimsPipeline:
         )
         last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
         last_date.name = "last_date"
-        patient_data = self.patient_data.join(last_date, on="Patid")
-        patient_data["latest_age"] = patient_data["last_date"] - patient_data["Yrdob"]
-        patient_data = patient_data.set_index("Patid")
-        patient_data["is_fem"] = (patient_data["Gdr_Cd"] == b"F").astype(int)
-        patient_data.drop(columns=["Yrdob", "last_date", "Gdr_Cd"], inplace=True)
         chunk_info = {}
         chunk_info["offsets"] = counts.to_numpy()
         chunk_info["records"] = chunk["diag"].to_numpy().astype(bytes)
         chunk_info["ids"] = counts.index
         chunk_info["visits"] = visits.to_numpy()
-        chunk_info["demo"] = patient_data.to_numpy()
         chunk_info["ages"] = (
             (chunk["Fst_Dt"] / 365.25 + 1960) - chunk["Yrdob"]
         ).astype(int)
@@ -269,6 +260,7 @@ class DiagnosisPipeline(ClaimsPipeline):
                 ("dates", np.dtype("uint16")),
             ]
         self._pad = pad
+        self.write_demo = True
 
     def diagnose(self, chunk):
         codes = [f"{code: <{self._pad}}".encode("utf-8") for code in self.disease_codes]
@@ -327,7 +319,7 @@ def sample_cases(labeled_ids, counts, chunk, patient_data, mode):
     visits = chunk.groupby("patid")["Fst_Dt"].transform(lambda x: pd.factorize(x)[0])
     last_date = (chunk.groupby("patid")["Fst_Dt"].last() / 365.25) + 1960
     last_date.name = "last_date"
-    patient_data = patient_data.join(last_date, on="Patid")
+    patient_data = patient_data.join(last_date, on="Patid", how="right")
 
     return collect_chunk_info(
         chunk, counts, labeled_ids, visits, patient_data, diag_dates, mode
@@ -374,13 +366,12 @@ def discretize_labs(chunk):
 
 
 def clean_pharm(chunk):
-    pharm = chunk[["Patid", "Fill_Dt", "Ahfsclss", "Brnd_Nm"]]
+    # six digit ahfsclss code. First two digits are a prefix
+    pharm = chunk[["Patid", "Fill_Dt", "Ahfsclss"]]
     pharm.dropna(subset=["Fill_Dt"], inplace=True)
     chunk.dropna(subset=["Fst_Dt"], inplace=True)
-    chunk.drop(columns=["Fill_Dt", "Ahfsclss", "Brnd_Nm"], inplace=True)
-    pharm = pharm.melt(id_vars=["Patid", "Fill_Dt"])
-    pharm = pharm.rename(
-        columns={"Fill_Dt": "Fst_Dt", "variable": "Icd_Flag", "value": "Diag"}
-    )
+    chunk.drop(columns=["Fill_Dt", "Ahfsclss"], inplace=True)
+    pharm = pharm.rename(columns={"Fill_Dt": "Fst_Dt", "Ahfsclss": "Diag"})
+    pharm["Icd_Flag"] = "rx "
     pharm["Icd_Flag"] = pharm["Icd_Flag"].str.encode("utf-8")
     return pd.concat([chunk, pharm])

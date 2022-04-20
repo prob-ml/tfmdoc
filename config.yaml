@@ -54,6 +54,11 @@ preprocess:
   prediction_window: 30
   disease: "NA"
   early_detection: 0
+  save_counts: False
+
+encoding:
+  tag: "f2d"
+  threshold: 80
 
 
 disease_codes:
