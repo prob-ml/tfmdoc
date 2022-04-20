@@ -88,11 +88,10 @@ def main(cfg=None):
         random_seed=cfg_train.random_seed,
         mode=cfg.mode,
     )
-    mapping = dataset.code_lookup
     if cfg.mode == "pretraining":
-        model = instantiate(cfg.bert, n_tokens=mapping.shape[0])
+        model = instantiate(cfg.bert, n_tokens=dataset.n_tokens)
     else:
-        model = instantiate(cfg.model, n_tokens=mapping.shape[0])
+        model = instantiate(cfg.model, n_tokens=dataset.n_tokens)
     callbacks = [ModelCheckpoint(monitor="val_loss")]
     trainer = pl.Trainer(
         gpus=cfg_train.gpus,

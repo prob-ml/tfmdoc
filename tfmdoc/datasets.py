@@ -29,11 +29,10 @@ class ClaimsDataset(Dataset):
         # indicates starting point of each patient's individual record
         self.offsets = np.cumsum(np.array(self.file["offsets"]))
         # flat file containing all records, concatenated
+        self.n_tokens = None
         self.records = self._encode_records(
             preprocess_dir, encoding_tag, encoding_threshold
         )
-        # array of all codes indicating numerical encoding
-        self.code_lookup = np.array(self.file["diag_code_lookup"])
         # array of all patient IDs
         self.ids = np.array(self.file["ids"])
         self.visits = torch.from_numpy(np.array(self.file["visits"]))
@@ -66,7 +65,7 @@ class ClaimsDataset(Dataset):
         labels = []
         if self.mask:
             patient_records, labels = random_mask(
-                patient_records, labels, self.code_lookup.shape[0]
+                patient_records, labels, self.n_tokens
             )
             patient_records = torch.tensor(patient_records)
             labels = torch.tensor(labels)
@@ -84,6 +83,7 @@ class ClaimsDataset(Dataset):
         )
         codes = unique[counts >= threshold]
         codes = np.insert(codes, 0, ["pad", "mask", "unk"])
+        self.n_tokens = len(codes)
         code_dict = {code: i for i, code in enumerate(codes)}
         encoder = lambda x: code_dict.get(x, 2)
         return np.vectorize(encoder)(records)
@@ -122,7 +122,7 @@ class DiagnosisDataset(ClaimsDataset):
     def __getitem__(self, index):
         ages, visits, _, patient_records, _ = super().__getitem__(index)
         if self._bow:
-            patient_records = pad_bincount(patient_records, self.code_lookup.shape)
+            patient_records = pad_bincount(patient_records, self.n_tokens)
             ages = pad_bincount(ages, 100)
         if self._shuffle:
             reindex = torch.randperm(patient_records.shape[0])
@@ -193,8 +193,8 @@ class EarlyDetectionDataset(ClaimsDataset):
             late_ages = (late_ages / self._age_q).round() * self._age_q
 
         if self._bow:
-            early_records = pad_bincount(early_records, self.code_lookup.shape)
-            late_records = pad_bincount(late_records, self.code_lookup.shape)
+            early_records = pad_bincount(early_records, self.n_tokens)
+            late_records = pad_bincount(late_records, self.n_tokens)
             early_ages = pad_bincount(early_ages, 100)
             late_ages = pad_bincount(late_ages, 100)
 
