@@ -1,2 +1,3 @@
-from .load_data import ClaimsDataset
+from .bert import BERT
+from .datasets import ClaimsDataset
 from .model import Tfmd

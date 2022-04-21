@@ -60,3 +60,12 @@ disable=
 
     # not super compatible with neural networks
     too-many-instance-attributes,
+
+    # sometimes this makes sense
+    consider-using-enumerate,
+
+    # not really compatible with inheritance
+    too-few-public-methods,
+
+    # too many false positives
+    duplicate-code,

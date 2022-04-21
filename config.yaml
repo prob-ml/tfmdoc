@@ -1,15 +1,43 @@
-model:
-  _target_: tfmdoc.Tfmd
+bert: &bert
+  _target_: tfmdoc.BERT
   d_model: 32
   n_blocks: 4
   n_heads: 8
-  max_len: 512
   dropout: 0.1
-  d_ff: 8
-  transformer: True
-  d_bow: []
   lr: 0.001
 
+
+model:
+  <<: *bert
+  _target_: tfmdoc.Tfmd
+  transformer: True
+  d_ff: 32
+  d_bow: []
+  d_demo: 2
+  bert: null
+
+
+pretrain: &pretrain
+  train_frac: 0.85
+  val_frac: 0.15
+  gpus:
+    - 6
+  batch_size: 32
+  max_epochs: 1
+  limit_train_batches: 1.0
+  random_seed: 42
+
+
+train:
+  <<: *pretrain
+  train_frac: 0.75
+  val_frac: 0.1
+  batch_size: 64
+  max_epochs: 5
+  shuffle: False
+  synth_labels: ""
+
+mode: pretraining
 
 preprocess:
   data_dir: "/nfs/turbo/lsa-regier/OPTUM2/"
@@ -24,21 +52,14 @@ preprocess:
   do: False
   split_codes: True
   prediction_window: 30
-  disease: "ald"
+  disease: "NA"
   early_detection: 0
+  save_counts: False
 
-train:
-  train_frac: 0.75
-  val_frac: 0.1
-  gpus:
-    - 6
-  batch_size: 64
-  max_epochs: 5
-  limit_train_batches: 1.0
-  save_prediction: False
-  shuffle: False
-  synth_labels: ""
-  random_seed: 42
+encoding:
+  tag: "f2d"
+  threshold: 80
+
 
 disease_codes:
   ald:
@@ -73,3 +94,7 @@ pad:
 # best checkpoints:
 # transformer: outputs/2021-09-03/10-36-29/lightning_logs/version_0/checkpoints/epoch=9-step=38409.ckpt
 # bow: ?
+
+hydra:
+  sweep:
+    dir: multirun/${mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}
