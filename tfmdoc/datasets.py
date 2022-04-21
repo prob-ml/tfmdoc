@@ -13,10 +13,10 @@ class ClaimsDataset(Dataset):
     def __init__(
         self,
         preprocess_dir,
-        encoding_tag,
+        encoding_tag=None,
         filename="preprocessed",
         age_quantum=0,
-        encoding_threshold=80,
+        encoding_threshold=0,
     ):
         """Object containing features and labeling for each patienxs[t
             in the processed data set.
@@ -75,12 +75,16 @@ class ClaimsDataset(Dataset):
 
     def _encode_records(self, preprocess_dir, tag, threshold):
         records = np.array(self.file["records"])
-        unique = np.load(
-            preprocess_dir + f"code_counts/{tag}_unique.npy", allow_pickle=True
-        )
-        counts = np.load(
-            preprocess_dir + f"code_counts/{tag}_counts.npy",
-        )
+        if tag is None:
+            unique, counts = np.unique(records, return_counts=True)
+        else:
+            unique = np.load(
+                preprocess_dir + f"code_counts/{tag}_unique.npy",
+                allow_pickle=True,
+            )
+            counts = np.load(
+                preprocess_dir + f"code_counts/{tag}_counts.npy",
+            )
         codes = unique[counts >= threshold]
         codes = np.insert(codes, 0, ["pad", "mask", "unk"])
         self.n_tokens = len(codes)
@@ -93,12 +97,12 @@ class DiagnosisDataset(ClaimsDataset):
     def __init__(
         self,
         preprocess_dir,
-        encoding_tag,
+        encoding_tag=None,
         bag_of_words=False,
         synth_labels=None,
         filename="preprocessed",
         shuffle=False,
-        encoding_threshold=80,
+        encoding_threshold=0,
     ):
         super().__init__(
             preprocess_dir,
@@ -139,12 +143,12 @@ class EarlyDetectionDataset(ClaimsDataset):
     def __init__(
         self,
         preprocess_dir,
-        encoding_tag,
+        encoding_tag=None,
         bag_of_words=False,
         filename="preprocessed",
         late_cutoff=30,
         early_cutoff=90,
-        encoding_threshold=80,
+        encoding_threshold=0,
     ):
         super().__init__(
             preprocess_dir,
