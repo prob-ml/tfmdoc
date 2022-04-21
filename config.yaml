@@ -14,7 +14,7 @@ model:
   d_ff: 32
   d_bow: []
   d_demo: 2
-  batch_first: True
+  bert: null
 
 
 pretrain: &pretrain

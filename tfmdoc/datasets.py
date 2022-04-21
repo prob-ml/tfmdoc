@@ -100,7 +100,12 @@ class DiagnosisDataset(ClaimsDataset):
         shuffle=False,
         encoding_threshold=80,
     ):
-        super().__init__(preprocess_dir, filename, encoding_tag, encoding_threshold)
+        super().__init__(
+            preprocess_dir,
+            encoding_tag,
+            filename,
+            encoding_threshold=encoding_threshold,
+        )
         # array of binary labels (is a patient a case or control?)
         demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
@@ -141,7 +146,12 @@ class EarlyDetectionDataset(ClaimsDataset):
         early_cutoff=90,
         encoding_threshold=80,
     ):
-        super().__init__(preprocess_dir, filename, encoding_tag, encoding_threshold)
+        super().__init__(
+            preprocess_dir,
+            encoding_tag,
+            filename,
+            encoding_threshold=encoding_threshold,
+        )
         # array of binary labels (is a patient a case or control?)
         demog = np.array(self.file["demo"])
         demog[:, 0] = np.nan_to_num(demog[:, 0])
