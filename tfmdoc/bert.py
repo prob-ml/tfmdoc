@@ -76,9 +76,7 @@ class BERT(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(
-            self.parameters(), lr=self.hparams.lr, weight_decay=1e-4
-        )
+        return torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
 
 
 class PositionalEncoding(torch.nn.Module):

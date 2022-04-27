@@ -3,6 +3,24 @@ from hydra import compose, initialize
 from hydra.utils import instantiate
 
 from tfmdoc.aipw import aipw_estimator
+from tfmdoc.datasets import random_mask
+
+
+def test_bert():
+    with initialize(config_path=".."):
+        cfg = compose(config_name="config")
+        bert = instantiate(cfg.bert, n_tokens=6)
+        t = torch.randint(low=20, high=60, size=(4, 32))
+        v = torch.randint(high=3, size=(4, 32))
+        x = torch.randint(high=6, size=(4, 32))
+        y = []
+        for i, records in enumerate(x):
+            _, labels = random_mask(records, 6, i)
+            y.append(torch.tensor(labels))
+        y = torch.stack(y)
+        assert bert.configure_optimizers().defaults
+        assert bert.training_step((t, v, None, x, y), 0) > 0
+        assert bert.validation_step((t, v, None, x, y), 0) > 0
 
 
 def test_model():

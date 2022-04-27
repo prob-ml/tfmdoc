@@ -1,7 +1,6 @@
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, random_split
-from torch.utils.data.sampler import WeightedRandomSampler
 
 # HELPERS
 
@@ -31,18 +30,6 @@ def padded_collate(batch, pad=True, mode="pretraining"):
     return ts, vs, ws, xs, ys
 
 
-def balanced_sampler(ix, labels):
-    # given a very imbalanced data set
-    # downsample the majority class and upsample the minority class
-    # this will result in an approximate 50-50 split per batch
-    p = labels[ix].sum() / len(ix)
-    weights = 1.0 / torch.tensor([1 - p, p], dtype=torch.float)
-    sample_weights = weights[labels[ix]]
-    return WeightedRandomSampler(
-        weights=sample_weights, num_samples=len(sample_weights), replacement=True
-    )
-
-
 def build_loaders(
     dataset,
     lengths,
@@ -64,16 +51,11 @@ def build_loaders(
     collate_fn = lambda x: padded_collate(x, pad, mode)
 
     for key, subset in zip(keys, subsets):
-        if key == "test" or mode != "diagnosis":
-            sampler = None
-            # save index of test samples for post hoc analysis
-        else:
-            sampler = balanced_sampler(subset.indices, dataset.labels)
         loaders[key] = DataLoader(
             subset,
             collate_fn=collate_fn,
             batch_size=batch_size,
-            sampler=sampler,
+            shuffle=(key == "train"),
         )
     return loaders
 

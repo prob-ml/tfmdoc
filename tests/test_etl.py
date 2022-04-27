@@ -24,6 +24,9 @@ def test_bert_pipeline():
         )
         cpl.run()
         preprocess_dir = "tests/test_data/test_pipeline/"
+        dataset = datasets.ClaimsDataset(preprocess_dir)
+        _, _, _, x, y = dataset[0]
+        assert len(x) == len(y)
         os.remove(preprocess_dir + "preprocessed.hdf5")
         os.rmdir(preprocess_dir)
 
@@ -50,8 +53,8 @@ def test_diag_pipeline():
         preprocess_dir = "tests/test_data/test_pipeline/"
         torch_dataset = datasets.DiagnosisDataset(preprocess_dir)
         assert torch_dataset.offsets[-1] == torch_dataset.records.shape[0]
-        t, v, w, x, y = torch_dataset[7]
-        assert len(x) == torch_dataset.offsets[7] - torch_dataset.offsets[6]
+        t, v, w, x, y = torch_dataset[2]
+        assert len(x) == torch_dataset.offsets[2] - torch_dataset.offsets[1]
         assert y.item() in {0, 1}
         assert w.shape[0] == 2
         assert (v.sort(descending=True)[0] == v).all().item()
