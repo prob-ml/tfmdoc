@@ -62,13 +62,12 @@ class ClaimsDataset(Dataset):
         ages = self.ages[start:stop].int()
         if self._age_q:
             ages = (ages / self._age_q).round() * self._age_q
-        labels = []
         if self.mask:
-            patient_records, labels = random_mask(
-                patient_records, labels, self.n_tokens
-            )
+            patient_records, labels = random_mask(patient_records, self.n_tokens, index)
             patient_records = torch.tensor(patient_records)
             labels = torch.tensor(labels)
+        else:
+            labels = None
 
         # return array of diag codes and patient labels
         return ages, visits, None, patient_records, labels
@@ -250,7 +249,9 @@ def pad_bincount(records, n_codes):
     return torch.from_numpy(padded).float()
 
 
-def random_mask(patient_records, labels, n_tokens):
+def random_mask(patient_records, n_tokens, seed):
+    random.seed(seed)
+    labels = []
     for i in range(len(patient_records)):
         prob = random.random()
         if prob < 0.15:

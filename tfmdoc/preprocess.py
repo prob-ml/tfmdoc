@@ -302,11 +302,10 @@ def sample_cases(labeled_ids, counts, chunk, patient_data, mode):
         diag_dates = chunk.groupby(chunk.index)["first_diag"].first()
         patient_data = patient_data.join(labeled_ids, how="right", on="Patid")
     elif mode == "diagnosis":
-        # downsample to a 4-1 control/case ratio
         cases = labeled_ids[labeled_ids == 1]
         controls = labeled_ids[labeled_ids == 0]
         try:
-            controls = controls.sample(4 * len(cases), random_state=17)
+            controls = controls.sample(len(cases), random_state=17)
         except ValueError:
             pass
         labeled_ids = pd.concat([controls, cases])

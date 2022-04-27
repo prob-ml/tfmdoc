@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torchmetrics
 from torch.nn import Dropout, Linear, ReLU
@@ -140,34 +138,6 @@ class Tfmd(BERT):
         batch = batch[:4]
         y_hat = self(*batch)
         return softmax(y_hat, dim=1)[:, 1]
-
-
-class PositionalEncoding(torch.nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
-        super().__init__()
-        self.dropout = torch.nn.Dropout(p=dropout)
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model),
-        )
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0)
-        # non-optimizable parameter
-        self.register_buffer("pe", pe)
-
-    def forward(self, v, x):
-        # x has shape (n_batches, seq_length, d_model)
-        # expand position encodings along batch dimension
-        pos = self.pe.expand(v.shape[0], self.pe.shape[1], self.pe.shape[2])
-        # expand visit indices along embedding dimension
-        v = v.unsqueeze(2).expand(v.shape[0], v.shape[1], pos.shape[2])
-        # select visit encodings for each patient
-        pos_encoding = pos.gather(1, v.long())
-        # add encodings to embedded input
-        x += pos_encoding
-        return self.dropout(x)
 
 
 # helpers

@@ -15,6 +15,7 @@ model:
   d_bow: []
   d_demo: 2
   bert: null
+  lr: 0.0001
 
 
 pretrain: &pretrain
@@ -47,7 +48,7 @@ preprocess:
   max_length: 512
   min_year: 2002
   max_year: 2018
-  n: 500000
+  n: 100000
   include_labs: True
   do: False
   split_codes: True
@@ -98,3 +99,5 @@ pad:
 hydra:
   sweep:
     dir: multirun/${mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  run:
+    dir: outputs/${mode}/${preprocess.filename}/${now:%Y-%m-%d}/${now:%H-%M-%S}
